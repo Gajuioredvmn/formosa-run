@@ -54,23 +54,24 @@ const spriteWidths = {
 const sprites = Object.fromEntries(Object.entries(spriteWidths).map(([name, width]) => [
   name, { id: name, ww: width, collide: 0, sway: 0, glow: 0 },
 ]));
-const context = vm.createContext({ SPR: sprites });
+const context = vm.createContext({ SPR: sprites, window: {} });
 const milkfishGround = uniqueMatch(/^  milkfish: \[[^\r\n]+/gm, 'milkfish ground bands')[0];
 const milkfishLife = uniqueMatch(/^  milkfish: \{[^\r\n]+/gm, 'milkfish vegetation')[0];
-new vm.Script([
+const sceneryScript = new vm.Script([
   constLine('TAU'), constLine('clamp'), constLine('DS'), constLine('_varCache'),
   constLine('C_GRASS'), constLine('BAND'), constLine('VERGE'),
   extractBlock(/^const RAIL_TEX = \{/gm, 'RAIL_TEX'),
-  ...['mulberry', 'variants', 'pickVar', 'every', 'dressHarborWalk', 'houseRow'].map(name => declaration(name)),
+  ...['hexToRgb', 'shadeHex', 'mulberry', 'variants', 'pickVar', 'every', 'dressHarborWalk', 'houseRow'].map(name => declaration(name)),
   declaration('Deco', 'class'),
   extractBlock(/^  boulevard\(/gm, 'boulevard', 'function '),
   `globalThis.api = { Deco, dressHarborWalk, houseRow, boulevard, DS,
     milkfishGround: ({${milkfishGround}}).milkfish,
     milkfishLife: ({${milkfishLife}}).milkfish };`,
-].join('\n'), { filename: 'index.html:scenery' }).runInContext(context);
+].join('\n'), { filename: 'index.html:scenery' });
+sceneryScript.runInContext(context);
 const api = context.api;
 
-function scenery(section = {}, overrides = {}) {
+function scenery(section = {}, overrides = {}, activeApi = api) {
   const piece = {
     seed: 1234, L: 120, side: 0, gaps: [],
     sprites: [], colliders: [], walls: [], rails: [], wires: [],
@@ -78,7 +79,7 @@ function scenery(section = {}, overrides = {}) {
     sec: () => section,
     ...overrides,
   };
-  const decorator = new api.Deco(piece);
+  const decorator = new activeApi.Deco(piece);
   decorator.sec = section;
   return { piece, decorator };
 }
@@ -89,6 +90,36 @@ function frontages(piece) {
 
 function overlaps(a, b, c, d) {
   return a < d && b > c;
+}
+
+// Load the shipped module, but supply only image-independent sprite metadata.
+// Its real houseRow and the real index.html Deco methods create every record.
+function classicScenery(section = {}, overrides = {}, loadedParts = true) {
+  const definitions = { ...sprites };
+  const dimensions = {
+    upper: [6, 6.8], shop: [5.3, 3], column: [.34, 2.45], base: [.38, .64],
+    stone: [.48, .18], cornice: [6, .24], canopy: [5.8, .42], side: [5.4, 6.8], sign: [5.3, .54],
+  };
+  const parts = Array.from({ length: 4 }, (_, panel) => Object.fromEntries(
+    Object.entries(dimensions).map(([part, [ww, wh]]) => {
+      const name = `pixel_house_${part}#${panel}`;
+      definitions[name] = { id: name, name, ww, wh, collide: 0, sway: 0, glow: 0 };
+      return [part, name];
+    }),
+  ));
+  const environment = vm.createContext({ SPR: definitions, window: {} });
+  sceneryScript.runInContext(environment);
+  const modulePath = path.resolve(__dirname, '..', 'render', 'classic-street-art.js');
+  new vm.Script(fs.readFileSync(modulePath, 'utf8'), { filename: modulePath }).runInContext(environment);
+  const art = environment.window.FormosaClassicStreetArt;
+  if (loadedParts) art.state.parts.push(...parts);
+  const result = scenery(section, overrides, environment.api);
+  const wallCalls = [], wall = result.decorator.wall;
+  result.decorator.wall = function (...args) {
+    wallCalls.push({ s0: args[0], s1: args[1], sg: args[2], off: args[3], depth: args[4], height: args[5], texture: args[6], options: args[7] || {} });
+    return wall.apply(this, args);
+  };
+  return { ...result, api: environment.api, art, wallCalls };
 }
 
 test('all inline game scripts parse without executing browser code', () => {
@@ -209,4 +240,84 @@ test('milkfish far trees root on a dry dyke between pond bands', () => {
     assert.equal(api.milkfishGround[index - 1].k, 1);
     assert.equal(api.milkfishGround[index + 1].k, 1);
   }
+});
+
+test('classic street art uses noncolliding overhead layers, solid inner shops and at least two metres of arcade', () => {
+  for (const side of [-1, 1]) {
+    const scene = classicScenery();
+    scene.api.houseRow(scene.decorator, 0, 120, side, 3.8, { vsigns: true });
+    const upper = scene.wallCalls.filter(w => w.texture.startsWith('pixel_house_upper#'));
+    const shop = scene.wallCalls.filter(w => w.texture.startsWith('pixel_house_shop#'));
+    const canopy = scene.wallCalls.filter(w => w.texture.startsWith('pixel_house_canopy#'));
+    assert(upper.length > 0 && canopy.length > 0, 'The shipped module must actually place its layered pixel shops');
+    assert.equal(shop.length, upper.length);
+    assert(upper.every(w => w.options.collide === false && w.options.y >= 3));
+    assert(canopy.every(w => w.options.collide === false && w.options.y > 2.5));
+    assert(scene.wallCalls.filter(w => !shop.includes(w)).every(w => w.options.collide === false));
+    assert(shop.every(w => w.options.collide === true && !w.options.y));
+    for (const facade of upper) {
+      const inner = shop.find(w => w.s0 === facade.s0 && w.s1 === facade.s1);
+      assert(inner && inner.off - facade.off >= 2, 'The ground-floor shop must sit behind a real arcade recess');
+      const s = (facade.s0 + facade.s1) / 2, x = scene.decorator.lat(s, side, facade.off + 1);
+      assert(!scene.piece.colliders.some(c => s > c.s0 && s < c.s1 && x > c.x0 && x < c.x1), 'The passage under the overhead facade must stay physically open');
+    }
+    const walls = scene.piece.colliders.filter(c => c.kind === 'wall');
+    assert.equal(walls.length, shop.reduce((sum, w) => sum + Math.ceil((w.s1 - w.s0) / 6), 0), 'Only the visible inner shop faces create wall colliders');
+    assert.equal(scene.piece.colliders.filter(c => c.kind === 'solid').length, upper.length * 2, 'Each visible pair of outer columns remains solid');
+    assert(scene.piece.sprites.some(s => s.id.startsWith('vsign')), 'Accepted shops keep their attached signs');
+  }
+});
+
+test('classic street art rejects complete shops, columns and props in a same-side landmark gap or narrow fork', () => {
+  for (const overrides of [
+    { gaps: [[0, 120, 1]] },
+    { side: -1, innerFree: Array(61).fill(2) },
+    { side: -1, innerFree: Array(61).fill(5.5) },
+  ]) {
+    const scene = classicScenery({}, overrides);
+    scene.api.houseRow(scene.decorator, 0, 120, 1, 3.8, { vsigns: true });
+    assert.equal(scene.wallCalls.length, 0, 'A rejected building leaves no overhead or ground-floor wall');
+    assert.equal(scene.piece.colliders.length, 0, 'A rejected building leaves no invisible shop/column collider');
+    assert.equal(scene.piece.sprites.length, 0, 'A rejected building leaves no floating sign or scooter');
+  }
+  const opposite = classicScenery({}, { gaps: [[0, 120, -1]] });
+  opposite.api.houseRow(opposite.decorator, 0, 120, 1, 3.8, { vsigns: true });
+  assert(opposite.piece.walls.length > 0, 'A landmark gap only clears its own side');
+});
+
+test('classic street art samples a widening fork over the complete building footprint', () => {
+  const scene = classicScenery({}, {
+    side: -1, innerFree: Array.from({ length: 61 }, (_, i) => i * 2 < 40 ? 5.5 : 20),
+  });
+  scene.api.houseRow(scene.decorator, 0, 120, 1, 3.8, { vsigns: true });
+  assert(scene.piece.walls.length > 0, 'Buildings resume once the inner fork has enough room');
+  assert(scene.piece.walls.every(w => w.s0 >= 40));
+  assert(scene.piece.sprites.every(s => s.s >= 40));
+  const pinched = classicScenery({}, {
+    L: 7, side: -1, innerFree: [20, 20, 2, 20, 20, 20, 20, 20],
+  });
+  pinched.api.houseRow(pinched.decorator, 0, 7, 1, 3.8, { vsigns: true });
+  assert.equal(pinched.piece.walls.length + pinched.piece.colliders.length + pinched.piece.sprites.length, 0, 'Clear endpoints cannot hide a pinched sample through the middle of a shop');
+});
+
+test('classic street art with unavailable images preserves the original shop fallback', () => {
+  const scene = classicScenery({}, {}, false);
+  scene.api.houseRow(scene.decorator, 0, 120, 1, 3.8, { vsigns: true });
+  assert(scene.piece.sprites.some(s => s.id.startsWith('townhouse')));
+  assert(scene.piece.colliders.length > 0);
+  assert.equal(scene.piece.walls.length, 0, 'No incomplete pixel facade is placed without its imported parts');
+});
+
+test('a late landmark forecourt removes actual classic shop parts without removing the opposite frontage or road guard', () => {
+  const scene = classicScenery();
+  for (const side of [-1, 1]) scene.api.houseRow(scene.decorator, 0, 120, side, 3.8, { vsigns: true });
+  scene.decorator.wall(0, 120, 1, 0, 0, .8, 'rail_balustrade', { collide: false });
+  const oppositeCount = scene.piece.walls.filter(w => w.sg === -1).length;
+  assert(scene.piece.walls.some(w => w.sg === 1 && w.depth > 0 && overlaps(w.s0, w.s1, 40, 80)));
+  scene.decorator.gap(40, 80, 1);
+  assert(scene.piece.walls.every(w => !(w.sg === 1 && w.off >= 2.5 && w.depth > 0 && overlaps(w.s0, w.s1, 40, 80))), 'A cleared forecourt must not leave rendered shop walls behind');
+  assert(scene.piece.colliders.every(c => !((c.x0 + c.x1) > 0 && overlaps(c.s0, c.s1, 40, 80))));
+  assert(scene.piece.sprites.every(s => !(s.x > 0 && s.s >= 40 && s.s <= 80)));
+  assert.equal(scene.piece.walls.filter(w => w.sg === -1).length, oppositeCount);
+  assert(scene.piece.walls.some(w => w.sg === 1 && w.off === 0 && w.depth === 0), 'The existing safety guard is part of the road');
 });

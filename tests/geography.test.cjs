@@ -22,6 +22,17 @@ test('Named landmarks and regional cultural tags remain on their assigned route'
  for(const id of ['s4g','s5m'])assert(!data.stages[id].sections.some(s=>(s.tags||[]).includes('hakka_roundhouse')),'Houlong roundhouse in '+id);
  assert(!data.stages.s5p.sections.some(s=>(s.tags||[]).includes('marblewall')),'Shitiping is not a Taroko marble cliff');
 });
+
+test('Jiji keeps continuous asphalt beside its independent railway',()=>{
+ const stage=data.stages.s4b,piece=data.pieces.find(p=>p.id==='s4b');
+ const rail=stage.sections.find(s=>s.parallelRail);
+ assert(rail,'The green-tunnel route needs its separate railway section');
+ assert(!stage.sections.some(s=>s.track),'The public road must not become railway track');
+ assert(!stage.sections.some(s=>(s.tags||[]).includes('ontracks')),'Do not direct drivers onto the Jiji railway');
+ assert(rail.tags.includes('greentunnel')&&rail.tags.includes('jiji_parallel'));
+ assert(piece.sections.some(s=>s.parallelRail),'Godot data must retain the browser section');
+ assert(!piece.sections.some(s=>s.track),'Shared native geometry cannot reintroduce the road-to-track switch');
+});
 test('A wrapped panorama cannot reintroduce the 85 tower through the former 400-degree workaround',()=>{
  const c={};vm.createContext(c);vm.runInContext(`const PXK=1;const azX=a=>256+a/360*512;const hash2=()=>.5;const mixHex=(a,b,t)=>a;const shadeHex=(c,k)=>c;
  function mulberry(seed){let s=seed>>>0;const r=()=>{s=(Math.imul(s,1664525)+1013904223)>>>0;return s/4294967296;};r.int=(a,b)=>Math.floor(a+r()*(b-a+1));r.pick=a=>a[Math.floor(r()*a.length)];return r;}

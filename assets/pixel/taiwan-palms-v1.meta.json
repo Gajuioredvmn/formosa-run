@@ -1,0 +1,36 @@
+{
+  "tool": "built-in image_gen",
+  "role": "palm",
+  "prompt": "Use case: stylized-concept. Asset type: genuine pixel-art two-palm transparent sprite atlas for a480x270 logical Taiwan arcade racing game.\nImage1 is the user's authoritative PIXEL ART STYLE reference only.\nCreate exactly TWO complete mature Taiwanese coastal palm trees, one in each of TWO equal vertical cells arranged left and right. Distinct natural trunk leans and crown silhouettes. Full fronds, textured segmented grey-brown trunks, full trunk bases, generous transparent padding and central gutter, no crossing cell edges.\nSophisticated arcade PIXEL ART matching the reference: crisp stepped contours, deliberate leaf pixel clusters and bounded palettes, bright yellow-green sunlit fronds, emerald midtones, cool teal-blue detailed shade. Native consistent square pixel blocks, not a smooth painting shrunk. Logical standing height around150pixels each. Warm sun upper left, strong cool shadows with readable details. Natural substantial crowns, not green triangles or lollipop trees.\nTrue transparent RGBA around and between fronds. No scenery, ground, pots, people, checkerboard, cast ground shadow, glow, text or HUD. Wide atlas about1536x1024, exactly two equal side-by-side cells, one tree each.",
+  "source": "exec-5b0f0eee-76f4-4af7-ae05-5d05974c6cdd.png",
+  "destination": "assets/pixel/taiwan-palms-v1.png",
+  "reference": "file_00000000e52482068c26ad485a4d454a.png",
+  "transparent_background": true,
+  "imageEditsAfterGeneration": "none; copied byte-for-byte",
+  "width": 1536,
+  "height": 1024,
+  "alphaRange": [
+    0,
+    253
+  ],
+  "bbox96": [
+    23,
+    17,
+    1525,
+    1005
+  ],
+  "cells": [
+    [
+      23,
+      40,
+      758,
+      1002
+    ],
+    [
+      47,
+      17,
+      757,
+      1005
+    ]
+  ]
+}

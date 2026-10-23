@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "asset": "player-rosso-rear-v1.png",
+  "generator": "Built-in image_gen",
+  "purpose": "Classic Canvas player ROSSO only; other nine player designs unchanged",
+  "reference": "file_00000000e52482068c26ad485a4d454a.png",
+  "width": 1774,
+  "height": 887,
+  "solidCrop": [
+    159,
+    75,
+    1455,
+    750
+  ],
+  "contactY": 825,
+  "crew": "male driver image-left; female passenger image-right; exactly two people",
+  "mapping": "At runtime map crop width to original spr.bw and tyre baseline to original yG; no road/camera/physics changes",
+  "prompt": "Use case: stylized-concept.\nAsset type: one transparent game sprite for a pixel-art pseudo-3D arcade driving game, original 1990s-inspired ROSSO GT.\nReference image role: the supplied Taiwan driving triptych sets the pixel medium, rear chase silhouette, warm sun/cool shadow color grouping, and two occupants. Generate ONLY the player's red convertible car isolated, no road or scene.\nPrimary subject: full straight rear view of a wide low 1980s wedge-shaped red convertible, black horizontal rear grille, rectangular red-and-amber tail lamps, dark empty license plate, two pairs of round exhausts, chunky black rear tires, both side mirrors, visible thick car body and seats. Exactly two adults viewed from behind: short dark-haired male driver on image LEFT, long warm-brown-haired female passenger on image RIGHT. Two heads only. No front faces. Windshield rim in front of them.\nCamera/framing: symmetrical straight chase view, slightly elevated so you see the cockpit but rear bumper remains dominant. Full car centered and entirely within canvas including every tire and mirror, no crop. Occupants' heads top ~25% image; tire contact baseline ~85%; rear width ~88% image. The car should be roughly twice as wide as its total occupied height.\nStyle/medium: AUTHENTIC hand-placed 1990s high-end pixel sprite: consistent visible square pixel grid, like a 224x124 logical sprite enlarged by nearest-neighbor. Sharp stepped silhouettes, tight coherent 2x2 and 3x2 pixel clusters, restrained 5-7 shades per material with hard color steps. Dark blue-purple shadows under body, warm coral and pale cream sun highlights on red fenders. Bold readable black-red grille and tire tread pixel clusters. Precise aligned square pixel highlights, not random noise, not blurred or smooth. Must remain legible after display around 180 logical pixels wide.\nBackdrop: true transparent alpha everywhere outside the car, including clear spaces around occupants and windshield; no gray/white checkerboard, no black rectangle, no ground shadow, no smoke, no particles.\nConstraints: one single rear sprite only, no text, no watermark, no panels, no UI, no side view, no extra people. Avoid photorealism, painted brush texture, glossy CGI smooth gradients, anti-aliased vector contours, tiny noisy speckles. Car design original, no brand logos."
+}

@@ -1,0 +1,22 @@
+{
+  "tool": "built-in image_gen",
+  "role": "skyline",
+  "prompt": "Use case: stylized-concept. Asset type: transparent distant Kaohsiung skyline PIXEL ART layer for a480x270 Taiwan arcade racer.\nImage1 is authoritative pixel style reference only.\nOne wide city silhouette, distinctive Kaohsiung85 Sky Tower slightly right of centre, exactly ONE85 tower, surrounded by many varied low/mid/high contemporary Taiwan buildings and tiny window pixel patterns. The85 has its architectural 高-like split paired side blocks joined to one slender central tower and antenna; proportionate, much narrower than the full city. Natural heights and gaps, dense small buildings fill the base across the width. No giant foreground tower or mirrored duplicate85.\nGenuine polished arcade PIXEL ART: stepped edges, coherent square pixel clusters, limited palette, sunlit pale cyan/cream glass, blue-green facets, cool blue distance shade and warmer roof details. Designed for roughly350x120 logical pixels. Match the attached bright detailed pixel reference, no smooth photo, watercolor, cheap polygon3D or vector art.\nONLY buildings on TRUE transparent RGBA, clear sky/gaps. No clouds, sky, mountains, road, cars, palms, ships, water, people, text, logos or HUD. Wide landscape about2048x1024; full antenna/top inside with transparent margin.",
+  "source": "exec-be9bb013-995a-4e3f-ac3c-f6db70872696.png",
+  "destination": "assets/pixel/kaohsiung-skyline-v1.png",
+  "reference": "file_00000000e52482068c26ad485a4d454a.png",
+  "transparent_background": true,
+  "imageEditsAfterGeneration": "none; copied byte-for-byte",
+  "width": 1774,
+  "height": 887,
+  "alphaRange": [
+    0,
+    255
+  ],
+  "bbox96": [
+    22,
+    110,
+    1755,
+    813
+  ]
+}

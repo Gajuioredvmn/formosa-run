@@ -1,0 +1,144 @@
+{
+  "tool": "built-in image_gen",
+  "purpose": "Classic Canvas shophouse atlas; four front elevations. Approved direct implementation scope from user.",
+  "reference_image": "file_00000000e52482068c26ad485a4d454a.png",
+  "generated_source": "exec-30fc4851-5f6b-43b8-976f-5787ee399dd2.png",
+  "generated_utc": "2026-10-23T16:50:33.488050+00:00",
+  "width": 1774,
+  "height": 887,
+  "mode": "RGB",
+  "sha256": "38e9253be8ecce01bb06a3ad5d295d3e4d80ad02c979b6cc96739283dd2d4430",
+  "postprocessing": "none; original generated PNG copied byte-for-byte",
+  "desired_logical_panel": [
+    192,
+    384
+  ],
+  "actual_panels": [
+    {
+      "index": 0,
+      "x0": 0,
+      "x1": 443,
+      "y0": 0,
+      "y1": 887,
+      "width": 443,
+      "theme": "cream fruit grocery"
+    },
+    {
+      "index": 1,
+      "x0": 443,
+      "x1": 887,
+      "y0": 0,
+      "y1": 887,
+      "width": 444,
+      "theme": "turquoise convenience grocery"
+    },
+    {
+      "index": 2,
+      "x0": 887,
+      "x1": 1331,
+      "y0": 0,
+      "y1": 887,
+      "width": 444,
+      "theme": "sand local food shop"
+    },
+    {
+      "index": 3,
+      "x0": 1331,
+      "x1": 1774,
+      "y0": 0,
+      "y1": 887,
+      "width": 443,
+      "theme": "rose blue-window drinks and ice"
+    }
+  ],
+  "uv_panels": [
+    [
+      0.0,
+      0,
+      0.25,
+      1
+    ],
+    [
+      0.25,
+      0,
+      0.5,
+      1
+    ],
+    [
+      0.5,
+      0,
+      0.75,
+      1
+    ],
+    [
+      0.75,
+      0,
+      1.0,
+      1
+    ]
+  ],
+  "observed_y_bands_pixels": {
+    "upper_two_floors": [
+      0,
+      499
+    ],
+    "awning": [
+      503,
+      575
+    ],
+    "blank_fascia": [
+      584,
+      632
+    ],
+    "shop_interior": [
+      635,
+      866
+    ],
+    "threshold": [
+      866,
+      887
+    ]
+  },
+  "observed_y_bands_normalized": {
+    "upper_two_floors": [
+      0,
+      0.5625704622322435
+    ],
+    "awning": [
+      0.5670800450958287,
+      0.6482525366403608
+    ],
+    "blank_fascia": [
+      0.6583990980834273,
+      0.7125140924464487
+    ],
+    "shop_interior": [
+      0.7158962795941376,
+      0.9763246899661782
+    ],
+    "threshold": [
+      0.9763246899661782,
+      1
+    ]
+  },
+  "side_pillar_approx_fraction": [
+    0,
+    0.085,
+    0.915,
+    1
+  ],
+  "visual_review": {
+    "four_front_panels": true,
+    "two_residential_floors_plus_shop": true,
+    "orthographic_front": true,
+    "no_people_vehicles_sky_road": true,
+    "doors_and_side_pillars_distinct": true,
+    "pixel_cluster_art_style": true,
+    "notes": [
+      "Native image is 1774x887, not the requested 1536x768. Equal normalized quarters imply half-pixel boundaries; integer crop widths are 443/444/444/443.",
+      "Actual upper-floor/awning boundary is around56.3%, not requested60%; use observed bands instead of stretching the door crop.",
+      "The generated native art has varied fine pixel clusters, not a guaranteed uniform2x logical grid; no smooth image was programmatically reduced to simulate pixel art."
+    ]
+  },
+  "prompt_file": "taiwan-shophouses-pixel.prompt.txt"
+}

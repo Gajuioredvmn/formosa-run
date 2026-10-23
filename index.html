@@ -131,7 +131,8 @@ table.sp td.t{text-align:right;font-family:var(--font-num);color:#fff;white-spac
 <link rel="stylesheet" href="./render/hud.css">
 <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
 <script src="./data/routes.js"></script>
-<script type="module" src="./render/main.js"></script>
+<script src="./render/classic-street-art.js"></script>
+<script type="module" src="./render/bootstrap.js"></script>
 </head><body><canvas id="gl" aria-label="賽車畫面"></canvas>
 <canvas id="hud" aria-hidden="true"></canvas>
 <div id="ui"></div>
@@ -366,7 +367,7 @@ const PANO_PAINT = {
     paintRange(F.img, F.hz, { az0: -112, az1: 30, base: 18, amp: 52, rough: 3.4, seed: 11.3, peaks: [[-55, 14, 20], [-20, 9, 16], [8, 10, 10]], pal: BLUE_FAR, haze: 0xcfe2ee, tex: 0.3, mist: 0.5 });
     paintRange(F.img, F.hz, { az0: 110, az1: 178, base: 4, amp: 26, rough: 4, seed: 4.4, peaks: [[150, 12, 12]], pal: GREEN_FAR, haze: 0xc8dcea, tex: 0.7, mist: 0.4 });
     paintBelow(F.img, F.hz, [[-180, 0, 0x9aa4a0, 0x8a9690], [0, 180, 0x5aa6c4, 0x4a98bc]]);
-    paintSkylineCity(N.img, N.hz, -46, 40, { seed: 41, landmark: 'tower85', towerAz: -4 });
+    paintSkylineCity(N.img, N.hz, -46, 40, { seed: 41, landmark: window.FormosaClassicStreetArt?.state.images.skyline ? null : 'tower85', towerAz: -4 });
     paintSkyline(N.img, N.hz, 120, 175, { seed: 43, base: 2, amp: 18 });
   },
   // 海線: the Strait to the west with Little Liuqiu low on the horizon; the mountains far to the east
@@ -445,7 +446,7 @@ function buildBackdrop(key, cloudSeed) {
   const F = makeLayer(L_FAR), N = makeLayer(L_NEAR);
   (PANO_PAINT[key] || PANO_PAINT.plain)(F, N);
   F.g.putImageData(F.img, 0, 0); N.g.putImageData(N.img, 0, 0);
-  const set = { far: F.c, near: N.c, clouds: paintClouds(cloudSeed) };
+  const set = { key, far: F.c, near: N.c, clouds: paintClouds(cloudSeed) };
   BG.cache[id] = set;
   return set;
 }
@@ -498,6 +499,7 @@ function drawBackdrop(g, set, camAz, t, alpha) {
   drawLayer(g, set.clouds, camAz * 0.96 + drift, 1, HY - L_CLOUD.hz, alpha);
   drawLayer(g, set.far, camAz, 1, HY - L_FAR.hz, alpha);
   drawLayer(g, set.near, camAz, 1.12, HY - L_NEAR.hz, alpha);
+  if(window.FormosaClassicStreetArt)window.FormosaClassicStreetArt.backdrop(g,set,camAz,alpha,{centre:X0,focal:FOC,horizon:HY});
 }
 
 // ===================== the far country of the other stages: plains, cloud seas, the gorge, the north coast, Taipei =====================
@@ -587,8 +589,8 @@ Object.assign(PANO_PAINT, {
   },
   // Jiji and Sanyi are wooded foothills; only Sun Moon Lake uses the lake panorama.
   foothills(F, N) {
-    paintRange(F.img, F.hz, { az0: -180, az1: 180, base: 12, amp: 33, rough: 3.3, seed: 191.5, pal: BLUE_FAR, haze: 0xd8e4ec, tex: .35, mist: .5 });
-    paintRange(N.img, N.hz, { az0: -135, az1: 95, base: 5, amp: 25, rough: 4.2, seed: 192.1, pal: GREEN_HILL, haze: 0xc8dce0, tex: 1, mist: .45 });
+    paintRange(F.img, F.hz, { az0: -180, az1: 180, base: 12, amp: 44, rough: 1.5, seed: 191.5, peaks:[[-170,25,30],[-90,24,36],[0,28,34],[90,26,36],[170,25,30]], pal: BLUE_FAR, haze: 0xd8e4ec, tex: .25, mist: .5 });
+    paintRange(N.img, N.hz, { az0: -180, az1: 180, base: 6, amp: 30, rough: 2.2, seed: 192.1, peaks:[[-110,30,18],[10,35,20],[125,28,16]], pal: GREEN_HILL, haze: 0xc8dce0, tex: .8, mist: .45 });
     paintBelow(F.img, F.hz, [[-180, 180, 0x81a566, 0x709356]]);
   },
   nanzhuang(F, N) {
@@ -1012,7 +1014,7 @@ const STAGES = {
     sign: { L: ['日月潭', '台21', '水社碼頭'], R: ['清境農場', '台14甲', '合歡山・武嶺'] },
     sections: [
       { len: 360, k: 0, lanes: 3, sh: 2.4, L: 'town', R: 'river', tags: ['checkpoint', 'townhouse', 'lamps', 'jiji'] },
-      { len: 560, k: 0.003, dy: 12, lanes: 2, sh: 1.2, shl: 1.2, track: true, train: 'jiji', L: 'farm', R: 'river', tags: ['greentunnel', 'ontracks', 'banana'] },
+      { len: 560, k: 0.003, dy: 12, lanes: 2, sh: 1.2, shl: 1.2, parallelRail: true, train: 'jiji', L: 'farm', R: 'river', tags: ['greentunnel', 'jiji_parallel', 'banana'] },
       { len: 520, k: -0.005, dy: 20, roll: [5, 2], lanes: 3, sh: 2.4, shl: 1.6, L: 'orchard', R: 'orchard', tags: ['banana', 'plum', 'farmhouse', 'betelstand'] },
       { len: 480, k: 0.0062, dy: 30, L: 'town', R: 'hills', tags: ['snakekiln', 'townhouse', 'checheng'] },
       { len: 500, k: -0.0066, dy: -24, L: 'mountain', R: 'river', tags: ['betelgrove', 'guardR', 'temple'] },
@@ -3670,6 +3672,7 @@ function paintTaiwan() {
     ['grassland', '龍磐大草原', 'Longpan Grassland'],
     ['nanfangao', '南方澳漁港・跨港大橋', 'Nanfangao Harbour'], ['coldspring', '蘇澳冷泉', 'Suao Cold Spring'], ['scallions', '三星蔥', 'Sanxing Scallions'], ['jiaoxi', '礁溪溫泉', 'Jiaoxi Hot Spring'], ['turtleisland', '龜山島', 'Turtle Island'], ['lanyang', '蘭陽博物館', 'Lanyang Museum'],
     ['ontracks', '前方上鐵軌・小心火車', 'RAILWAY AHEAD'],
+    ['jiji_parallel', '集集支線・道路旁鐵道', 'RAILWAY BESIDE ROAD'],
     ['sheding', '社頂自然公園', 'Sheding Park'], ['shadao', '砂島', 'Shadao'], ['hongchaikeng', '紅柴坑', 'Hongchaikeng'], ['nanwan', '南灣', 'Nanwan'], ['xiaowan', '小灣', 'Xiaowan'], ['bananabay', '香蕉灣', 'Banana Bay'],
   ];
   for (const [id, n, en] of S) for (const d of [-1, 1]) addSprite('sight_' + id + (d < 0 ? '_l' : '_r'), paintSightSign(n, en, d), 2.5, { collide: 0, shadow: 0.3, ax: d < 0 ? 1 : 0 });
@@ -4044,6 +4047,7 @@ function paintPole(seed) {
   return px;
 }
 function paintTown() {
+  if (window.FormosaClassicStreetArt) window.FormosaClassicStreetArt.registerSprites({ canvas, Pix, addSprite });
   for (let i = 0; i < 14; i++) { const px = paintTownhouse(2000 + i * 17); addSprite('townhouse#' + i, px, px.h / PPM, { collide: 0, shadow: 0 }); }
   for (let i = 0; i < 4; i++) { const px = paintTownhouse(2400 + i * 17, { name: i % 2 ? '海產' : '活海鮮', sign: [0x1a58b8, 0xffffff], floors: 3 }); addSprite('seafood#' + i, px, px.h / PPM, { collide: 0, shadow: 0 }); }
   for (let i = 0; i < 3; i++) { const px = paintTownhouse(2500 + i * 17, { name: '機車行', sign: [0xf2c21a, 0xb0141c] }); addSprite('scooterstore#' + i, px, px.h / PPM, { collide: 0, shadow: 0 }); }
@@ -4085,9 +4089,14 @@ class Deco {
   spr(name, s, x, o) {
     o = o || {};
     if (s < 0 || s > this.p.L) return null;
+    if (window.FormosaClassicStreetArt) name = window.FormosaClassicStreetArt.spriteName(this, name, s);
     const nm = SPR[name] ? name : pickVar(name, this.rnd);
     if (!nm) return null;
     const S = SPR[nm], sc = o.scale || 1;
+    // The Jiji branch has its own right-of-way. Keep its ballast clear of
+    // decorative farm plants; the road-side camphor row stays outside it.
+    const section = this.p.sec(s), edge = this.p.outerL(Math.round(clamp(s, 0, this.p.L) / DS));
+    if (section.parallelRail && !o.landmark && x < edge - 4.8 && x > edge - 9.2) return null;
     // a cleared forecourt in front of a landmark: nothing else stands there
     if (this.p.gaps && !o.landmark) for (const g of this.p.gaps) if (s >= g[0] && s <= g[1] && (g[2] < 0 ? x < 0 : x > 0)) return null;
     // the inner side of a fork child, where its sibling runs close by: only what fits in the gap
@@ -4105,7 +4114,7 @@ class Deco {
     o = o || {};
     if (s1 <= 0 || s0 >= this.p.L) return;
     const S = SPR[tex], SS = o.side && SPR[o.side];
-    this.p.walls.push({ s0, s1, sg, off, depth, h, tex: S ? S.id : -1, side: SS ? SS.id : -1, col: o.col == null ? 0xd8d0c4 : o.col, sideCol: o.sideCol == null ? shadeHex(o.col == null ? 0xd8d0c4 : o.col, 0.78) : o.sideCol, y: o.y || 0, u0: o.u0 || 0, u1: o.u1 == null ? 1 : o.u1, tile: o.tile || 0, glow: o.glow || 0 });
+    this.p.walls.push({ s0, s1, sg, off, depth, h, tex: S ? S.id : -1, side: SS ? SS.id : -1, col: o.col == null ? 0xd8d0c4 : o.col, sideCol: o.sideCol == null ? shadeHex(o.col == null ? 0xd8d0c4 : o.col, 0.78) : o.sideCol, y: o.y || 0, u0: o.u0 || 0, u1: o.u1 == null ? 1 : o.u1, tile: o.tile || 0, glow: o.glow || 0, layer: o.layer || 0 });
     if (off < 40 && o.collide !== false) for (let s = s0; s < s1; s += 6) this.collide(Math.min(s + 3, s1), this.lat(s + 3, sg, off + depth / 2), depth / 2 + 0.2, 3.2, 'wall');
   }
   // a low barrier strip along the road: kind 'guard' (W-beam), 'concrete', 'parapet', 'railing', 'fence', 'hedge'
@@ -4125,11 +4134,15 @@ class Deco {
     const p = this.p; (p.gaps = p.gaps || []).push([s0, s1, sg]);
     const side = (x) => (sg < 0 ? x < 0 : x > 0);
     p.sprites = p.sprites.filter((q) => !(q.s >= s0 && q.s <= s1 && side(q.x)));
+    // A landmark can be added after the street row. Clear that row's actual
+    // building parts too, while preserving the road-edge safety railing.
+    p.walls = p.walls.filter((w) => !(w.sg === sg && w.s1 > s0 && w.s0 < s1 && w.off >= 2.5 && w.depth > 0));
     p.colliders = p.colliders.filter((c) => !(c.s1 > s0 && c.s0 < s1 && side((c.x0 + c.x1) / 2)));
   }
   collide(s, x, hx, hs, kind) { this.p.colliders.push({ s0: s - hs, s1: s + hs, x0: x - hx, x1: x + hx, kind: kind || 'solid' }); }
   finish() {
     const p = this.p, nb = Math.ceil(p.L / BUCKET) + 2;
+    if (window.FormosaClassicStreetArt) window.FormosaClassicStreetArt.prepareShadows(p, SPRL, DS);
     p.sprites.sort((a, b) => a.s - b.s);
     p.sprB = new Array(nb); p.wallB = new Array(nb); p.wireB = new Array(nb);
     for (let b = 0; b < nb; b++) { p.sprB[b] = []; p.wallB[b] = []; p.wireB[b] = []; }
@@ -4223,7 +4236,7 @@ function decoratePiece(p) {
       if (p.innerFree && sg === -p.side && p.innerFree[i] < 4) continue;
       const type = sg > 0 ? sec.R : sec.L, L = LIFE[type]; if (!L) continue;
       const room = p.innerFree && sg === -p.side ? p.innerFree[i] : Infinity;
-      if (L.near && L.near[0] && due(sg, 'near', s, L.near[0])) { const k = r.pick(L.near[1]), off = r.range(L.near[2][0], L.near[2][1]); if (off < room) { plant(D, k, s, D.lat(s, sg, off), r.range(0.9, 1.15)); if (r() < 0.5) plant(D, 'bush', s + r.range(-2, 2), D.lat(s, sg, off + r.range(-0.8, 1.2)), r.range(0.8, 1.2), { collide: false }); } }
+      if (!(sec.parallelRail && sg < 0) && L.near && L.near[0] && due(sg, 'near', s, L.near[0])) { const k = r.pick(L.near[1]), off = r.range(L.near[2][0], L.near[2][1]); if (off < room) { plant(D, k, s, D.lat(s, sg, off), r.range(0.9, 1.15)); if (r() < 0.5) plant(D, 'bush', s + r.range(-2, 2), D.lat(s, sg, off + r.range(-0.8, 1.2)), r.range(0.8, 1.2), { collide: false }); } }
       if (L.under && r() < L.under[0]) { const off = r.range(L.under[2][0], L.under[2][1]); if (off < room) plant(D, r.pick(L.under[1]), s, D.lat(s, sg, off), r.range(0.75, 1.3), { collide: false }); }
       if (L.mid && due(sg, 'mid', s, L.mid[0])) { const n = r.int(L.mid[3][0], L.mid[3][1]); if (L.mid[2][1] < room) grove(D, L.mid[1], s, sg, L.mid[2][0], L.mid[2][1], n, r); }
       if (L.far && due(sg, 'far', s, L.far[0])) { const off = r.range(L.far[2][0], L.far[2][1]); if (off < room) plant(D, r.pick(L.far[1]), s, D.lat(s, sg, off), r.range(1.0, 1.4), { collide: false }); }
@@ -4345,6 +4358,7 @@ function every(s0, s1, step, jitter, r, fn) { for (let s = s0 + step * 0.5; s < 
 // (a perspective-mapped facade shears its signboards into parallelograms; a card keeps them upright), with alleys,
 // pavement scooters and the odd convenience store; the row is solid to the car, like a wall
 function houseRow(D, s0, s1, sg, off, opts) {
+  if (window.FormosaClassicStreetArt && window.FormosaClassicStreetArt.houseRow({ pickVar }, D, s0, s1, sg, off, opts)) return;
   const r = D.rnd, o = opts || {};
   let s = s0 + r.range(0, 6);
   while (s < s1 - 4) {
@@ -4459,15 +4473,18 @@ const TAGS = {
     tramCrossing(D.p, xs); (D.p.xings = D.p.xings || []).push(xs);
   },
   tower85(D) {
+    if(window.FormosaClassicStreetArt?.state.images.skyline)return;
     // the 85 Sky Tower stands ahead and to the left as you leave the start
     const q = worldToRoad(D.p, -150, -1020);
     D.spr('sky85', q.s, q.x, { flip: false, collide: false });
   },
   cranes(D, s0, s1) {
+    if (D.p.id === 's1' && window.FormosaClassicStreetArt?.state.images.port) return;
     // ship-to-shore gantry cranes on the container quay across the water, booms raised; a railing along our side of the water
     every(s0, s1, 54, 10, D.rnd, (s) => D.spr('crane', s, D.lat(s, 1, D.rnd.range(146, 152)), { flip: false, collide: false }));
   },
   ships(D, s0, s1) {
+    if (window.FormosaClassicStreetArt && window.FormosaClassicStreetArt.port(D, s0, s1)) return;
     // container ships moored along the far quay, and the odd one out in the channel
     every(s0, s1, 220, 30, D.rnd, (s) => { const L = D.rnd.range(110, 160); D.wall(s, s + L, 1, 112, 24, 30, pickVar('shipside', D.rnd), { col: 0x2a2a3a, sideCol: 0x1e1e2a, collide: false }); });
   },
@@ -4590,7 +4607,7 @@ const TAGS = {
   pier2(D, s0, s1) {
     // the warehouses in a row along the quay, murals on their fronts, the big figures between them, people about
     sightSign(D, s0 + 60, 1, 'pier2');
-    for (let s = s0 + 40; s < s1 - 40; s += 40) { if (s > s0 + 240 && s < s0 + 420) continue; const nm = pickVar('pier2', D.rnd), x = D.lat(s + 10, 1, 3.6 + SPR[nm].ww / 2); D.spr(nm, s + 10, x, { flip: false, collide: false }); D.collide(s + 10, x, SPR[nm].ww / 2, 10, 'wall'); if (D.rnd() < 0.8) D.spr(pickVar('pier2giant', D.rnd), s + 30, D.lat(s + 30, 1, 2.2), { flip: D.rnd() < 0.5 }); }
+    for (let s = s0 + 40; s < s1 - 40; s += 40) { if (s > s0 + 240 && s < s0 + 420) continue; const nm = pickVar('pier2', D.rnd), x = D.lat(s + 10, 1, 3.6 + SPR[nm].ww / 2); D.spr(nm, s + 10, x, { flip: false, collide: false }); D.collide(s + 10, x, SPR[nm].ww / 2, 10, 'wall'); }
     every(s0, s1, 16, 5, D.rnd, (s) => D.spr(D.rnd() < 0.6 ? 'walkers' : 'planter', s, D.lat(s, 1, D.rnd.range(1.2, 2.6)), { collide: false, flip: D.rnd() < 0.5 }));
   },
   dome(D, s0, s1) { sightSign(D, s0 + 40, -1, 'dome'); const s = s0 + 240; D.spr('dome', s, D.lat(s, -1, 3.2), { flip: false }); every(s - 40, s + 40, 12, 3, D.rnd, (q) => D.spr('walkers', q, D.lat(q, -1, D.rnd.range(2, 5)), { collide: false })); },
@@ -4716,8 +4733,31 @@ Object.assign(TAGS, {
   // ---------------- 南投 · 集集 ----------------
   jiji(D, s0, s1) { landmark(D, s0 + 220, -1, 'jijistation', 3.2, 'jiji'); D.spr('lamp2', s0 + 196, D.lat(s0 + 196, -1, 1)); D.spr('lamp2', s0 + 244, D.lat(s0 + 244, -1, 1)); },
   ontracks(D, s0, s1) { sightSign(D, s0 - 160, 1, 'ontracks'); D.spr('xinglight', s0 - 40, D.lat(s0 - 40, 1, 1), { flip: false }); D.spr('xinglight', s0 - 40, D.lat(s0 - 40, -1, 1), { flip: true }); D.spr('xinglight', s1 + 20, D.lat(s1 + 20, 1, 1), { flip: false }); },
+  jiji_parallel(D, s0, s1) {
+    if(D.p.id!=='s4b')return;
+    // An independent left-hand railway follows the road. The driving surface
+    // remains asphalt; the fence and separate ballast never occupy a lane.
+    D.p.grounds=D.p.grounds||[];
+    D.p.grounds.push({s0,s1,sg:-1,o0:5.1,o1:8.9,a:0x989080,b:0x88837a,per:1.1,rails:[6.35,7.65]});
+    D.rail(s0,s1,-1,3.8,'railing',{collide:true});
+    D.p.anim.push({kind:'train',s0,s1,sg:-1,off:7,length:28,speed:10,tex:'jijitrain',height:3.4,phase:180,contained:true});
+    sightSign(D,s0-140,1,'jiji_parallel');
+    sightSign(D,s1-120,1,'jiji');
+  },
   jijitrain(D, s0, s1) { for (let s = s0 + 140; s < s1 - 40; s += 240) D.spr('jijitrain', s, D.lat(s, -1, 5.5), { flip: false, collide: false }); D.rail(s0, s1, -1, 4.4, 'kerb'); },
-  greentunnel(D, s0, s1) { sightSign(D, s0 + 30, 1, 'greentunnel'); every(s0 + 60, s1, 22, 4, D.rnd, (s) => { for (const sg of [-1, 1]) D.spr('camphor', s + (sg > 0 ? 11 : 0), D.lat(s, sg, 2.2), { collide: false }); }); },
+  greentunnel(D, s0, s1, sec) {
+    sightSign(D, s0 + 30, 1, 'greentunnel');
+    every(s0 + 60, s1, 22, 4, D.rnd, (s) => {
+      for (const sg of [-1, 1]) {
+        // Along Jiji the left crowns stand beyond the railway, making a
+        // readable road/fence/ballast/train/tree sequence instead of hiding
+        // the railcar inside roadside trunks. Other green tunnels keep theirs.
+        const parallel = sec && sec.parallelRail && sg < 0;
+        if (parallel && (Math.floor((s-s0)/22)&1)) continue;
+        D.spr('camphor', s + (sg > 0 ? 11 : 0), D.lat(s, sg, parallel ? 10.8 : 2.2), { collide: false, scale:parallel?.9:1 });
+      }
+    });
+  },
   plum(D, s0) { sightSign(D, s0 + 60, 1, 'plum'); },
   snakekiln(D, s0, s1) { landmark(D, s0 + 220, 1, 'snakekiln', 6, 'snakekiln'); },
   checheng(D, s0, s1) { sightSign(D, s1 - 160, -1, 'checheng'); rowOf(D, s0 + 200, s1, 50, 12, -1, 'tinhouse', 6, 16); },
@@ -4933,6 +4973,11 @@ const CAR_STEERS = [-2, -1, 0, 1, 2];        // full left, half left, straight, 
 const CPX = 68;                            // pixels per metre across the car in the race view; frames are drawn 1:1
 const CFW = 224, CFH = 124, CGY = 112;     // frame size, and the row the rear tyres stand on
 const CAR_REAR = 1.3;                      // the rear wheels' contact line lies this far behind PC.s
+let PIXEL_PLAYER = null;
+async function loadPixelPlayer() {
+  try { PIXEL_PLAYER=await import('./render/pixel-cars.js'); await PIXEL_PLAYER.ready(); }
+  catch(e) { console.warn('Pixel player asset unavailable; original car frames retained.',e); }
+}
 function carPal(col) {
   // six steps from shadow to highlight, saturated, the way arcade sprites are coloured
   const pale = ((col >> 16) & 255) + ((col >> 8) & 255) + (col & 255) > 600;
@@ -5396,6 +5441,7 @@ function drawPlayerCar(spr) {
   // the shadow on the road: hard-edged rows, wider than the car, tapering
   VG.fillStyle = 'rgba(10,6,22,0.42)';
   VG.fillRect(x - bw / 2 - 3, yG - 2, bw + 6, 3); VG.fillRect(x - bw / 2 - 1, yG + 1, bw + 2, 2); VG.fillRect(x - bw / 2 + 4, yG + 3, bw - 8, 1);
+  if (PIXEL_PLAYER && PIXEL_PLAYER.draw(VG,{pc:PC,spr,x,ground:yG,lift,spinning:HAZ.spinT>0,braking:PC.brake>.1||RACE.state==='goal'})) return;
   if (PC.crash) {
     VG.save(); VG.translate(x, yG - lift - 30); VG.rotate(PC.roll * 0.8 + Math.sin(PC.crash.t * 6) * 0.1); VG.drawImage(img, -spr.ax, -spr.ay + 30); VG.restore();
     return;
@@ -6139,9 +6185,11 @@ function findCollider(p, s, x, hl, hw, kind) {
   return null;
 }
 // Shared longitudinal index. Long walls belong to every bucket they span; an
-// explicitly empty HD array must not resurrect the legacy collision objects.
+// The collision geometry must belong to the renderer actually on screen.
+// An explicitly empty active HD array must not resurrect legacy obstacles.
 function colliderIndex(p) {
-  const source = p.hdColliders || p.colliders || [], size = 32;
+  const activeHD = typeof window !== 'undefined' && window.FORMOSA_HD && window.FORMOSA_HD.status.active;
+  const source = (activeHD && p.hdColliders) || p.colliders || [], size = 32;
   let cache = p._krContactIndex;
   if (!cache || cache.source !== source || cache.length !== source.length) {
     cache = { source, length: source.length, size, buckets: new Map(), trafficLength: 0, trafficRelevant: new Map() };
@@ -6633,7 +6681,7 @@ function roadLimits(p, s) {
   return [typeof p.leftEdge === 'function' ? p.leftEdge(s) : -p.hw(s),
     typeof p.rightEdge === 'function' ? p.rightEdge(s) : p.hw(s) + Math.max(0, p.shoulder(s))];
 }
-function trafficColliders(p) { return p.hdColliders || p.colliders || []; }
+function trafficColliders(p) { return colliderIndex(p).source; }
 // Piece paving edges are linear between the original DS samples. Taking every
 // sample in a bucket is conservative even where a long collider crosses a
 // widening section; endpoint-only tests would incorrectly discard that wall.
@@ -6806,7 +6854,9 @@ function spawnVehicle(p, s, options) {
   return { spr, turn, type, p, s, x, v, v0: v, vPrev: v, brake: 0, len: T.len, wid: T.wid, lane: x, oncoming: false, passed: false, hitT: 0, push: 0, lc: null, lcT: rnd(2, M.every), sig: 0, sigT: 0, manners: M };
 }
 function trafficPlayerContact(vehicle) {
-  if (PC.crash || vehicle.p !== PC.piece) return false;
+  // The player is held on its starting grid while the key turns and lights
+  // count down. Moving traffic must not impart velocity or separate that grid.
+  if (RACE.state === 'ignition' || RACE.state === 'countdown' || PC.crash || vehicle.p !== PC.piece) return false;
   const ds = vehicle.s - PC.s, dx = vehicle.x - PC.x;
   const halfLength = ((vehicle.len || 4.5) + playerLength()) / 2, halfWidth = ((vehicle.wid || 1.8) + playerWidth()) / 2;
   if (Math.abs(ds) >= halfLength || Math.abs(dx) >= halfWidth) return false;
@@ -7552,7 +7602,7 @@ function raceStart(carIdx, auto, seq) {
   PC.spr = carSprites(spec);
   pcSetup(spec, auto, seq); controlsReset();
   const p = ROUTE.root; PC.piece = p; PC.s = p.startS || 90; PC.x = LANE * 0.5; PC.dist = 0;
-  if (NET.on && NET.phase === 'race') { const k = netSlot(), lanes = Math.max(1, Math.round((2 * p.hw(PC.s)) / LANE)); PC.x = -p.hw(PC.s) + LANE * ((k % lanes) + 0.5); PC.s -= Math.floor(k / lanes) * 9; }
+  if (NET.on && NET.phase === 'race') { const grid=netGridPosition(netSlot()); if(grid){PC.x=grid.x;PC.s=grid.s;} }
   Object.assign(RACE, { state: 'countdown', time: STAGES.s1.time, elapsed: 0, score: 0, countdown: 4.2, route: ['s1'], stageNo: 1, splits: [], checked: new Set(), goal: null, crashes: 0, lastBeep: 5, overT: 0, goalT: 0 });
   CAM.init = false;
   HUD.show = true; HUD.msgs.length = 0;
@@ -7560,14 +7610,16 @@ function raceStart(carIdx, auto, seq) {
   engineStart(spec.engine);
   trafficReset(); fxReset(); hazardsReset();
   GHOST.rec = []; GHOST.recT = 0; if (G.mode === 'play') GHOST.load(); else GHOST.on = false;
-  // from the driver's seat first: the key, the starter, the catch — not online, where everyone starts together
-  if (G.mode === 'play' && !(NET.on && NET.phase === 'race') && !G.noIgnite) { RACE.state = 'ignition'; igniteStart(); }
+  // Each online round starts with the same ignition sequence too. Skipping its
+  // picture never changes the host's shared start time.
+  IGN.on=false;
+  if (G.mode === 'play' && (!G.noIgnite || NET.on && NET.phase === 'race')) { RACE.state = 'ignition'; igniteStart(); }
 }
 function onCrash() { RACE.crashes++; shake(0.6); }
 function raceUpdate(dt) {
   if (RACE.state === 'ignition') { igniteUpdate(dt); return; }
   if (RACE.state === 'countdown') {
-    RACE.countdown -= dt;
+    RACE.countdown = NET.on && NET.phase === 'race' && NET.goAt ? Math.max(0,(NET.goAt-netNow())/1000) : RACE.countdown-dt;
     const n = Math.ceil(RACE.countdown);
     if (n < RACE.lastBeep && n >= 0) { RACE.lastBeep = n; if (n <= 3 && n >= 1) sfxBeep(false); if (n === 0) { sfxBeep(true); hudMsg('GO!', null, '#7cf26a', 1.2); } }
     // revving on the line is allowed; the clutch holds the car until the lights go green
@@ -7666,7 +7718,7 @@ function igniteUpdate(dt) {
   else PC.rpm = 0;
   if (IGN.acc) IGN.lamps = IGN.caught ? Math.max(0, IGN.lamps - dt * 3) : IGN.crank ? 0.55 : 1;
   IGN.drop = t < T.drop ? 0 : ease(clamp((t - T.drop) / (T.end - T.drop), 0, 1));
-  if (t >= T.end) { IGN.on = false; RACE.state = 'countdown'; }
+  if (t >= T.end) { IGN.on = false; RACE.state = 'countdown'; if(NET.on&&NET.phase==='race'&&NET.goAt)RACE.countdown=Math.max(0,(NET.goAt-netNow())/1000); }
 }
 function ease(u) { return u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2; }
 // ---- the picture ----
@@ -8237,6 +8289,20 @@ function roadRow(cx, rk, R, gs, gsN) {
     lineAt(X(R.div), 0.2 * rk, PAINT, asph);
     if (R.F > 0.5 && (Math.floor((gs - 0) / 3) & 1)) { const hw = (R.F - 0.5) * 1.6; fillSpan(Math.round(X(R.div - hw)), Math.round(X(R.div + hw)), fogPx(0xe8dca0, _f)); }
   }
+  if (R.p.pixelShadeRows && rk > FOC / 190) {
+    const shadows = R.p.pixelShadeRows.get(Math.floor((gs - R.p.gS) * 2));
+    if (shadows) {
+      const lo = Math.max(0, Math.ceil(X(oL))), hi = Math.min(RW, Math.floor(X(oR))), fb = RV.fb;
+      for (const sh of shadows) {
+        const a = Math.max(lo, Math.round(X(sh[0]))), b = Math.min(hi, Math.round(X(sh[1])));
+        for (let x = a; x < b; x++) {
+          const i = _row + x, c = fb[i], r = c & 255, g = (c >>> 8) & 255, blue = (c >>> 16) & 255;
+          // Cool, translucent shade retains road/paint detail and never turns black.
+          fb[i] = (255 << 24) | (Math.round(blue * .75 + 18) << 16) | (Math.round(g * .73 + 13) << 8) | Math.round(r * .69 + 9);
+        }
+      }
+    }
+  }
 }
 function rasterStrip(A, B, nA, nB) {
   const yN = A[0].sy, yF = B[0].sy;
@@ -8266,6 +8332,10 @@ function rasterStrip(A, B, nA, nB) {
       sideRow(sideBands(R0.sec.L), cx0 + R0.oL * rk0, rk0, -1, gs, gsN, null);
       sideRow(sideBands(R1.sec.R), cx1 + R1.oR * rk1, rk1, 1, gs, gsN, null);
       if (x1l > x0r) { sideRow(sideBands(R0.sec.R), x0r, rk0, 1, gs, gsN, mid); sideRow(sideBands(R1.sec.L), x1l, rk1, -1, gs, gsN, mid); }
+      // A fork's neighbouring road must not suppress the current road's
+      // independent railway/tram ballast and other physical ground strips.
+      groundOverlays(R0.p, gs - R0.p.gS, cx0, rk0, R0, gs);
+      groundOverlays(R1.p, gs - R1.p.gS, cx1, rk1, R1, gs);
       roadRow(cx0, rk0, R0, gs, gsN); roadRow(cx1, rk1, R1, gs, gsN);
     }
   }
@@ -8453,7 +8523,14 @@ function drawStripItems(a, b, clip) {
     if (GHOST.p === p && GHOST.s >= s0 && GHOST.s < s1) items.push(item(7, GHOST, p.gS + GHOST.s, 0, p));
     if (NET.on) for (const P of NET.peers.values()) if (P.vis && P.dp === p && P.ds >= s0 && P.ds < s1) { P.x = P.dx; items.push(item(10, P, p.gS + P.ds, 0, p)); }
   }
-  if (items.length > 1) items.sort((u, v) => (v.gs - u.gs) || ((u.k === 1 || u.k === 2 || u.k === 4) ? -1 : 1));
+  if (items.length > 1) items.sort((u, v) => {
+    const along = v.gs - u.gs; if (along) return along;
+    // At the same road depth, draw an inner shop behind the arcade's outer
+    // columns/beam. This only orders scenery; the road projection is unchanged.
+    if (u.k === 1 && v.k === 1) return (v.o.off - u.o.off) || ((u.o.layer || 0) - (v.o.layer || 0));
+    const behind = it => (it.k === 1 || it.k === 2 || it.k === 4) ? 0 : 1;
+    return behind(u) - behind(v);
+  });
   for (let n = 0; n < items.length; n++) {
     const it = items[n];
     if (it.k === 1) { wallItem(it.o, a, b, gsA, gsB, clip); continue; }
@@ -8497,11 +8574,13 @@ function drawStripItems(a, b, clip) {
 // moving set pieces: the light-rail tram, the train, the plane landing
 function animItems(an, p, s0, s1, items) {
   if (an.kind === 'tram' || an.kind === 'train') {
-    const L = an.kind === 'tram' ? 34 : 120, sp = an.kind === 'tram' ? 9 : 24, run = an.s1 - an.s0 + L;
-    const pos = an.s0 - L + ((RV.t * sp + (an.kind === 'tram' ? 0 : 400)) % run);
-    const tex = an.kind === 'tram' ? 'tram' : 'train';
+    const L = an.length || (an.kind === 'tram' ? 34 : 120), sp = an.speed || (an.kind === 'tram' ? 9 : 24);
+    const run = an.contained ? Math.max(1, an.s1 - an.s0 - L) : an.s1 - an.s0 + L;
+    const phase = an.phase == null ? (an.kind === 'tram' ? 0 : 400) : an.phase;
+    const pos = an.s0 - (an.contained ? 0 : L) + ((RV.t * sp + phase) % run);
+    const tex = an.tex || (an.kind === 'tram' ? 'tram' : 'train');
     if (!SPR[tex]) return;
-    const w = an._w || (an._w = { s0: 0, s1: 0, sg: an.sg, off: an.off - 1.3, depth: 2.6, h: an.kind === 'tram' ? 3.6 : 4.0, tex: SPR[tex].id, side: -1, col: 0xffffff, sideCol: 0xd8dce0, y: 0, u0: 0, u1: 1 });
+    const w = an._w || (an._w = { s0: 0, s1: 0, sg: an.sg, off: an.off - 1.3, depth: 2.6, h: an.height || (an.kind === 'tram' ? 3.6 : 4.0), tex: SPR[tex].id, side: -1, col: 0xffffff, sideCol: 0xd8dce0, y: 0, u0: 0, u1: 1 });
     w.s0 = pos; w.s1 = pos + L;
     if (w.s1 > s0 && w.s0 < s1) { w.gs0 = p.gS + w.s0; w.gs1 = p.gS + w.s1; items.push(item(1, w, Math.max(w.gs0, p.gS + s0), 0, p)); }
   }
@@ -8632,7 +8711,8 @@ function updateBackdrop(force) {
   const p = CV.p || PC.piece; if (!p) return;
   // a fork child's backdrop fades in over its first stretch (so nothing flips while you are still choosing);
   // a plain next stage fades in over the last stretch of the one before it
-  if (p.side && p.parent && CV.s < 700) { BG.set = backdropFor(p.parent); BG.next = backdropFor(p); BG.fade = sstep(clamp(CV.s / 700, 0, 1)); return; }
+  const approachFade = p.id === 's4b' ? 260 : 700;
+  if (p.side && p.parent && CV.s < approachFade) { BG.set = backdropFor(p.parent); BG.next = backdropFor(p); BG.fade = sstep(clamp(CV.s / approachFade, 0, 1)); return; }
   BG.set = backdropFor(p);
   const left = p.L - CV.s;
   if (p.next && left < 600) { BG.next = backdropFor(p.next); BG.fade = sstep(clamp((600 - left) / 600, 0, 1)); }
@@ -8704,6 +8784,8 @@ async function boot() {
   resize();
   await loadFonts();
   if (typeof loadRefCars === 'function') await loadRefCars();
+  await loadPixelPlayer();
+  if (window.FormosaClassicStreetArt) await window.FormosaClassicStreetArt.loadAssets();
   const t0 = performance.now();
   paintNature(); paintTown(); paintLand(); paintSigns(); paintSights(); paintHazards(); paintBig(); paintCity(); paintRails(); paintTraffic(); paintTaiwan(); paintTrains();
   const tA = performance.now();
@@ -8727,6 +8809,7 @@ window.__kr = {
   playerWidth, playerLength, trafficFree, trafficCorridorOpen, trafficTryMove, roadLimits,
   playerMassKg, trafficMassKg, solveVehicleImpulse, trafficPlayerContact,
   G, ROUTE, SPR, SPRL, ATLAS, PC, RACE, BOT, TRAFFIC, CTL, RV, CV, TRAFFIC_SPR, FX, CARS, AVATAR, carSprites, carTurn, carGeo, paintCarRear, carLamps, badgeSurprise, avatarSet, get IGN() { return IGN; }, gapLeft, nearIntervals,
+  netDebug: { slot:netSlot, players:netPlayers, position:netGridPosition, layout:netBuildGridLayout, now:netNow, message:netOnMsg, peer:netPeer, drop:netDrop, start:netStartRace, ignitionSkip:igniteSkip },
   get SET() { return SET; }, get GHOST() { return GHOST; }, get HAZ() { return HAZ; }, get BG() { return BG; }, get NET() { return NET; }, get UI() { return UI; }, netHost, netJoin, netLeave, netHostStart, show(n) { show(n); }, showResult, openRecords, courseLayout, startEnding,
   race(i, auto) { G.state = 'race'; raceStart(i || 0, auto !== false); },
   bot(on, forks, skill) { BOT.on = on !== false; BOT.forks = forks || []; BOT.forkI = 0; BOT.skill = skill || 1; },
@@ -8766,7 +8849,7 @@ function uiInit() {
   root.innerHTML = `
   <section class="scr" id="s-title">
     <div class="title-wrap">
-      <div class="logo"><span class="logo-tc">衝向寶島</span><span class="logo-en">FORMOSA RUN</span><span class="logo-yr">高雄港出發・環島十條路線　1993</span></div>
+      <div class="logo"><span class="logo-tc">衝向寶島</span><span class="logo-en">FORMOSA RUN</span><span class="logo-yr">高雄港出發・環島五關分歧　1993</span></div>
       <div class="tap" id="tap">點一下開始　TAP TO START</div>
       <div class="menu" id="menu" hidden>
         <button class="btn big" data-go="select">開始遊戲</button>
@@ -9531,225 +9614,215 @@ function drawEnding(dt) {
 const NET_CFG = Object.assign({ host: '0.peerjs.com', port: 443, path: '/', secure: true, key: 'peerjs' }, window.__krPeerCfg || {});
 const NET_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const NET = {
-  on: false, host: false, code: '', id: '', ws: null, hb: 0, peers: new Map(), phase: 'idle', err: '', status: '',
-  me: { name: '', avatar: '', avatarKind: 'face', car: 0, img: null }, results: [], startAt: 0, lastSend: 0, seq: 0, onLobby: null, joinT: 0,
+  on:false,host:false,code:'',id:'',ws:null,hb:0,peers:new Map(),phase:'idle',err:'',status:'',epoch:0,
+  me:{name:'',avatar:'',avatarKind:'face',car:0,img:null,clientId:netToken()},
+  results:[],startAt:0,goAt:0,lastSend:0,seq:0,onLobby:null,joinT:0,
+  grid:[],slotHistory:new Map(),gridLayout:null,roundId:'',roundNo:0,clockOffset:0,clockRtt:Infinity,
 };
-function netCode() { let c = ''; for (let i = 0; i < 6; i++) c += NET_CODE_CHARS[Math.floor(Math.random() * NET_CODE_CHARS.length)]; return c; }
-function netToken() { return Math.random().toString(36).slice(2, 12); }
-function netMe() { NET.me.name = (SET.name || '').trim() || ('車手' + Math.floor(Math.random() * 90 + 10)); NET.me.avatar = SET.avatar || ''; NET.me.avatarKind = SET.avatarKind || 'face'; NET.me.car = UI.sel; }
-// ---------- signalling ----------
-function netSignal(id, cb) {
-  const url = (NET_CFG.secure ? 'wss' : 'ws') + '://' + NET_CFG.host + ':' + NET_CFG.port + NET_CFG.path + 'peerjs?key=' + NET_CFG.key + '&id=' + encodeURIComponent(id) + '&token=' + netToken() + '&version=1.5.4';
-  let ws;
-  try { ws = new WebSocket(url); } catch (e) { cb.error('連不上配對伺服器'); return null; }
-  NET.ws = ws; NET.id = id;
-  ws.onopen = () => { NET.hb = setInterval(() => { if (ws.readyState === 1) ws.send(JSON.stringify({ type: 'HEARTBEAT' })); }, 5000); };
-  ws.onmessage = (ev) => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } if (m.type === 'OPEN') cb.open(); else if (m.type === 'ID-TAKEN') cb.taken(); else if (m.type === 'ERROR') cb.error((m.payload && m.payload.msg) || 'signalling error'); else if (m.type === 'LEAVE' || m.type === 'EXPIRE') cb.leave(m.src); else if (m.type === 'OFFER' || m.type === 'ANSWER' || m.type === 'CANDIDATE') cb.sig(m); };
-  ws.onerror = () => cb.error('配對伺服器連線失敗');
-  ws.onclose = () => { clearInterval(NET.hb); if (NET.on && NET.phase === 'lobby') cb.error('配對伺服器斷線'); };
-  return ws;
+function netCode(){let c='';for(let i=0;i<6;i++)c+=NET_CODE_CHARS[Math.floor(Math.random()*NET_CODE_CHARS.length)];return c;}
+function netToken(){return Math.random().toString(36).slice(2,12);}
+function netMe(){NET.me.name=(SET.name||'').trim()||('車手'+Math.floor(Math.random()*90+10));NET.me.avatar=SET.avatar||'';NET.me.avatarKind=SET.avatarKind||'face';NET.me.car=UI.sel;}
+function netNow(){return Date.now()+(NET.host?0:NET.clockOffset);}
+function netLive(P){return NET.on&&P&&P.epoch===NET.epoch&&NET.peers.get(P.id)===P&&!P.closing;}
+function netSignal(id,cb){
+  const epoch=NET.epoch,url=(NET_CFG.secure?'wss':'ws')+'://'+NET_CFG.host+':'+NET_CFG.port+NET_CFG.path+'peerjs?key='+NET_CFG.key+'&id='+encodeURIComponent(id)+'&token='+netToken()+'&version=1.5.4';
+  let ws;try{ws=new WebSocket(url);}catch(e){cb.error('連不上配對伺服器');return null;}
+  NET.ws=ws;NET.id=id;
+  const live=()=>NET.on&&NET.epoch===epoch&&NET.ws===ws;
+  ws.onopen=()=>{if(!live())return;ws.krHeartbeat=setInterval(()=>{if(live()&&ws.readyState===1)ws.send(JSON.stringify({type:'HEARTBEAT'}));},5000);NET.hb=ws.krHeartbeat;};
+  ws.onmessage=ev=>{if(!live())return;let m;try{m=JSON.parse(ev.data);}catch(e){return;}if(m.type==='OPEN')cb.open();else if(m.type==='ID-TAKEN')cb.taken();else if(m.type==='ERROR')cb.error((m.payload&&m.payload.msg)||'signalling error');else if(m.type==='LEAVE'||m.type==='EXPIRE')cb.leave(m.src);else if(['OFFER','ANSWER','CANDIDATE'].includes(m.type))cb.sig(m);};
+  ws.onerror=()=>{if(live())cb.error('配對伺服器連線失敗');};
+  ws.onclose=()=>{clearInterval(ws.krHeartbeat);if(live()&&NET.phase==='lobby')cb.error('配對伺服器斷線');};return ws;
 }
-function netSend(msg) { if (NET.ws && NET.ws.readyState === 1) NET.ws.send(JSON.stringify(msg)); }
-// STUN to find each other, and a public relay for the phones whose carriers hide them behind symmetric NAT
-const RTC_CFG = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }, { urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turns:openrelay.metered.ca:443'], username: 'openrelayproject', credential: 'openrelayproject' }] };
-// ---------- peers ----------
-function netPeer(id) {
-  let P = NET.peers.get(id);
-  if (P) return P;
-  P = { id, pc: null, ctl: null, st: null, name: '', avatar: '', avatarKind: 'face', img: null, car: 0, host: false, ready: false, state: null, prev: null, rt: 0, fx: null, wasAhead: false, fin: null, spr: null, conn: 'new' };
-  NET.peers.set(id, P);
-  return P;
+function netSend(msg){if(NET.on&&NET.ws&&NET.ws.readyState===1)NET.ws.send(JSON.stringify(msg));}
+const RTC_CFG={iceServers:[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']},{urls:['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443','turns:openrelay.metered.ca:443'],username:'openrelayproject',credential:'openrelayproject'}]};
+function netPeer(id){let P=NET.peers.get(id);if(P)return P;P={id,epoch:NET.epoch,pc:null,ctl:null,st:null,name:'',avatar:'',avatarKind:'face',img:null,car:0,host:false,ready:false,state:null,prev:null,rt:0,fx:null,wasAhead:false,fin:null,spr:null,conn:'new',lastSeq:-1,closing:false};NET.peers.set(id,P);return P;}
+function netDrop(id,expected,notify=true){
+  const P=NET.peers.get(id);if(!P||(expected&&P!==expected))return;
+  // Remove ownership before close(), which may synchronously raise a callback.
+  NET.peers.delete(id);P.closing=true;clearTimeout(P.discTO);
+  if(NET.host)NET.grid=NET.grid.filter(q=>q.id!==id);
+  for(const ch of [P.ctl,P.st])if(ch){ch.onmessage=null;ch.onopen=null;ch.onclose=null;}
+  if(P.pc){P.pc.onconnectionstatechange=null;P.pc.onicecandidate=null;P.pc.ondatachannel=null;try{P.pc.close();}catch(e){}}
+  if(notify&&NET.on)netLobbyChanged();
 }
-function netDrop(id) { const P = NET.peers.get(id); if (!P) return; try { if (P.pc) P.pc.close(); } catch (e) { /* gone */ } NET.peers.delete(id); netLobbyChanged(); }
-function netWire(P, pc, connId) {
-  P.pc = pc; P.connId = connId;
-  pc.onicecandidate = (e) => { if (e.candidate) netSend({ type: 'CANDIDATE', dst: P.id, payload: { candidate: e.candidate, type: 'data', connectionId: connId } }); };
-  // 'disconnected' is often a passing thing on a phone (a network change, a tab put aside for a moment): wait before
-  // giving up on it; 'failed' and 'closed' are final
-  pc.onconnectionstatechange = () => {
-    const st = pc.connectionState; P.conn = st;
-    // never got through at all: that is the network between the two phones, not a drop
-    const gone = () => { if (NET.host || P.host) netDrop(P.id); if (P.host) { NET.err = P.opened ? '和房主斷線了（房主的手機要保持亮著、頁面在前面）' : '連不上房主：兩邊的網路擋住了直連。兩台連同一個 Wi-Fi 最穩；用行動網路的話換一台開房間試試'; NET.lost = true; NET.status = ''; netLobbyChanged(); } };
-    clearTimeout(P.discTO);
-    if (st === 'failed' || st === 'closed') gone();
-    else if (st === 'disconnected') { P.discTO = setTimeout(() => { if (P.pc === pc && pc.connectionState === 'disconnected') gone(); }, 8000); if (P.host) { NET.status = '和房主的連線不穩，等一下…'; netLobbyChanged(); } }
-    else if (st === 'connected' && P.host) { NET.status = ''; netLobbyChanged(); }
+function netWire(P,pc,connId){
+  const old=P.pc;if(old&&old!==pc){old.onconnectionstatechange=null;old.onicecandidate=null;old.ondatachannel=null;try{old.close();}catch(e){}}
+  P.pc=pc;P.connId=connId;P.ice=[];P.closing=false;const live=()=>netLive(P)&&P.pc===pc;
+  pc.onicecandidate=e=>{if(live()&&e.candidate)netSend({type:'CANDIDATE',dst:P.id,payload:{candidate:e.candidate,type:'data',connectionId:connId}});};
+  pc.onconnectionstatechange=()=>{if(!live())return;const st=pc.connectionState;P.conn=st;clearTimeout(P.discTO);
+    const gone=()=>{if(!live())return;const wasHost=P.host,rejected=P.rejected;netDrop(P.id,P);if(wasHost&&!rejected){NET.err=P.opened?'和房主斷線了（請保持頁面在前景）':'連不上房主：請確認網路與房號';NET.lost=true;NET.status='';netLobbyChanged();}};
+    if(st==='failed'||st==='closed')gone();else if(st==='disconnected'){P.discTO=setTimeout(()=>{if(live()&&pc.connectionState==='disconnected')gone();},8000);if(P.host){NET.status='和房主的連線不穩，等一下…';netLobbyChanged();}}
+    else if(st==='connected'&&P.host){NET.status='';netLobbyChanged();}
   };
-  pc.ondatachannel = (e) => netChannel(P, e.channel);
+  pc.ondatachannel=e=>{if(live())netChannel(P,e.channel);};
 }
-const NET_PART = 12000;   // a photo does not fit one data-channel message: it goes in parts, reassembled on the other side
-function netChannel(P, ch) {
-  if (ch.label === 'ctl') P.ctl = ch; else P.st = ch;
-  ch.onmessage = (e) => {
-    let m; try { m = JSON.parse(e.data); } catch (err) { return; }
-    if (m.t === 'part') {
-      const q = P.parts || (P.parts = {}), r = q[m.id] || (q[m.id] = { n: m.n, got: 0, d: new Array(m.n) });
-      if (m.i >= 0 && m.i < r.n && r.d[m.i] == null) { r.d[m.i] = String(m.d); r.got++; }
-      if (r.got === r.n) { delete q[m.id]; try { m = JSON.parse(r.d.join('')); } catch (err) { return; } } else return;
-    }
-    netOnMsg(P, m);
+function netIce(P,candidate){if(!netLive(P)||!P.pc)return;if(!P.pc.remoteDescription){P.ice.push(candidate);return;}P.pc.addIceCandidate(candidate).catch(()=>{});}
+function netFlushIce(P,pc){if(!netLive(P)||P.pc!==pc)return;for(const c of P.ice.splice(0))pc.addIceCandidate(c).catch(()=>{});}
+const NET_PART=12000;
+function netChannel(P,ch){
+  if(ch.label!=='ctl'&&ch.label!=='st')return;
+  if(ch.label==='ctl')P.ctl=ch;else P.st=ch;
+  const pc=P.pc,live=()=>netLive(P)&&P.pc===pc&&(ch.label==='ctl'?P.ctl:P.st)===ch;
+  ch.onmessage=e=>{if(!live())return;let m;try{m=JSON.parse(e.data);}catch(err){return;}
+    if(m.t==='part'){
+      if(!Number.isInteger(m.n)||m.n<1||m.n>64||!Number.isInteger(m.i)||typeof m.d!=='string'||m.d.length>NET_PART)return;
+      const parts=P.parts||(P.parts={});if(!parts[m.id]&&Object.keys(parts).length>=8)return;
+      const r=parts[m.id]||(parts[m.id]={n:m.n,got:0,d:new Array(m.n)});if(r.n!==m.n)return;
+      if(m.i>=0&&m.i<r.n&&r.d[m.i]==null){r.d[m.i]=m.d;r.got++;}
+      if(r.got!==r.n)return;delete parts[m.id];try{m=JSON.parse(r.d.join(''));}catch(err){return;}
+    }netOnMsg(P,m);
   };
-  ch.onopen = () => { if (ch.label === 'ctl') P.opened = true; if (ch.label === 'ctl' && !NET.host) { netMe(); netCtl(P, { t: 'hello', name: NET.me.name, avatar: NET.me.avatar, avatarKind: NET.me.avatarKind, car: NET.me.car }); } };
+  // A closed reliable channel is final; transient ICE disconnects keep their grace period.
+  ch.onclose=()=>{if(ch.label!=='ctl'||!live())return;const wasHost=P.host,rejected=P.rejected;netDrop(P.id,P);if(wasHost&&!rejected&&NET.on){NET.err=P.opened?'房主離開了或連線已關閉':'連不上房主：請確認網路與房號';NET.lost=true;NET.status='';netLobbyChanged();}};
+  ch.onopen=()=>{if(!live())return;if(ch.label==='ctl'){P.opened=true;if(!NET.host){netMe();netCtl(P,{t:'hello',clientId:NET.me.clientId,name:NET.me.name,avatar:NET.me.avatar,avatarKind:NET.me.avatarKind,car:NET.me.car});
+      for(const delay of [0,120,400])setTimeout(()=>{if(live())netCtl(P,{t:'clock-ping',clientAt:Date.now()});},delay);
+    }}};
 }
-function netCtl(P, m) {
-  try {
-    if (!P.ctl || P.ctl.readyState !== 'open') return;
-    const s = JSON.stringify(m);
-    if (s.length <= NET_PART) { P.ctl.send(s); return; }
-    const id = Math.random().toString(36).slice(2, 8), n = Math.ceil(s.length / NET_PART);
-    for (let i = 0; i < n; i++) P.ctl.send(JSON.stringify({ t: 'part', id, i, n, d: s.slice(i * NET_PART, (i + 1) * NET_PART) }));
-  } catch (e) { /* dropped */ }
-}
-function netSt(P, m) { try { if (P.st && P.st.readyState === 'open') P.st.send(JSON.stringify(m)); } catch (e) { /* dropped */ } }
-function netAll(m, except) { for (const P of NET.peers.values()) if (P !== except) netCtl(P, m); }
-// ---------- host ----------
-function netHost() {
-  netLeave(); netMe();
-  NET.on = true; NET.host = true; NET.phase = 'lobby'; NET.err = ''; NET.code = netCode(); NET.status = '開房間中…'; netWake(true);
-  const open = () => netSignal('kr-' + NET.code, {
-    open() { NET.status = ''; netLobbyChanged(); },
-    taken() { NET.code = netCode(); try { NET.ws.close(); } catch (e) { /* retry */ } open(); },
-    error(msg) { NET.err = msg; netLobbyChanged(); },
-    leave(src) { netDrop(src); },
-    sig(m) {
-      const P = netPeer(m.src);
-      if (m.type === 'OFFER') {
-        const pc = new RTCPeerConnection(RTC_CFG); netWire(P, pc, m.payload.connectionId);
-        pc.setRemoteDescription(m.payload.sdp).then(() => pc.createAnswer()).then((a) => pc.setLocalDescription(a).then(() => a)).then((a) => netSend({ type: 'ANSWER', dst: P.id, payload: { sdp: a, type: 'data', connectionId: m.payload.connectionId, browser: 'kr' } })).catch(() => netDrop(P.id));
-      } else if (m.type === 'CANDIDATE' && P.pc) P.pc.addIceCandidate(m.payload.candidate).catch(() => { /* late */ });
-    },
-  });
-  open();
-  netLobbyChanged();
-}
-// ---------- joining ----------
-function netJoin(code) {
-  netLeave(); netMe();
-  code = (code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  if (code.length !== 6) { NET.err = '房號是 6 個字'; netLobbyChanged(); return; }
-  NET.on = true; NET.host = false; NET.phase = 'lobby'; NET.err = ''; NET.code = code; NET.status = '連線中…'; NET.joinT = G.t; netWake(true);
-  clearTimeout(NET.joinTO); NET.joinTO = setTimeout(() => { const P = [...NET.peers.values()].find((q) => q.host); if (NET.on && !NET.host && !(P && P.ctl && P.ctl.readyState === 'open')) { NET.err = '連不上房主：房號打錯，或是兩邊的網路擋住了直連（兩台連同一個 Wi-Fi 最穩）'; NET.status = ''; NET.lost = true; netLobbyChanged(); } }, 15000);
-  const hostId = 'kr-' + code, P = netPeer(hostId); P.host = true;
-  netSignal('krp-' + netToken(), {
-    open() {
-      const pc = new RTCPeerConnection(RTC_CFG), connId = 'dc_' + netToken(); netWire(P, pc, connId);
-      netChannel(P, pc.createDataChannel('ctl', { ordered: true }));
-      netChannel(P, pc.createDataChannel('st', { ordered: false, maxRetransmits: 0 }));
-      pc.createOffer().then((o) => pc.setLocalDescription(o).then(() => o)).then((o) => netSend({ type: 'OFFER', dst: hostId, payload: { sdp: o, type: 'data', connectionId: connId, label: 'kr', serialization: 'json', reliable: true, browser: 'kr' } })).catch(() => { NET.err = '建立連線失敗'; netLobbyChanged(); });
-    },
-    taken() { NET.err = '請再試一次'; netLobbyChanged(); },
-    error(msg) { NET.err = /Could not connect|not found|does not exist/i.test(msg) ? '找不到這個房號' : msg; netLobbyChanged(); },
-    leave(src) { if (src === hostId) { NET.err = '房主離開了'; NET.phase = 'idle'; netLobbyChanged(); } },
-    sig(m) {
-      if (m.src !== hostId || !P.pc) return;
-      if (m.type === 'ANSWER') P.pc.setRemoteDescription(m.payload.sdp).catch(() => { NET.err = '連線失敗'; netLobbyChanged(); });
-      else if (m.type === 'CANDIDATE') P.pc.addIceCandidate(m.payload.candidate).catch(() => { /* late */ });
-    },
-  });
-  netLobbyChanged();
-}
-// the screen stays on while online: a phone that locks drops the connection for everyone
-function netWake(on) {
-  if (!navigator.wakeLock) return;
-  if (!on) { if (NET.wake) { NET.wake.release().catch(() => {}); NET.wake = null; } return; }
-  if (NET.wake) return;
-  navigator.wakeLock.request('screen').then((w) => { NET.wake = w; w.addEventListener('release', () => { NET.wake = null; }); }).catch(() => {});
-}
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && NET.on) netWake(true); });
-function netLeave() {
-  clearTimeout(NET.joinTO); netWake(false); NET.lost = false;
-  if (NET.ws) { try { NET.ws.close(); } catch (e) { /* closing */ } }
-  clearInterval(NET.hb);
-  for (const P of NET.peers.values()) { try { if (P.pc) P.pc.close(); } catch (e) { /* gone */ } }
-  NET.peers.clear(); NET.on = false; NET.host = false; NET.phase = 'idle'; NET.ws = null; NET.err = ''; NET.status = ''; NET.results = []; NET.code = '';
-}
-// ---------- the lobby: who is here ----------
-function netSlot() { const list = netPlayers(); const i = list.findIndex((q) => q.me); return i < 0 ? 0 : i; }
-function netPlayers() {
-  const list = [{ id: NET.id || 'me', me: true, name: NET.me.name, avatar: NET.me.avatar, avatarKind: NET.me.avatarKind, car: NET.me.car, host: NET.host, fin: NET.myFin || null }];
-  for (const P of NET.peers.values()) if (P.name) list.push({ id: P.id, me: false, name: P.name, avatar: P.avatar, avatarKind: P.avatarKind, car: P.car, host: P.host, fin: P.fin });
-  return list;
-}
-function netLobbyChanged() { if (NET.onLobby) NET.onLobby(); if (NET.host) netAll({ t: 'lobby', players: netPlayers().map((q) => ({ id: q.id, name: q.name, avatar: q.avatar, avatarKind: q.avatarKind, car: q.car, host: q.host, fin: q.fin })) }); }
-function netSetCar(i) { NET.me.car = i; if (NET.host) netLobbyChanged(); else for (const P of NET.peers.values()) netCtl(P, { t: 'car', car: i }); }
-// ---------- messages ----------
-function netOnMsg(P, m) {
-  if (m.t === 'hello') { P.name = String(m.name || '').slice(0, 10); P.avatar = typeof m.avatar === 'string' && m.avatar.length < 600000 && /^data:image\/(png|jpeg);base64,/.test(m.avatar) ? m.avatar : ''; P.avatarKind = m.avatarKind === 'thing' ? 'thing' : 'face'; P.car = clamp(m.car | 0, 0, CARS.length - 1); avatarDecode(P.avatar, (im) => { P.img = im; }); P.spr = carSprites(CARS[P.car]); netLobbyChanged(); if (NET.phase === 'race' || NET.phase === 'countdown') netCtl(P, { t: 'start', in: 0, late: true }); }
-  else if (m.t === 'car') { P.car = clamp(m.car | 0, 0, CARS.length - 1); P.spr = carSprites(CARS[P.car]); netLobbyChanged(); }
-  else if (m.t === 'lobby' && !NET.host) {
-    // the host's roster: everyone else, so we can draw them; the host itself is P
-    const seen = new Set();
-    for (const q of m.players || []) {
-      if (q.id === NET.id) continue;
-      seen.add(q.id);
-      const Q = q.id === P.id ? P : netPeer(q.id);
-      if (Q.name !== q.name || Q.avatar !== q.avatar) { Q.name = q.name; Q.avatar = q.avatar; Q.avatarKind = q.avatarKind; avatarDecode(Q.avatar, (im) => { Q.img = im; }); }
-      Q.host = !!q.host; Q.fin = q.fin || null; if (Q.car !== q.car || !Q.spr) { Q.car = clamp(q.car | 0, 0, CARS.length - 1); Q.spr = carSprites(CARS[Q.car]); }
+function netCtl(P,m){try{if(!netLive(P)||!P.ctl||P.ctl.readyState!=='open')return;const s=JSON.stringify(m);if(s.length<=NET_PART){P.ctl.send(s);return;}const id=netToken(),n=Math.ceil(s.length/NET_PART);for(let i=0;i<n;i++)P.ctl.send(JSON.stringify({t:'part',id,i,n,d:s.slice(i*NET_PART,(i+1)*NET_PART)}));}catch(e){}}
+function netSt(P,m){try{if(netLive(P)&&P.st&&P.st.readyState==='open')P.st.send(JSON.stringify(m));}catch(e){}}
+function netAll(m,except){for(const P of NET.peers.values())if(P!==except)netCtl(P,m);}
+function netHost(){
+  netLeave();netMe();NET.on=true;NET.host=true;NET.phase='lobby';NET.err='';NET.code=netCode();NET.status='開房間中…';netWake(true);const epoch=NET.epoch;
+  const open=()=>netSignal('kr-'+NET.code,{
+    open(){netHostGrid();NET.status='';netLobbyChanged();},
+    taken(){NET.code=netCode();const ws=NET.ws;NET.ws=null;try{ws.close();}catch(e){}if(NET.epoch===epoch&&NET.on)open();},
+    error(msg){NET.err=msg;netLobbyChanged();},leave(src){netDrop(src);},
+    sig(m){if(!m.payload)return;const P=netPeer(m.src);
+      if(m.type==='OFFER'){
+        const pc=new RTCPeerConnection(RTC_CFG);netWire(P,pc,m.payload.connectionId);
+        const live=()=>netLive(P)&&P.pc===pc;
+        pc.setRemoteDescription(m.payload.sdp).then(()=>{if(live()){netFlushIce(P,pc);return pc.createAnswer();}}).then(a=>{if(a&&live())return pc.setLocalDescription(a).then(()=>a);}).then(a=>{if(a&&live())netSend({type:'ANSWER',dst:P.id,payload:{sdp:a,type:'data',connectionId:P.connId,browser:'kr'}});}).catch(()=>{if(live())netDrop(P.id,P);});
+      }else if(m.type==='CANDIDATE'&&P.pc&&m.payload.connectionId===P.connId)netIce(P,m.payload.candidate);
     }
-    for (const id of [...NET.peers.keys()]) if (!seen.has(id) && id !== P.id) NET.peers.delete(id);
-    if (NET.onLobby) NET.onLobby();
-  }
-  else if (m.t === 'start') { netStartRace(m.in || 0, !!m.late); }
-  else if (m.t === 'st') {
-    // a position: from a player (to the host), or relayed by the host (from someone else)
-    const from = NET.host ? P : netPeer(m.id || P.id);
-    if (m.id && !NET.host && m.id === NET.id) return;
-    from.prev = from.state; from.state = m; from.rt = G.t;
-    if (NET.host) { const out = Object.assign({}, m, { id: P.id }); for (const Q of NET.peers.values()) if (Q !== P) netSt(Q, out); }
-  }
-  else if (m.t === 'fin') { const from = NET.host ? P : netPeer(m.id || P.id); from.fin = { time: m.time, route: m.route, car: m.car }; if (NET.host) netLobbyChanged(); else if (NET.onLobby) NET.onLobby(); }
+  });open();netLobbyChanged();
 }
-// ---------- the race ----------
-function netStartRace(delay, late) {
-  if (NET.phase === 'race') return;
-  NET.phase = 'race'; NET.myFin = null; for (const P of NET.peers.values()) { P.fin = null; P.state = null; P.prev = null; }
-  if (NET.host) netAll({ t: 'start', in: delay });
-  startPlay();
-  if (late) { RACE.state = 'run'; RACE.countdown = 0; }
+function netJoin(code){
+  netLeave();netMe();code=(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length!==6){NET.err='房號是 6 個字';netLobbyChanged();return;}
+  NET.on=true;NET.host=false;NET.phase='lobby';NET.err='';NET.code=code;NET.status='連線中…';NET.joinT=G.t;netWake(true);
+  const epoch=NET.epoch,hostId='kr-'+code,P=netPeer(hostId);P.host=true;
+  NET.joinTO=setTimeout(()=>{if(NET.on&&NET.epoch===epoch&&!NET.host&&!P.opened){NET.err='連不上房主：請確認房號與網路';NET.status='';NET.lost=true;netLobbyChanged();}},15000);
+  netSignal('krp-'+netToken(),{
+    open(){const pc=new RTCPeerConnection(RTC_CFG),connId='dc_'+netToken();netWire(P,pc,connId);const live=()=>netLive(P)&&P.pc===pc;
+      netChannel(P,pc.createDataChannel('ctl',{ordered:true}));netChannel(P,pc.createDataChannel('st',{ordered:false,maxRetransmits:0}));
+      pc.createOffer().then(o=>{if(live())return pc.setLocalDescription(o).then(()=>o);}).then(o=>{if(o&&live())netSend({type:'OFFER',dst:hostId,payload:{sdp:o,type:'data',connectionId:connId,label:'kr',serialization:'json',reliable:true,browser:'kr'}});}).catch(()=>{if(live()){NET.err='建立連線失敗';netLobbyChanged();}});
+    },taken(){NET.err='請再試一次';netLobbyChanged();},error(msg){NET.err=/Could not connect|not found|does not exist/i.test(msg)?'找不到這個房號':msg;netLobbyChanged();},
+    leave(src){if(src===hostId&&netLive(P)){NET.err='房主離開了';NET.lost=true;NET.status='';netDrop(P.id,P);}},
+    sig(m){if(m.src!==hostId||!P.pc||!m.payload||m.payload.connectionId!==P.connId)return;const pc=P.pc;
+      if(m.type==='ANSWER')pc.setRemoteDescription(m.payload.sdp).then(()=>netFlushIce(P,pc)).catch(()=>{if(netLive(P)&&P.pc===pc){NET.err='連線失敗';netLobbyChanged();}});
+      else if(m.type==='CANDIDATE')netIce(P,m.payload.candidate);
+    }
+  });netLobbyChanged();
 }
-function netHostStart() { if (NET.host && NET.phase === 'lobby') netStartRace(0, false); }
-function netUpdate(dt) {
-  if (!NET.on || NET.phase !== 'race' || G.mode !== 'play') return;
-  // send where we are, a dozen times a second
-  if (G.t - NET.lastSend > 1 / 12) {
-    NET.lastSend = G.t;
-    const m = { t: 'st', q: NET.seq++, p: ROUTE.pieces.indexOf(PC.piece), s: Math.round(PC.s * 10) / 10, x: Math.round(PC.x * 100) / 100, v: Math.round(PC.v * 10) / 10, si: PC._si == null ? 2 : PC._si, b: PC.brake > 0.1 ? 1 : 0, c: PC.crash ? 1 : 0, d: PC.drift ? 1 : 0, r: +(FX.roll || 0).toFixed(2) };
-    if (NET.host) { const out = Object.assign({}, m, { id: NET.id }); for (const Q of NET.peers.values()) netSt(Q, out); }
-    else for (const Q of NET.peers.values()) if (Q.host) netSt(Q, m);
+function netWake(on){
+  if(!navigator.wakeLock)return;if(!on){if(NET.wake){NET.wake.release().catch(()=>{});NET.wake=null;}return;}if(NET.wake)return;
+  const epoch=NET.epoch;navigator.wakeLock.request('screen').then(w=>{if(!NET.on||epoch!==NET.epoch){w.release().catch(()=>{});return;}NET.wake=w;w.addEventListener('release',()=>{if(NET.wake===w)NET.wake=null;});}).catch(()=>{});
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&NET.on)netWake(true);});
+function netLeave(){
+  NET.epoch++;NET.on=false;NET.host=false;NET.phase='idle';clearTimeout(NET.joinTO);clearInterval(NET.hb);netWake(false);
+  const ws=NET.ws;NET.ws=null;if(ws){clearInterval(ws.krHeartbeat);try{ws.close();}catch(e){}}
+  for(const P of [...NET.peers.values()])netDrop(P.id,P,false);
+  NET.peers.clear();Object.assign(NET,{lost:false,err:'',status:'',results:[],code:'',id:'',myFin:null,grid:[],slotHistory:new Map(),gridLayout:null,roundId:'',roundNo:0,goAt:0,startAt:0,clockOffset:0,clockRtt:Infinity});
+}
+function netHostGrid(){if(!NET.host||!NET.id)return;if(!NET.grid.some(q=>q.id===NET.id)){NET.grid.push({id:NET.id,clientId:NET.me.clientId,slot:0,car:NET.me.car});NET.slotHistory.set(NET.me.clientId,0);}}
+function netAssignGrid(P,clientId){
+  netHostGrid();clientId=String(clientId||P.id).slice(0,64);
+  const old=NET.grid.find(q=>q.clientId===clientId&&q.id!==P.id);
+  if(old){const prior=NET.peers.get(old.id);if(prior)netDrop(old.id,prior,false);}
+  let entry=NET.grid.find(q=>q.id===P.id);if(entry){entry.car=P.car;return entry;}
+  const used=new Set(NET.grid.map(q=>q.slot)),remembered=NET.slotHistory.get(clientId);
+  const slot=Number.isInteger(remembered)&&!used.has(remembered)?remembered:[0,1,2,3,4,5,6,7].find(k=>!used.has(k));
+  if(slot==null)return null;entry={id:P.id,clientId,slot,car:P.car};NET.grid.push(entry);NET.slotHistory.set(clientId,slot);P.clientId=clientId;return entry;
+}
+function netBuildGridLayout(p){
+  const maxLength=Math.max(...CARS.map(c=>c.L)),maxWidth=Math.max(...CARS.map(c=>c.W)),rowGap=maxLength+1.4,stagger=rowGap*.35,baseS=Math.max(p.startS||90,rowGap*3+stagger+maxLength/2+1),columnOffset=(maxWidth+.8)/2;
+  let halfWidth=Infinity;for(let k=0;k<8;k++)halfWidth=Math.min(halfWidth,p.hw(baseS-Math.floor(k/2)*rowGap-(k%2)*stagger));
+  if(columnOffset+maxWidth/2+.2>halfWidth)return null;
+  return{baseS,rowGap,stagger,columnOffset,maxLength,maxWidth,halfWidth};
+}
+function netSlot(){const q=NET.grid.find(q=>q.id===NET.id||q.clientId===NET.me.clientId);return q?q.slot:-1;}
+function netGridPosition(slot){const l=NET.gridLayout;if(!l||slot<0||slot>7)return null;return{s:l.baseS-Math.floor(slot/2)*l.rowGap-(slot%2)*l.stagger,x:slot%2?l.columnOffset:-l.columnOffset};}
+function netPlayers(){
+  const list=[{id:NET.id||'me',clientId:NET.me.clientId,me:true,name:NET.me.name,avatar:NET.me.avatar,avatarKind:NET.me.avatarKind,car:NET.me.car,host:NET.host,fin:NET.myFin||null}];
+  for(const P of NET.peers.values())if(P.name&&!P.rejected)list.push({id:P.id,clientId:P.clientId,me:false,name:P.name,avatar:P.avatar,avatarKind:P.avatarKind,car:P.car,host:P.host,fin:P.fin});
+  for(const q of list){const g=NET.grid.find(g=>g.id===q.id);q.slot=g?g.slot:-1;}
+  return list.sort((a,b)=>a.slot-b.slot);
+}
+function netLobbyChanged(){if(NET.onLobby)NET.onLobby();if(NET.on&&NET.host)netAll({t:'lobby',players:netPlayers().map(q=>({id:q.id,clientId:q.clientId,slot:q.slot,name:q.name,avatar:q.avatar,avatarKind:q.avatarKind,car:q.car,host:q.host,fin:q.fin})),grid:NET.grid});}
+function netSetCar(i){NET.me.car=i;const own=NET.grid.find(q=>q.id===NET.id);if(own)own.car=i;if(NET.host)netLobbyChanged();else for(const P of NET.peers.values())if(P.host)netCtl(P,{t:'car',car:i});}
+function netStartPacket(late=false){return{t:'start',roundId:NET.roundId,roundNo:NET.roundNo,goAt:NET.goAt,sentAt:Date.now(),grid:NET.grid,layout:NET.gridLayout,late};}
+function netOnMsg(P,m){
+  if(!netLive(P)||!m||typeof m.t!=='string')return;
+  if(m.t==='clock-ping'&&NET.host&&Number.isFinite(m.clientAt)){netCtl(P,{t:'clock-pong',clientAt:m.clientAt,hostAt:Date.now()});return;}
+  if(m.t==='clock-pong'&&!NET.host&&P.host&&Number.isFinite(m.clientAt)&&Number.isFinite(m.hostAt)){
+    const now=Date.now(),rtt=now-m.clientAt;if(rtt>=0&&rtt<5000&&rtt<=NET.clockRtt){NET.clockRtt=rtt;NET.clockOffset=m.hostAt-(m.clientAt+now)/2;}return;
   }
-  // the others: advance each one by its speed between packets, and gasp when one goes past us
-  for (const P of NET.peers.values()) {
-    const S = P.state; if (!S) continue;
-    const age = G.t - P.rt, p = ROUTE.pieces[S.p];
-    P.vis = !!p && age < 4;
-    if (!P.vis) continue;
-    P.dp = p; P.ds = S.s + S.v * WORLD_K * Math.min(age, 1); P.dx = S.x;
-    const ahead = P.dp === PC.piece ? P.ds > PC.s + 10 : (P.dp === PC.piece.next || PC.piece.children.includes(P.dp));
-    const near = P.dp === PC.piece && Math.abs(P.ds - PC.s) < 14 && Math.abs(P.dx - PC.x) < 6;
-    if (!ahead && P.wasAhead && RACE.elapsed > 3 && near) { badgeSurprise(P, 'gasp'); sfxPass(0.8, clamp((P.dx - PC.x) / 4, -1, 1)); }     // we went past: a gasp
-    if (ahead && !P.wasAhead && RACE.elapsed > 3 && near) { badgeSurprise(P, 'gasp'); sfxPass(0.7, clamp((P.dx - PC.x) / 4, -1, 1)); }     // they went past: the same
-    P.wasAhead = ahead;
-    if (P.fx) { P.fx.t += dt; if (P.fx.t > P.fx.dur) P.fx = null; }
+  if(m.t==='room-full'&&!NET.host&&P.host){P.rejected=true;NET.err='房間已滿（最多 8 人）';NET.status='';NET.lost=false;NET.phase='idle';clearTimeout(NET.joinTO);netLobbyChanged();return;}
+  if(m.t==='hello'&&NET.host){
+    P.car=clamp(m.car|0,0,CARS.length-1);const entry=netAssignGrid(P,m.clientId);
+    if(!entry){P.rejected=true;netCtl(P,{t:'room-full'});setTimeout(()=>{if(netLive(P))netDrop(P.id,P);},250);return;}
+    P.name=String(m.name||'車手').slice(0,10);P.avatar=typeof m.avatar==='string'&&m.avatar.length<600000&&/^data:image\/(png|jpeg);base64,/.test(m.avatar)?m.avatar:'';P.avatarKind=m.avatarKind==='thing'?'thing':'face';
+    const avatar=P.avatar;avatarDecode(avatar,im=>{if(netLive(P)&&P.avatar===avatar)P.img=im;});P.spr=carSprites(CARS[P.car]);netLobbyChanged();if(NET.phase==='race')netCtl(P,netStartPacket(true));return;
   }
-  // finished: tell the room
-  if ((RACE.state === 'goal' || RACE.state === 'timeup') && !NET.myFin) {
-    NET.myFin = { time: RACE.state === 'goal' ? Math.round(RACE.elapsed * 100) / 100 : null, route: RACE.route.join('>'), car: CARS[RACE.carIdx].id };
-    const m = { t: 'fin', time: NET.myFin.time, route: NET.myFin.route, car: NET.myFin.car };
-    if (NET.host) netLobbyChanged(); else for (const Q of NET.peers.values()) if (Q.host) netCtl(Q, m);
-    if (NET.onLobby) NET.onLobby();
+  if(m.t==='car'&&NET.host){if(!NET.grid.some(q=>q.id===P.id))return;P.car=clamp(m.car|0,0,CARS.length-1);P.spr=carSprites(CARS[P.car]);NET.grid.find(q=>q.id===P.id).car=P.car;netLobbyChanged();return;}
+  if(m.t==='lobby'&&!NET.host&&P.host){
+    if(Array.isArray(m.grid))NET.grid=m.grid.filter(q=>q&&Number.isInteger(q.slot)&&q.slot>=0&&q.slot<8).map(q=>({...q}));
+    const seen=new Set();for(const q of m.players||[]){if(q.id===NET.id)continue;seen.add(q.id);const Q=q.id===P.id?P:netPeer(q.id);Q.clientId=q.clientId;
+      if(Q.name!==q.name||Q.avatar!==q.avatar){Q.name=q.name;Q.avatar=q.avatar;Q.avatarKind=q.avatarKind;const avatar=Q.avatar;avatarDecode(avatar,im=>{if(netLive(Q)&&Q.avatar===avatar)Q.img=im;});}
+      Q.host=!!q.host;Q.fin=q.fin||null;if(Q.car!==q.car||!Q.spr){Q.car=clamp(q.car|0,0,CARS.length-1);Q.spr=carSprites(CARS[Q.car]);}
+    }for(const id of [...NET.peers.keys()])if(!seen.has(id)&&id!==P.id)netDrop(id,null,false);NET.status='';clearTimeout(NET.joinTO);if(NET.onLobby)NET.onLobby();return;
   }
+  if(m.t==='start'&&!NET.host&&P.host){netStartRace(0,!!m.late,m);return;}
+  if(m.t==='st'){
+    if(NET.phase!=='race'||m.round!==NET.roundId||!Number.isInteger(m.q))return;
+    const from=NET.host?P:NET.peers.get(m.id||P.id);if(!from||from.id===NET.id||!NET.grid.some(q=>q.id===from.id)||m.q<=from.lastSeq)return;
+    from.lastSeq=m.q;from.prev=from.state;from.state=m;from.rt=G.t;
+    if(NET.host){const out={...m,id:P.id};for(const Q of NET.peers.values())if(Q!==P)netSt(Q,out);}return;
+  }
+  if(m.t==='fin'&&m.round===NET.roundId){const from=NET.host?P:NET.peers.get(m.id||P.id);if(!from)return;from.fin={time:m.time,route:m.route,car:m.car};if(NET.host)netLobbyChanged();else if(NET.onLobby)NET.onLobby();}
+}
+function netStartRace(delay=0,late=false,packet=null){
+  if(!NET.on)return false;
+  if(NET.host){if(NET.phase==='race')return false;netHostGrid();NET.gridLayout=netBuildGridLayout(ROUTE.root);if(!NET.gridLayout){NET.err='起跑道路寬度不足以安全排入雙列';netLobbyChanged();return false;}
+    NET.roundNo++;NET.roundId=NET.id+':'+NET.epoch+':'+NET.roundNo+':'+netToken();NET.goAt=Date.now()+(IGN_T.end+4.2+.6+Math.max(0,Number(delay)||0))*1000;
+  }else{
+    if(!packet||!packet.roundId||!Number.isFinite(packet.goAt)||!packet.layout||!Array.isArray(packet.grid))return false;
+    if(packet.roundNo<NET.roundNo||packet.roundId===NET.roundId)return false;
+    NET.roundId=packet.roundId;NET.roundNo=packet.roundNo;NET.goAt=packet.goAt;NET.grid=packet.grid.map(q=>({...q}));NET.gridLayout={...packet.layout};
+    if(!Number.isFinite(NET.clockRtt)&&Number.isFinite(packet.sentAt))NET.clockOffset=packet.sentAt-Date.now();
+  }
+  if(netSlot()<0){NET.err='房主未分配起跑格位';netLobbyChanged();return false;}
+  NET.phase='race';NET.startAt=NET.goAt;NET.myFin=null;NET.seq=0;NET.lastSend=-Infinity;
+  for(const P of NET.peers.values()){P.fin=null;P.state=null;P.prev=null;P.lastSeq=-1;P.vis=false;}
+  if(NET.host)netAll(netStartPacket(false));startPlay();return true;
+}
+function netHostStart(){if(NET.host&&NET.phase==='lobby')netStartRace(0,false);}
+function netUpdate(dt){
+  if(!NET.on||NET.phase!=='race'||G.mode!=='play')return;
+  if(G.t-NET.lastSend>1/12){NET.lastSend=G.t;const m={t:'st',round:NET.roundId,q:NET.seq++,p:ROUTE.pieces.indexOf(PC.piece),s:Math.round(PC.s*10)/10,x:Math.round(PC.x*100)/100,v:Math.round(PC.v*10)/10,si:PC._si==null?2:PC._si,b:PC.brake>.1?1:0,c:PC.crash?1:0,d:PC.drift?1:0,r:+(FX.roll||0).toFixed(2)};
+    if(NET.host){const out={...m,id:NET.id};for(const Q of NET.peers.values())netSt(Q,out);}else for(const Q of NET.peers.values())if(Q.host)netSt(Q,m);
+  }
+  for(const P of NET.peers.values()){const S=P.state;if(!S)continue;const age=G.t-P.rt,p=ROUTE.pieces[S.p];P.vis=!!p&&age<4;if(!P.vis)continue;
+    P.dp=p;P.ds=S.s+S.v*WORLD_K*Math.min(age,1);P.dx=S.x;const ahead=P.dp===PC.piece?P.ds>PC.s+10:(P.dp===PC.piece.next||PC.piece.children.includes(P.dp)),near=P.dp===PC.piece&&Math.abs(P.ds-PC.s)<14&&Math.abs(P.dx-PC.x)<6;
+    if(!ahead&&P.wasAhead&&RACE.elapsed>3&&near){badgeSurprise(P,'gasp');sfxPass(.8,clamp((P.dx-PC.x)/4,-1,1));}if(ahead&&!P.wasAhead&&RACE.elapsed>3&&near){badgeSurprise(P,'gasp');sfxPass(.7,clamp((P.dx-PC.x)/4,-1,1));}P.wasAhead=ahead;if(P.fx){P.fx.t+=dt;if(P.fx.t>P.fx.dur)P.fx=null;}
+  }
+  if((RACE.state==='goal'||RACE.state==='timeup')&&!NET.myFin){NET.myFin={time:RACE.state==='goal'?Math.round(RACE.elapsed*100)/100:null,route:RACE.route.join('>'),car:CARS[RACE.carIdx].id};const m={t:'fin',round:NET.roundId,...NET.myFin};if(NET.host)netLobbyChanged();else for(const Q of NET.peers.values())if(Q.host)netCtl(Q,m);if(NET.onLobby)NET.onLobby();}
 }
 // a rival on screen: its car, solid, with the portrait on its pole
 function drawRival(P, x, y, k, clip) {
-  const S = P.spr || carSprites(CARS[P.car || 0]), st = P.state; if (!S || !st) return;
+  const spec = CARS[P.car || 0], S = P.spr || carSprites(spec), st = P.state; if (!S || !st) return;
   const n = S.frames.length, si = clamp(st.si | 0, 0, n - 1), img = S.frames[si][st.b ? 1 : 0][Math.floor(G.t * 8) & 1], sc = k / CPX;
   const w = img.width * sc, hh = img.height * sc, top = y - S.ay * sc;
   if (top >= clip) return;
+  const pixel = !st.c && spec.id === 'rosso' && window.FORMOSA_PIXEL_CAR?.state.ready && PIXEL_PLAYER?.drawProjectedRear;
+  if (pixel) { VG.save(); VG.beginPath(); VG.rect(0, 0, VG.canvas.width, Math.max(0, clip)); VG.clip(); }
   VG.fillStyle = 'rgba(10,6,22,0.35)'; VG.fillRect(Math.round(x - S.bw * sc / 2), Math.round(y - 1), Math.round(S.bw * sc), Math.max(1, Math.round(2 * sc)));
-  if (st.c) { VG.save(); VG.translate(x, y - hh * 0.4); VG.rotate(Math.sin(G.t * 6) * 0.5); VG.drawImage(img, -S.ax * sc, -(S.ay * sc) + hh * 0.4, w, hh); VG.restore(); }
+  if (pixel) { PIXEL_PLAYER.drawProjectedRear(VG, {spec,spr:S,x,ground:y,scale:sc,clip,braking:!!st.b,roll:st.r||0}); VG.restore(); }
+  else if (st.c) { VG.save(); VG.translate(x, y - hh * 0.4); VG.rotate(Math.sin(G.t * 6) * 0.5); VG.drawImage(img, -S.ax * sc, -(S.ay * sc) + hh * 0.4, w, hh); VG.restore(); }
   else if (st.r) { VG.save(); VG.translate(x, y); VG.rotate(st.r); VG.drawImage(img, 0, 0, img.width, Math.max(1, Math.min(img.height, (clip - top) / sc)), -S.ax * sc, -S.ay * sc, w, Math.min(hh, clip - top)); VG.restore(); }
   else VG.drawImage(img, 0, 0, img.width, Math.max(1, Math.min(img.height, (clip - top) / sc)), x - S.ax * sc, top, w, Math.min(hh, clip - top));
-  if (S.heads) { const ph = [0, 1, 0, 2][Math.floor(G.t * 6) & 3], sh = S.shift[si]; for (const h of S.heads) VG.drawImage(h.frames[ph], Math.round(x - S.ax * sc + (h.x + sh) * sc), Math.round(top + h.y * sc), h.frames[0].width * sc, h.frames[0].height * sc); }
+  if (!pixel && S.heads) { const ph = [0, 1, 0, 2][Math.floor(G.t * 6) & 3], sh = S.shift[si]; for (const h of S.heads) VG.drawImage(h.frames[ph], Math.round(x - S.ax * sc + (h.x + sh) * sc), Math.round(top + h.y * sc), h.frames[0].width * sc, h.frames[0].height * sc); }
   if (top < clip + 10) drawBadge(x, top + 26 * sc, k, P.name || '?', P.img, P.fx);
 }
 

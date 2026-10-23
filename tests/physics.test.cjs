@@ -20,6 +20,16 @@ function energy(a,b){return .5*a.massKg*(a.v*a.v+a.vx*a.vx)+.5*b.massKg*(b.v*b.v
 function near(a,b,tol=1e-7){assert(Math.abs(a-b)<=tol*Math.max(1,Math.abs(a),Math.abs(b)),a+' != '+b);}
 `,sandbox);vm.runInContext(player+traffic,sandbox,{filename:sourcePath});return sandbox;}
 const tests=[];function test(name,body){tests.push({name,body});}
+test('Ignition and countdown hold the grid against a real approaching train; run still collides',`
+for(const phase of ['ignition','countdown','run']){
+ reset(0);RACE.state=phase;const train=vehicle(-15,0);train.train=true;
+ // Distant trains keep the countdown spawn branch out of this DOM-free fixture.
+ TRAFFIC.list.push({...train,s:500},{...train,s:1000});
+ const before={s:PC.s,x:PC.x,v:PC.v,vx:PC.vx};trafficUpdate(0);
+ if(phase==='run'){assert(Math.abs(PC.v)>.1);assert.notEqual(PC.s,before.s);}
+ else {assert.deepEqual({s:PC.s,x:PC.x,v:PC.v,vx:PC.vx},before);assert.equal(PC.crash,null);}
+}
+`);
 test('Low-speed car and near-stationary train contacts stay on the ground',`
 reset(5);vehicle(4);trafficUpdate(0);assert.equal(PC.crash,null);assert.equal(PC.airY,0);assert.equal(PC.roll,0);
 reset(0);const train=vehicle(-.1);train.train=true;trafficUpdate(0);assert.equal(PC.crash,null);

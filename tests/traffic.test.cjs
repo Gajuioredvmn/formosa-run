@@ -10,7 +10,7 @@ const hazards=section('const HAZ_SIDES = ','// the tram going across,');
 const parade=section('const PARADE = ','function drawParadeOne(');
 const trains=section('function trainsUpdate(dt) {','// the horn, two tones, long');
 const contacts=section('function findCollider(p, s, x, hl, hw, kind) {','// ===================== controls:');
-const sandbox={console,assert,Math:Object.create(Math),performance:require('node:perf_hooks').performance,Map,Set};vm.createContext(sandbox);
+const sandbox={console,assert,Math:Object.create(Math),performance:require('node:perf_hooks').performance,Map,Set,window:{FORMOSA_HD:{status:{active:false}}}};vm.createContext(sandbox);
 vm.runInContext(`
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
 const LANE=3.7,DS=2,TAU=Math.PI*2;
@@ -31,8 +31,14 @@ test('Selected car dimensions drive gap and collision geometry',`assert.equal(pl
 test('Long guardrails stay solid and HD collider selection avoids legacy invisible objects',`
 const p=piece();const wall={s0:0,s1:800,x0:4,x1:5,kind:'wall'};p.colliders=[wall];
 assert.equal(findCollider(p,350,3.5,2.5,1,'wall'),wall);assert.equal(nearIntervals(p,350,5,null,0).length,1);
-p.hdColliders=[];assert.equal(findCollider(p,350,3.5,2.5,1,'wall'),null);assert.equal(nearIntervals(p,350,5,null,0).length,0);
+p.hdColliders=[];assert.equal(findCollider(p,350,3.5,2.5,1,'wall'),wall,'Inactive HD geometry cannot hide visible classic obstacles');
+window.FORMOSA_HD.status.active=true;
+assert.equal(findCollider(p,350,3.5,2.5,1,'wall'),null);assert.equal(nearIntervals(p,350,5,null,0).length,0);
 p.hdColliders=[wall];assert.equal(findCollider(p,700,3.5,2.5,1,'wall'),wall);assert.equal(nearIntervals(p,700,5,null,0).length,1);
+window.FORMOSA_HD.status.active=false;
+p.hdColliders=[{s0:0,s1:800,x0:-5,x1:-4,kind:'wall'}];
+assert.equal(findCollider(p,350,-4.5,2.5,1,'wall'),null,'Classic fallback cannot retain invisible HD walls');
+assert.equal(findCollider(p,350,3.5,2.5,1,'wall'),wall);
 `);
 test('Cars + procession + near-road static count in the same occupancy',`
 PC.piece=piece();const p=PC.piece;TRAFFIC.list=[{p,s:100,x:-2,len:4,wid:2}];HAZ.list=[{p,s:100,x:1,len:3,wid:2.5,parade:true}];p.colliders=[{s0:95,s1:105,x0:4,x1:6,kind:'solid'}];
@@ -77,12 +83,14 @@ for(const k of ['hw','shoulder','leftEdge','rightEdge'])delete p[k];
 PC.piece=p;PC.s=80;TRAFFIC.list=[];HAZ.list=[];HAZ.xings=[];
 const expected=[];assert(trafficCorridorOpen(p,80,920,expected));
 p.hdColliders=Array.from({length:10000},(_,i)=>({s0:i-1,s1:i+1,x0:i%2?-32:30,x1:i%2?-30:32,kind:'solid'}));
+window.FORMOSA_HD.status.active=true;
 const start=performance.now();const actual=[];assert(trafficCorridorOpen(p,80,920,actual));
 assert.deepEqual(actual,expected,'Off-road objects must not create artificial extra path events');
 for(let i=0;i<80;i++)assert(trafficCorridorOpen(p,80,920));
 const ms=performance.now()-start;assert(ms<1500,'81 plans with 10,000 roadside colliders took '+ms+'ms');
 assert.equal(findCollider(p,500,31,2.5,1),p.hdColliders[498],'Physical roadside collision remains active');
 globalThis.largeScenery={colliders:10000,plans:81,ms,msPerPlan:ms/81};
+window.FORMOSA_HD.status.active=false;
 `);
 test('A long wall is retained when road widening reaches it between its endpoints',`
 const p=Object.assign(Object.create(Piece.prototype),piece());p.L=400;p.N=201;
@@ -91,9 +99,11 @@ for(let i=60;i<=90;i++)p.W[i]=3.7+8.3*(1-Math.abs(i-75)/15);
 for(const k of ['hw','shoulder','leftEdge','rightEdge'])delete p[k];
 PC.piece=p;TRAFFIC.list=[];HAZ.list=[];HAZ.xings=[];
 p.hdColliders=[{s0:100,s1:200,x0:8.4,x1:9.2,kind:'wall'}];
+window.FORMOSA_HD.status.active=true;
 assert(p.rightEdge(100)<8.4&&p.rightEdge(200)<8.4&&p.rightEdge(150)>9.2);
 assert.equal(trafficFree(p,150).some(q=>q[0]<=8.8&&q[1]>=8.8),false);
 const plan=[];assert(trafficCorridorOpen(p,80,220,plan));assert(plan.some(q=>q.s===150));
 assert.equal(findCollider(p,150,8.8,2.5,1),p.hdColliders[0]);
+window.FORMOSA_HD.status.active=false;
 `);
 const result={passed:tests.every(t=>t.pass),tests,simulation:sandbox.simulation,largeScenery:sandbox.largeScenery};if(process.argv[3]){const reportPath=path.resolve(process.argv[3]);fs.mkdirSync(path.dirname(reportPath),{recursive:true});fs.writeFileSync(reportPath,JSON.stringify(result,null,2));}console.log(JSON.stringify(result,null,2));process.exitCode=result.passed?0:1;

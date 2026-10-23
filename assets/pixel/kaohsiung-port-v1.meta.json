@@ -1,0 +1,22 @@
+{
+  "tool": "built-in image_gen",
+  "role": "port",
+  "prompt": "Use case: stylized-concept. Asset type: transparent Kaohsiung container-terminal PIXEL ART setpiece for a480x270 arcade racer.\nImage1 is authoritative pixel style reference only.\nONE complete long blue-hulled container freighter, near-side slight3/4 view, white aft bridge left and bow right, detailed red/blue/ochre containers, masts and rails. Behind it on a narrow visible quay exactly THREE coherent red ship-to-shore portal gantry cranes: braced paired legs, connected upper crossmembers, moderate mostly horizontal outreach booms, cables ending at rectangular container spreaders. Feet belong on quay behind ship, not on container deck. Full structures inside frame with generous transparent upper margin, no top cropping or unsupported tall thin strips.\nRich genuine arcade PIXEL ART matching Image1: stepped outlines, deliberate square pixel clusters, teal-blue hull shade, warm upper-left sun, red steel highlighted facets and cool blue detailed shadow. Native pixel shapes, not a smooth painting downsample; no photos or low-poly3D. Readable at180x85logical pixels.\nTRUE transparent RGBA outside and between supports. No sky, sea rectangle, road, people, palms, city, text, logos, HUD or captions. Exactly one ship, three cranes, wide2:1 landscape about2048x1024.",
+  "source": "exec-418b9559-52bb-4ab4-bbed-0cbb45a14493.png",
+  "destination": "assets/pixel/kaohsiung-port-v1.png",
+  "reference": "file_00000000e52482068c26ad485a4d454a.png",
+  "transparent_background": true,
+  "imageEditsAfterGeneration": "none; copied byte-for-byte",
+  "width": 1774,
+  "height": 887,
+  "alphaRange": [
+    0,
+    255
+  ],
+  "bbox96": [
+    0,
+    84,
+    1774,
+    804
+  ]
+}
