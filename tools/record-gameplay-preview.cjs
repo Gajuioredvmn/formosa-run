@@ -1,0 +1,23 @@
+// Three real-time browser driving excerpts. Only the initial fixture position
+// changes between excerpts; no collision, timer, traffic or speed loop override.
+const fs=require('node:fs'),path=require('node:path'),{createServer}=require('./serve.cjs');
+const {chromium}=require(path.join(process.env.USERPROFILE,'.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'));
+const root=path.resolve(__dirname,'..'),out=path.resolve(process.argv[2]||path.join(root,'../formosa-work/full-qa-20261024/release-preview'));
+fs.mkdirSync(out,{recursive:true});const report={scope:'Three ten-second real-time gameplay excerpts with normal controls, original timer and actual collisions. Scene entry positions are fixtures. Silent visual review; audio is tested separately.',errors:[],missing:[],segments:[]};
+(async()=>{const server=createServer(root);await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch({headless:true,channel:'msedge'});
+try{const page=await browser.newPage({viewport:{width:1280,height:720}});page.on('pageerror',e=>report.errors.push(e.message));page.on('response',r=>{if(r.status()>=400)report.missing.push(r.url());});await page.goto(`http://127.0.0.1:${server.address().port}/`);await page.waitForFunction(()=>window.__kr?.G.state==='race'&&window.FORMOSA_PIXEL_CAR?.state.complete,null,{timeout:90000});await page.evaluate(()=>__kr.halt(true));await page.evaluate(require('./qa-route-driver.cjs'));
+report.recording=await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=960;canvas.height=540;const ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
+ const stream=canvas.captureStream(30),mime=['video/mp4;codecs=avc1.42E01E','video/webm;codecs=vp9','video/webm'].find(m=>MediaRecorder.isTypeSupported(m)),recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:6500000});
+ const state=window.__previewRecord={canvas,ctx,stream,mime,recorder,chunks:[],frames:0,running:true};recorder.ondataavailable=e=>{if(e.data.size)state.chunks.push(e.data);};
+ state.finished=new Promise(resolve=>{recorder.onstop=()=>resolve();});
+ function frame(){if(!state.running)return;ctx.drawImage(document.getElementById('gl'),0,0,960,540);ctx.drawImage(document.getElementById('hud'),0,0,960,540);state.frames++;requestAnimationFrame(frame);}requestAnimationFrame(frame);
+ state.input=setInterval(()=>{if(__kr.RACE.state==='run')__qaRouteDriver.step(false);},1000/60);
+ return{mime,width:960,height:540,targetFps:30};});
+for(const [index,id,s]of [[0,'s1',360],[1,'s5d',1920],[2,'s4h',2450]]){
+ const before=await page.evaluate(({id,s,index})=>{const k=__kr;k.halt(true);k.G.mode='play';k.G.noIgnite=true;k.race(0,true);k.run();k.bot(false);k.show(null);const p=k.ROUTE.pieces.find(p=>p.id===id);k.go(k.ROUTE.pieces.indexOf(p),s,0);k.PC.v=42;k.PC.gear=3;k.CTL.touches.clear();Object.assign(__qaRouteDriver,{forks:['L','L','L','L'],plan:[],piece:null,nextPlan:0,failPlans:0,inputs:0});k.step(0);if(index===0)__previewRecord.recorder.start(1000);k.halt(false);return{id,label:p.def.label,start:k.state(),wallTime:performance.now()};},{id,s,index});
+ await new Promise(r=>setTimeout(r,10000));
+ const after=await page.evaluate(()=>{const k=__kr;k.halt(true);return{end:k.state(),wallTime:performance.now(),driver:__qaRouteDriver.last};});report.segments.push({...before,...after,elapsedWallSeconds:(after.wallTime-before.wallTime)/1000});await page.screenshot({path:path.join(out,`preview-${index+1}-${id}.png`)});
+}
+const captured=await page.evaluate(async()=>{const s=__previewRecord;clearInterval(s.input);s.running=false;s.recorder.stop();await s.finished;const blob=new Blob(s.chunks,{type:s.mime});const b64=await new Promise(resolve=>{const r=new FileReader();r.onload=()=>resolve(r.result.split(',')[1]);r.readAsDataURL(blob);});s.stream.getTracks().forEach(t=>t.stop());return{b64,mime:s.mime,bytes:blob.size,frames:s.frames};});
+report.file=captured.mime.startsWith('video/mp4')?'gameplay-preview-30s.mp4':'gameplay-preview-30s.webm';fs.writeFileSync(path.join(out,report.file),Buffer.from(captured.b64,'base64'));report.bytes=captured.bytes;report.frames=captured.frames;report.pass=!report.errors.length&&!report.missing.length&&report.segments.every(s=>s.end.el>s.start.el&&s.end.s>s.start.s&&s.elapsedWallSeconds>=9.8&&s.elapsedWallSeconds<12);
+}catch(e){report.pass=false;report.failure=String(e.stack||e);}finally{await browser.close();await new Promise(r=>server.close(r));fs.writeFileSync(path.join(out,'gameplay-preview-report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));if(!report.pass)process.exitCode=1;}})().catch(e=>{console.error(e);process.exitCode=1;});

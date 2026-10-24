@@ -1,0 +1,32 @@
+// Targeted regression for the 2026-10-25 section contact-sheet review.
+// One Edge page; fixed locations are explicit fixtures, not a full-route run.
+const fs=require('node:fs'),path=require('node:path'),{createServer}=require('./serve.cjs');
+let chromium;try{({chromium}=require('playwright'));}catch{({chromium}=require(path.join(process.env.USERPROFILE,'.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')));}
+const root=path.resolve(__dirname,'..'),out=path.resolve(process.argv[2]||path.join(root,'../formosa-work/release-20261025/section-review-fixes'));
+fs.mkdirSync(out,{recursive:true});const report={scope:'Targeted Jiji split, Alishan parallel railway and Beimen pond grounding. One browser page, real controls and unchanged timer.',checks:[],errors:[],missing:[],screens:[],soaks:[]};
+(async()=>{const server=createServer(root);await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch({headless:true,channel:'msedge'});
+try{
+ const page=await browser.newPage({viewport:{width:960,height:540}});page.on('pageerror',e=>report.errors.push(e.message));page.on('response',r=>{if(r.status()>=400)report.missing.push(r.url());});
+ await page.goto(`http://127.0.0.1:${server.address().port}/`,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__kr?.G.state==='race'&&window.FormosaRailCrossing,null,{timeout:90000});
+ await page.evaluate(()=>{__kr.halt(true);Object.defineProperty(performance,'now',{value:()=>100000+__kr.G.t*1000,configurable:true});});
+ const initial=await page.evaluate(()=>{const k=__kr,p=k.ROUTE.pieces.find(p=>p.id==='s4b'),q=p.railCrossing,checks=[],check=(name,pass,detail)=>checks.push({name,pass:!!pass,detail});
+  const widths=[];for(let s=q.start;s<=q.end;s+=4)widths.push({s,left:q.axis-.44-p.leftEdge(s),through:p.rightEdge(s)-q.axis-.44,centreHeight:FormosaRailCrossing.height(p,s,0)});
+  check('Jiji centre line stays on the open through-road; left local street >=3.9m',widths.every(w=>w.left>=3.9&&w.through>=7&&w.centreHeight===0),{axis:q.axis,minLeft:Math.min(...widths.map(w=>w.left)),minThrough:Math.min(...widths.map(w=>w.through))});
+  const ali=k.ROUTE.pieces.find(p=>p.id==='s3m'),si=ali.secs.findIndex(s=>s.tags?.includes('ali_parallel')),sec=ali.secs[si],a=ali.secStartS[si],b=ali.secStartS[si+1],train=ali.anim.filter(o=>o.kind==='train'&&o.tex==='alitrain'&&o.s0===a),grounds=ali.grounds.filter(o=>o.s0===a&&o.s1===b);
+  check('Alishan retains the original two-lane asphalt, gradient and length',sec&&!sec.track&&sec.parallelRail&&sec.lanes===2&&sec.len===480&&sec.dy===36&&sec.k===.0062&&sec.sh===1.2&&sec.shl===1.2,{section:si+1,a,b,sec});
+  check('Alishan moving train and both rails are entirely outside the left paved edge',train.length===1&&train[0].off-1.3>=5.1&&train[0].off+1.3<=8.9&&grounds.some(g=>g.sg===-1&&g.o0>=5.1&&g.rails.length===2),{train,grounds});
+  check('No current stage asks players to drive on the old longitudinal track surface',k.ROUTE.pieces.every(p=>p.secs.every(s=>!s.track)));
+  return{checks};});report.checks.push(...initial.checks);
+ for(let car=0;car<10;car++)for(const bypass of [true,false]){
+  const result=await page.evaluate(({car,bypass})=>{const k=__kr;k.G.mode='play';k.G.noIgnite=true;k.race(car,true);k.run();k.show(null);k.bot(false);k.TRAFFIC.list.length=0;k.HAZ.list.length=0;k.TRAFFIC.density=0;k.HAZ.nextS=1e8;const pi=k.ROUTE.pieces.findIndex(p=>p.id==='s4b'),p=k.ROUTE.pieces[pi],q=p.railCrossing,x=bypass?0:q.axis-2;k.go(pi,q.s-26,x);k.RACE.elapsed=7;k.PC.v=55;k.PC.gear=Math.min(4,k.PC.gears);k.CTL.keys.KeyZ=true;k.sim(.6);k.CTL.keys.KeyZ=false;return{name:`${k.CARS[car].id} ${bypass?'default-centre underpass':'closed local crossing'}`,pass:bypass?k.PC.s>q.s+5:k.PC.s<q.s-7-k.playerLength()/2+.01,detail:{car,bypass,s:k.PC.s,x:k.PC.x,v:k.PC.v,gate:q.closed,crashes:k.RACE.crashes}};},{car,bypass});report.checks.push(result);
+ }
+ await page.evaluate(require('./qa-route-driver.cjs'));
+ for(const phase of [0,5,11,18]){
+  const r=await page.evaluate(phase=>{const k=__kr;let seed=7341+phase;Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);k.G.mode='play';k.race(0,true);k.run();k.bot(false);k.show(null);k.TRAFFIC.density=1;k.HAZ.nextS=1100;const i=k.ROUTE.pieces.findIndex(p=>p.id==='s4b'),p=k.ROUTE.pieces[i];k.go(i,1050,0);k.PC.v=45;k.PC.gear=Math.min(3,k.PC.gears);k.RACE.elapsed=phase;Object.assign(__qaRouteDriver,{forks:['L','R','L','L'],plan:[],piece:null,nextPlan:0,failPlans:0,inputs:0});const samples=[];for(let n=0;n<28;n++){__qaRouteDriver.drive(1);samples.push({s:k.PC.s,x:k.PC.x,v:k.PC.v,closed:p.railCrossing.closed,corridor:k.trafficCorridorOpen(p,Math.max(0,k.PC.s-12),Math.min(p.L,k.PC.s+500))});}return{phase,samples,pass:k.PC.s>1900&&samples.every(q=>q.corridor),crashes:k.RACE.crashes};},phase);report.soaks.push(r);
+ }
+ for(const [id,s,x,t,name]of [['s4b',1380,0,7,'jiji-approach'],['s4b',1510,0,7,'jiji-split'],['s4b',1640,0,8,'jiji-centre'],['s4b',1740,0,8,'jiji-exit'],['s4b',1600,'left',18,'jiji-local-open'],['s3m',1840,0,0,'alishan-approach'],['s3m',2020,0,0,'alishan-parallel'],['s3m',2140,0,0,'alishan-middle'],['s3m',2370,0,0,'alishan-exit'],['s3w',1580,0,0,'beimen-pond-bank']]){
+  const state=await page.evaluate(({id,s,x,t})=>{const k=__kr;k.G.mode='play';k.G.noIgnite=true;k.race(0,true);k.run();k.show(null);k.bot(false);k.TRAFFIC.list.length=0;k.HAZ.list.length=0;k.TRAFFIC.density=0;k.HAZ.nextS=1e8;const pi=k.ROUTE.pieces.findIndex(p=>p.id===id),p=k.ROUTE.pieces[pi];k.go(pi,s,x==='left'?p.railCrossing.axis-2:x);k.PC.v=0;k.RACE.elapsed=t;if(p.railCrossing)FormosaRailCrossing.update(p.railCrossing,t);k.step(0);return k.state();},{id,s,x,t});await page.screenshot({path:path.join(out,name+'.png')});report.screens.push({name,state});
+ }
+ report.pass=report.checks.every(c=>c.pass)&&report.soaks.every(s=>s.pass)&&!report.errors.length&&!report.missing.length;
+}catch(e){report.pass=false;report.failure=String(e.stack||e);}finally{await browser.close();await new Promise(r=>server.close(r));fs.writeFileSync(path.join(out,'section-review-report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify({pass:report.pass,checks:report.checks.length,failed:report.checks.filter(c=>!c.pass),soaks:report.soaks.map(s=>({phase:s.phase,pass:s.pass,last:s.samples.at(-1)})),errors:report.errors,missing:report.missing,failure:report.failure},null,2));if(!report.pass)process.exitCode=1;}
+})();

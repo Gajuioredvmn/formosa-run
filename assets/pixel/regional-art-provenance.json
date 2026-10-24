@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "created": "2026-10-25",
+  "tool": "Built-in image_gen imagegen",
+  "asset": "assets/pixel/regional-landmarks-v1.png",
+  "originalGeneratedFile": "exec-bfd5bc86-883b-406f-8504-8624280c0a22.png",
+  "prompt": "Use case: stylized-concept. Create ONE production game sprite atlas, a 2 by 2 sheet of FOUR DISTINCT Taiwan landmarks, each fully isolated on genuinely transparent background, generous transparent 40px gutters, nothing cropped, no text, no people, no cars, no roads, no sky/background panorama. Fine detailed pixel art for a polished HD2D arcade driving game: tiny crisp deliberate pixels, rich warm sunlight from upper left and cool blue-purple shadows with retained detail, bright sophisticated palette. Each quadrant occupies equal area of a square high-resolution sheet and is a freestanding ground-anchored cutout, a very slightly elevated front three-quarter or side view with coherent scale. TOP LEFT: Xiluo Bridge (Yunlin), a long horizontal RED STEEL WARREN TRUSS bridge excerpt of four connected repeated trapezoidal steel spans with triangular cross-braces, on slender gray concrete river piers, red deck, hollow see-through steelwork. It is a side-view LANDMARK, no river around it. TOP RIGHT: Longteng Broken Bridge ruins (Sanyi Miaoli), six separate tall weathered RED BRICK masonry pier remains with visibly broken arch stubs, tall narrow rectangular brick piers with asymmetric ruined tops, MISSING bridge deck and MISSING continuous arches, dark moss around low stone foundations with a few grasses. NOT red steel, NOT a complete aqueduct. BOTTOM LEFT: Jiufen hillside traditional Taiwanese three-story wooden teahouse, irregular stacked dark timber balconies, dark green tile eaves, warm windows, many small RED ROUND LANTERNS hanging in rows from the balcony edges, adjacent steep gray stone stair alley along its right side, potted plants, cream plaster panels, finely drawn perspective side wall so it reads as a dimensional building. No logos or signage lettering. BOTTOM RIGHT: Shitiping (Hualien) pale gray buff volcanic TUFF coastal rock terraces, low wide gently dipping layered abrasion platform, numerous circular eroded potholes with small turquoise tide pools, coarse angular eroded edges, slightly dark marine bases, a tiny amount of low coastal grass. NOT marble gorge, NOT mushroom rocks, NOT beach boulders. Each object has a clear base footprint with no separate painted cast shadow beyond base. Crucial: all four fit entirely in their own quadrant; no mixed landmarks; transparent spaces and openings remain transparent. No UI, no labels, no frame.",
+  "notes": [
+    "Original PNG retained without image editing; measured per-frame runtime crop with alpha cutoff 224.",
+    "Stylized game landmarks, compressed in scale; Longteng depicts a partial group of surviving piers, not a surveyed reconstruction.",
+    "Jiufen tea-house stair-lane is a regional architectural interpretation without commercial signage."
+  ],
+  "sources": [
+    {
+      "landmark": "Xiluo Bridge",
+      "url": "https://content.yunlin.gov.tw/News_Content.aspx?n=1024&s=106699",
+      "feature": "Red Warren steel truss spans on concrete piers"
+    },
+    {
+      "landmark": "Xiluo Bridge",
+      "url": "https://nchdb.boch.gov.tw/assets/advanceSearch/historicalBuilding/20011031000006",
+      "feature": "Official architectural heritage description"
+    },
+    {
+      "landmark": "Longteng Bridge Ruins",
+      "url": "https://landscape.forest.gov.tw/Front/land_search/Landscape.aspx?Sn=219&id=kVsq7hIIvoI%3D",
+      "feature": "Broken red brick masonry piers, distinct from Xiluo steel truss"
+    },
+    {
+      "landmark": "Jiufen",
+      "url": "https://newtaipei.travel/zh-tw/attractions/detail/109990",
+      "feature": "Hillside stone stairs and traditional tea streets"
+    },
+    {
+      "landmark": "Jiufen tea-house architecture",
+      "url": "https://www.a-meiteahouse.com/traffic-information",
+      "feature": "Timber balconies, tiled eaves and red lanterns; no brand replicated"
+    },
+    {
+      "landmark": "Shitiping",
+      "url": "https://www.eastcoast-nsa.gov.tw/zh-tw/attractions/detail/12/",
+      "feature": "Tuff marine erosion terraces, potholes and tide pools"
+    }
+  ]
+}

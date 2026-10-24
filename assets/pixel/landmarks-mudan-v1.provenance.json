@@ -1,0 +1,50 @@
+{
+  "tool": "image_gen.imagegen",
+  "created": "2026-10-25",
+  "prompt": "Use case: stylized-concept. Asset type: one transparent PNG landmark sprite for a detailed 2.5D pixel-art Taiwan arcade driving game. Draw Mudan Reservoir dam, Pingtung Taiwan, a broad low EARTH-AND-ROCK-FILL embankment dam, viewed from downstream near ground level with a slight three-quarter perspective. Geography requirements from Taiwan Water Resources Agency: the main dam is a wide gently sloping rockfill embankment with a thin straight crest service road and small safety railing; the THREE-BAY gated concrete spillway is SEPARATE at the viewer's RIGHT abutment and feeds one sloping open concrete chute beside the embankment. No vertical concrete gravity-dam main face; no waterfalls cut into its center. Integrate the dam into naturally irregular forested Taiwanese low mountain foothills on both ends, lush broadleaf shrubs and exposed rock strata at its base, with carefully drawn individual pebble/stone pixel clusters and sparse grass on the embankment. Show very little reservoir water, only a thin turquoise glimpse behind the crest. The dam and supporting hills must form ONE connected grounded silhouette. Front ground-level elevation, not an aerial/isometric diorama; no vertical cutaway cliff base. Composition: very wide low panoramic isolated object whose visible silhouette is roughly 2.8:1 width-to-height, full asset with generous transparent margin, flat horizontal bottom baseline. Forest foothills should be lower than a huge mountain wall, varied rounded canopy shapes; do not make big flat green triangles. Style: premium hand-painted 32-bit arcade pixel art, dense deliberate hard-edge pixel clusters, crisp discrete highlights, warm upper-left sunlight, cool readable blue-green shadows, strong contrast, textured earthy grey-beige river cobbles and moss, carefully drawn railings and engineering concrete. It must match richly detailed pixel vegetation and architecture in a commercial retro racer. No photograph, no plastic 3D rendering, no smooth blurry brush, no featureless large color slabs, no abstract block mountains, no sky, no clouds, no backdrop rectangle, no labels or text, no people or vehicles, no border, no ground shadow outside the object. True alpha transparency outside the complete dam/foothill silhouette.",
+  "source": "C:/Users/88690/.codex/generated_images/01a16bb5-ed4a-7a53-afbc-63da667d7b63/exec-38e3de24-76f2-416f-87d5-4f6a95783c77.png",
+  "purpose": "Original stylized pixel interpretation of Mudan Reservoir's broad sloped rockfill main dam, side spillway and connected forested foothills. Replaces only legacy dam sprite within its original world footprint; not a survey-accurate reconstruction.",
+  "references": [
+    {
+      "url": "https://www.wra.gov.tw/wrasb/cp.aspx?Create=1&n=31315",
+      "title": "水利署南區水資源分署—牡丹水庫",
+      "facts": "Pingtung Mudan; central-core zoned rolled earth/rock dam, crest 445.6 m, gated open-channel spillway."
+    },
+    {
+      "url": "https://web.wra.gov.tw/WraLib/wSite/books_88554",
+      "title": "牡丹水庫取水設施檢討及颱洪期取水改善設計",
+      "facts": "Separate open-channel spillway at left-bank abutment; three gate bays are specified in the operating rules."
+    },
+    {
+      "url": "https://www.wra.gov.tw/wralaw/Law_Content.aspx?n=9302&s=10875&sms=9191",
+      "title": "牡丹水庫水門操作規定",
+      "facts": "Earth/rockfill dam, three radial spillway gates. Official sources consulted for factual structure; no official photograph copied into the asset."
+    }
+  ],
+  "contract": {
+    "sprite": "dam",
+    "legacyPixels": [
+      420,
+      150
+    ],
+    "worldHeight": 42,
+    "worldWidth": 117.6,
+    "anchorX": 1,
+    "collide": 0,
+    "shadow": 0
+  },
+  "measuredAlpha": {
+    "image": [
+      2098,
+      750
+    ],
+    "bbox": [
+      22,
+      113,
+      2064,
+      528
+    ],
+    "threshold": 180,
+    "fullyTransparentPixels": 718736
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "generator": "built-in image_gen",
+  "date": "2026-10-24",
+  "file": "clouds-v1.png",
+  "source": "exec-2fcd84b1-b849-4137-8bf4-ba30a381eccb.png",
+  "prompt": "Use case: stylized-concept. Asset type: production sprite atlas for a fine pixel-art Taiwan arcade racing game. Create exactly SIX separate daylight cumulus cloud sprites in a strict 3-column by 2-row grid on a truly transparent background. Each cloud completely isolated inside its equal 512 by 512 cell, plenty of transparent gutters. Landscape 1536 by 1024. Top row: a long thin distant fair-weather cloud, a tall billowing cumulus tower, a broad medium cumulus cluster. Bottom row: a small asymmetric puff cluster, a long layered low bank, a tall asymmetric coastal summer cloud. Fine hand-placed pixel clusters, detailed stepped pixel edges and delicate tiny pixel highlights, no coarse blobs, no smooth photograph texture. Warm ivory sunlit upper-left faces and readable lavender-blue undersides. Naturally irregular silhouettes with flat-ish lower bases, NOT circular balls strung together. Unified rich 32-bit era high detail pixel illustration style suitable for HD2D layering. No sky rectangle, no landscape, no shadows beneath sprites, no labels, no border, no text, no outlines, no black matte. All six fully fit within their own cells."
+}

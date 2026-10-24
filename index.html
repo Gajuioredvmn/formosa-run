@@ -80,6 +80,7 @@ h2.ttl{margin:0 0 .5em;font:900 clamp(18px,3.2vh,26px)/1.1 var(--font-ui);color:
 .nm span{font:400 clamp(11px,1.8vh,13px)/1 var(--font-pix);color:var(--sun);letter-spacing:.14em}
 .desc{margin:0;font:500 clamp(12px,2vh,15px)/1.5 var(--font-ui);color:var(--cream)}
 .crew{font:700 clamp(11px,1.8vh,13px)/1.4 var(--font-ui);color:var(--sea)}
+.crew-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}.crew-card{display:grid;grid-template-columns:minmax(0,1fr);align-items:center;justify-items:center;text-align:center;gap:4px;margin:0;padding:5px;border:1px solid rgba(63,208,212,.35);border-radius:7px;background:rgba(10,6,24,.35)}.crew-card canvas{width:clamp(64px,18vh,144px);max-width:100%;height:auto;image-rendering:pixelated}.crew-card figcaption{font:700 clamp(10px,1.6vh,13px)/1.4 var(--font-ui);color:var(--cream)}.crew-card small{display:block;color:var(--sea);font-size:10px}
 .stats{display:grid;grid-template-columns:auto 1fr auto;gap:5px 10px;align-items:center}
 .stats .l{font:700 clamp(11px,1.8vh,13px)/1 var(--font-ui);color:var(--cream)}
 .stats .v{font:400 10px var(--font-pix);color:#fff}
@@ -111,6 +112,8 @@ h2.ttl{margin:0 0 .5em;font:900 clamp(18px,3.2vh,26px)/1.1 var(--font-ui);color:
 .radio button{text-align:left;padding:.5em .8em;border-radius:10px;background:rgba(255,243,220,.06);color:var(--cream);border:2px solid rgba(255,243,220,.18);font:900 clamp(13px,2.2vh,16px)/1.25 var(--font-ui)}
 .radio button small{display:block;font:400 9px var(--font-pix);color:var(--sea);margin-top:3px;letter-spacing:.08em}
 .radio button[aria-pressed="true"]{border-color:var(--lime);background:rgba(124,242,106,.14)}
+.radio select{width:100%;min-height:44px;padding:10px;border:2px solid var(--sea);border-radius:8px;background:#102439;color:var(--cream);font:700 15px var(--font-ui)}
+.radio label{display:grid;gap:6px}.radio label small{font:400 12px/1.4 var(--font-ui);color:var(--sea)}
 .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:6px;flex-wrap:wrap}
 .vmenu{display:flex;flex-direction:column;gap:10px;align-items:stretch;min-width:min(280px,80vw);padding:22px}
 .res-banner{font:400 clamp(30px,8vh,64px)/1 var(--font-num);text-align:center;transform:skewX(-10deg);letter-spacing:.08em;margin:0 0 .2em;filter:drop-shadow(0 4px 0 #140c2a)}
@@ -123,7 +126,7 @@ table.sp td.t{text-align:right;font-family:var(--font-num);color:#fff;white-spac
 .via{font-size:.78em;font-weight:400;opacity:.72;line-height:1.3}
 .new{color:var(--lime);font:400 11px var(--font-pix);margin-left:8px;animation:blink .6s steps(2,end) infinite}
 .rng{width:100%;accent-color:var(--sun)}
-@media (max-height:430px){.sel{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}.desc{display:none}.thumbs button{width:52px}}
+@media (max-height:430px){.crew-card{display:flex;justify-content:center;text-align:left}.crew-card canvas{width:56px}.sel{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}.desc{display:none}.thumbs button{width:52px}}
 @media (orientation:portrait){.sel{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto auto auto}.sel .actions,.thumbs{grid-column:1}}
 #rot{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:var(--night);color:var(--cream);font:900 20px var(--font-ui);text-align:center;padding:24px}
 @media (orientation:portrait) and (pointer:coarse){#rot.need{display:flex}}
@@ -131,7 +134,23 @@ table.sp td.t{text-align:right;font-family:var(--font-num);color:#fff;white-spac
 <link rel="stylesheet" href="./render/hud.css">
 <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
 <script src="./data/routes.js"></script>
+<script src="./render/ending-stories.js"></script>
+<script src="./render/ending-scenes.js"></script>
+<script src="./render/detail-surface.js"></script>
 <script src="./render/classic-street-art.js"></script>
+<script src="./render/landscape-art-manifest.js"></script>
+<script src="./render/landscape-parallax.js"></script>
+<script src="./render/world-art-manifest.js"></script>
+<script src="./render/world-life.js"></script>
+<script src="./render/landmark-art-manifest.js"></script>
+<script src="./render/landmark-art.js"></script>
+<script src="./render/regional-art-manifest.js"></script>
+<script src="./render/regional-art.js"></script>
+<script src="./render/salt-fields.js"></script>
+<script src="./render/cliff-art.js"></script>
+<script src="./render/road-events.js"></script>
+<script src="./render/rail-crossing.js"></script>
+<script src="./render/road-boundary.js"></script>
 <script type="module" src="./render/bootstrap.js"></script>
 </head><body><canvas id="gl" aria-label="賽車畫面"></canvas>
 <canvas id="hud" aria-hidden="true"></canvas>
@@ -175,9 +194,10 @@ const D2R = Math.PI / 180;
 
 // ---------- the screen ----------
 const view = $('gl');
-const vctx = view.getContext('2d', { alpha: false });
+const DETAIL = window.FormosaDetailSurface.scale;
+const vctx = window.FormosaDetailSurface.context(view, { alpha: false });
 const glCanvas = view;     // the touch controls listen on the game screen
-const RH = 270;            // internal height in game pixels: chunky arcade pixels
+const RH = 270;            // logical camera height; the physical surface is 540 rows
 let RW = 640;              // internal width follows the shape of the screen
 const FOC = 296;           // focal length in game pixels: about 49 degrees of vertical view
 let X0 = 320;              // screen centre
@@ -432,11 +452,13 @@ function paintCloudPix(rnd, w, h, tall) {
   return px;
 }
 function paintClouds(seed) {
-  const W = PANO_W, H = L_CLOUD.h, c = canvas(W, H), g = c.getContext('2d'), rnd = mulberry(seed);
-  const put = (px, x, y) => { const cv = px.toCanvas(); g.drawImage(cv, x, y); if (x + px.w > W) g.drawImage(cv, x - W, y); };
+  const painted=window.FormosaLandscape?.cloudStrip(seed,PANO_W,L_CLOUD.h,L_CLOUD.hz,DETAIL);if(painted)return painted;
+  const W = PANO_W, H = L_CLOUD.h, c = canvas(W * DETAIL, H * DETAIL), g = c.getContext('2d'), rnd = mulberry(seed);
+  c.logicalWidth=W;c.logicalHeight=H;g.scale(DETAIL,DETAIL);
+  const put = (px, x, y) => { const cv = px.toCanvas(),w=px.w/DETAIL,h=px.h/DETAIL;g.drawImage(cv,x,y,w,h);if(x+w>W)g.drawImage(cv,x-W,y,w,h); };
   // towering cumulus sitting on the horizon, then smaller fair-weather clouds higher up
-  for (let i = 0; i < 7; i++) { const w = rnd.int(112, 196), h = rnd.int(60, 98), px = paintCloudPix(rnd, w, h, true); put(px, rnd.int(0, W - 1), L_CLOUD.hz - h + rnd.int(3, 10)); }
-  for (let i = 0; i < 16; i++) { const w = rnd.int(60, 142), h = Math.round(w * rnd.range(0.32, 0.45)), px = paintCloudPix(rnd, w, h, false); put(px, rnd.int(0, W - 1), rnd.int(4, L_CLOUD.hz - h - 30)); }
+  for (let i = 0; i < 7; i++) { const w = rnd.int(112, 196), h = rnd.int(60, 98), px = paintCloudPix(rnd, w*DETAIL, h*DETAIL, true); put(px, rnd.int(0, W - 1), L_CLOUD.hz - h + rnd.int(3, 10)); }
+  for (let i = 0; i < 16; i++) { const w = rnd.int(60, 142), h = Math.round(w * rnd.range(0.32, 0.45)), px = paintCloudPix(rnd, w*DETAIL, h*DETAIL, false); put(px, rnd.int(0, W - 1), rnd.int(4, L_CLOUD.hz - h - 30)); }
   return c;
 }
 function makeLayer(spec) { const c = canvas(PANO_W, spec.h), g = c.getContext('2d'); return { c, g, img: g.createImageData(PANO_W, spec.h), hz: spec.hz }; }
@@ -455,7 +477,7 @@ function drawLayer(g, c, camAz, k, yTop, alpha) {
   const lx = (((camAz * k + Math.PI) / TAU) * PANO_W) % PANO_W;
   let x = Math.round(X0 - lx); while (x > 0) x -= PANO_W; while (x + PANO_W < 0) x += PANO_W;
   if (alpha != null) g.globalAlpha = alpha;
-  for (; x < RW; x += PANO_W) g.drawImage(c, x, yTop);
+  for (; x < RW; x += PANO_W) g.drawImage(c, x, yTop,c.logicalWidth||c.width,c.logicalHeight||c.height);
   g.globalAlpha = 1;
 }
 // the sky strip: colour by height above the horizon, in a dozen flat bands with ordered dither between them;
@@ -464,13 +486,13 @@ const SKY = { key: '', c: null, H: 420, sun: null };
 function skyStrip(T) {
   const key = T.top + ':' + T.hor + ':' + T.low + ':' + RW;
   if (SKY.key === key) return SKY.c;
-  const H = SKY.H, c = canvas(RW, H), g = c.getContext('2d'), img = g.createImageData(RW, H), d = img.data;
-  const N = 12, cols = [];
+  const H = SKY.H * DETAIL, W = RW * DETAIL, c = canvas(W, H), g = c.getContext('2d'), img = g.createImageData(W, H), d = img.data;
+  const N = 48, cols = [];
   for (let i = 0; i <= N; i++) { const t = i / N; cols.push(rgb(t < 0.5 ? mixHex(T.low, T.hor, t * 2) : mixHex(T.hor, T.top, (t - 0.5) * 2))); }
   for (let y = 0; y < H; y++) {
     const up = (H - y) / H, t = clamp(up < 0.095 ? up / 0.095 * 0.5 : 0.5 + Math.pow((up - 0.095) / 0.905, 0.8) * 0.5, 0, 1) * N;
-    for (let x = 0; x < RW; x++) {
-      const th = (BAYER4[(y & 3) * 4 + (x & 3)] + 0.5) / 16, k = Math.floor(t), C = cols[Math.min(N, (t - k) > th ? k + 1 : k)], o = (y * RW + x) * 4;
+    for (let x = 0; x < W; x++) {
+      const th = (BAYER4[(y & 3) * 4 + (x & 3)] + 0.5) / 16, k = Math.floor(t), C = cols[Math.min(N, (t - k) > th ? k + 1 : k)], o = (y * W + x) * 4;
       d[o] = C[0]; d[o + 1] = C[1]; d[o + 2] = C[2]; d[o + 3] = 255;
     }
   }
@@ -488,7 +510,7 @@ function sunPix(glow) {
 function drawSky(g, camAz, t, T) {
   const HY = Math.round(horizonY()), strip = skyStrip(T);
   g.fillStyle = cssHex(T.top); g.fillRect(0, 0, RW, RH);
-  g.drawImage(strip, 0, HY + 40 - SKY.H);
+  g.drawImage(strip, 0, HY + 40 - SKY.H, RW, SKY.H);
   g.fillStyle = cssHex(T.low); g.fillRect(0, HY + 40, RW, RH - HY - 40);
   const da = angWrap(T.sunAz * D2R - camAz);
   if (Math.abs(da) < 1.3) { const sx = X0 + FOC * Math.tan(da), sy = HY - FOC * Math.tan(T.sunEl * D2R); g.drawImage(sunPix(T.glow), Math.round(sx) - 13, Math.round(sy) - 13); }
@@ -497,8 +519,9 @@ function drawBackdrop(g, set, camAz, t, alpha) {
   // clouds drift slowly; nearer layers scroll a touch faster than the far range for a sense of depth
   const drift = (t * 0.0018) % TAU, HY = Math.round(horizonY());
   drawLayer(g, set.clouds, camAz * 0.96 + drift, 1, HY - L_CLOUD.hz, alpha);
-  drawLayer(g, set.far, camAz, 1, HY - L_FAR.hz, alpha);
-  drawLayer(g, set.near, camAz, 1.12, HY - L_NEAR.hz, alpha);
+  const landscape=window.FormosaLandscape,painted=landscape?.drawBackdrop(g,set,camAz,alpha,{width:RW,height:RH,focal:FOC,horizon:HY,piece:CV.p,s:CV.s,lateral:CV.lat,haze:RV.haze});
+  if(!painted)drawLayer(g, set.far, camAz, 1, HY - L_FAR.hz, alpha);
+  if(!painted||landscape.profile(set.key).skyline)drawLayer(g, set.near, camAz, 1.12, HY - L_NEAR.hz, alpha);
   if(window.FormosaClassicStreetArt)window.FormosaClassicStreetArt.backdrop(g,set,camAz,alpha,{centre:X0,focal:FOC,horizon:HY});
 }
 
@@ -815,8 +838,9 @@ function sideBands(type) { return SIDE_BANDS[type] || SIDE_BANDS.grass; }
 Object.assign(SIDE_BANDS, {
   // 稻田: the paddies of the plain and the valley, water glinting between the rows
   paddy: [VERGE, BAND(3, 0xa89e74, 0xa0966c, 6), BAND(1e9, 0x8cc850, 0x7ab844, 3, 3, [0xd8f0ff, 0xf4ffd8], 1.2)],
-  // 鹽田: salt pans, pale and pink, dark dikes between them
-  salt: [VERGE, BAND(2.6, 0x8a8278, 0x807870, 4), BAND(1e9, 0xf0ecf2, 0xe2dce6, 6, 0, [0xffffff, 0xd8ccd8], 2.5)],
+  // Salt ponds have a dry service dyke followed by water/crystallisation cells.
+  // The native salt raster draws the cross-dykes in physical world metres.
+  salt: [VERGE, BAND(4.8, 0x857c68, 0x807762, 4), BAND(1e9, 0x729a98, 0x648b89, 24, 1)],
   // 茶園: tea terraces in close rows across the slope
   tea: [VERGE, BAND(1e9, 0x62a846, 0x549a3c, 1.4, 0, [0x3f8a36, 0x9ad070], 1.5)],
   // 鳳梨田: pineapple fields, dusty green with the fruit's yellow crowns
@@ -875,7 +899,7 @@ const STAGES = {
   // ---------------------------------------------------------------- row 2 ----------------------------------------------------------------
   // 北上: the sugar line through 橋頭, the plain of 台南, 關廟 pineapples, into the old capital
   s2n: {
-    label: '台南・台1線北上', name: '台南', en: 'TAINAN', tod: ['day', 'day'], pano: 'tainan', clouds: 17, time: STAGE_TIME,
+    label: '高雄北郊・台南', name: '台南', en: 'TAINAN VIA NORTH KAOHSIUNG', tod: ['day', 'day'], pano: 'tainan', clouds: 17, time: STAGE_TIME,
     traffic: { per100: 1.7, mix: { scooter: 3, sedan: 3, bluetruck: 3, pickup: 1, bus: 1, gravel: 1, wagon: 1 } },
     children: ['s3w', 's3m'],
     sign: { L: ['海線・北門鹽水', '台17', '鹿港'], R: ['山線・嘉義', '台3', '阿里山'] },
@@ -941,17 +965,17 @@ const STAGES = {
       { len: 360, k: 0, lanes: 3, sh: 2.4, L: 'city', R: 'city', tags: ['checkpoint', 'qilou', 'fountain', 'chickenrice', 'lamps'] },
       { len: 520, k: 0.0028, dy: 12, L: 'farm', R: 'paddy', tags: ['paddies', 'parade_xingang', 'farmhouse'] },
       { len: 560, k: -0.0048, dy: 30, roll: [5, 2], L: 'tea', R: 'hills', tags: ['teafarm', 'betel'] },
-      { len: 480, k: 0.0062, dy: 36, lanes: 2, sh: 1.2, shl: 1.2, track: true, train: 'ali', L: 'mountain', R: 'tea', tags: ['ontracks', 'teafarm', 'stonehouse'] },
+      { len: 480, k: 0.0062, dy: 36, lanes: 2, sh: 1.2, shl: 1.2, parallelRail: true, train: 'ali', L: 'mountain', R: 'tea', tags: ['ali_parallel', 'teafarm', 'stonehouse'] },
       { len: 440, k: -0.0066, dy: 24, lanes: 3, sh: 2.4, shl: 1.6, L: 'town', R: 'mountain', tags: ['fenqihu', 'townhouse', 'lamps'] },
       { len: 520, k: 0.0055, dy: 42, L: 'mountain', R: 'mountain', tags: ['sakura', 'alitrain', 'coffee'] },
-      { len: 560, k: -0.006, dy: -20, roll: [7, 2], L: 'mountain', R: 'cliff', tags: ['cypress', 'guardR'] },
+      { len: 560, k: -0.006, dy: -20, roll: [7, 2], L: 'mountain', R: 'mountain', tags: ['cypress', 'guardR'] },
       { len: 480, k: 0.0048, dy: -40, L: 'mountain', R: 'hills', tags: ['cypress', 'sakura'] },
       { len: 400, k: 0, dy: -16, L: 'hills', R: 'grass', tags: ['palmgroup'] },
     ],
   },
   // 屏東山線: the mountain road under 大武山, 佛光山, the cable bridge, the glass bridge, then the pass at 壽卡
   s3sm: {
-    label: '屏東・沿山公路', name: '沿山公路', en: 'MOUNTAIN ROAD', tod: ['day', 'day'], pano: 'mountain', clouds: 37, time: STAGE_TIME,
+    label: '高屏・沿山公路', name: '沿山公路', en: 'MOUNTAIN ROAD', tod: ['day', 'day'], pano: 'mountain', clouds: 37, time: STAGE_TIME,
     traffic: { per100: 1.7, mix: { scooter: 3, sedan: 2, bluetruck: 3, pickup: 2, gravel: 2, logs: 2, suv: 1 } },
     children: ['s4c', 's4d'],
     sign: { L: ['花東縱谷', '南迴・多良', '台東'], R: ['恆春半島', '199縣道', '牡丹・旭海'] },
@@ -990,7 +1014,7 @@ const STAGES = {
   // ---------------------------------------------------------------- row 4 ----------------------------------------------------------------
   // 台中・大甲: the great Buddha of 八卦山, the windmills on the mudflats of 高美, 鎮瀾宮 and the Mazu procession, 三義's carvers
   s4a: {
-    label: '台中・大甲', name: '台中', en: 'TAICHUNG', tod: ['day', 'golden'], pano: 'taichung', clouds: 43, time: STAGE_TIME,
+    label: '彰化・台中・苗栗', name: '中部北上', en: 'CHANGHUA · TAICHUNG · MIAOLI', tod: ['day', 'golden'], pano: 'taichung', clouds: 43, time: STAGE_TIME,
     traffic: { per100: 2.1, mix: { scooter: 3, sedan: 4, bus: 2, bluetruck: 2, gravel: 1, suv: 2, wagon: 2, rebar: 1 } },
     children: ['s5a', 's5b'],
     sign: { L: ['淡水・台北', '台64', '台北101'], R: ['北海岸・野柳', '台2', '金山・女王頭'] },
@@ -1130,11 +1154,11 @@ const STAGES = {
     traffic: { per100: 1.6, mix: { scooter: 1, sedan: 3, bus: 3, suv: 3, wagon: 2, pickup: 2, bluetruck: 1 } },
     sections: [
       { len: 360, k: 0, lanes: 3, sh: 2.0, L: 'cabbage', R: 'hills', tags: ['checkpoint', 'cabbages', 'farmhouse'] },
-      { len: 480, k: 0.0068, dy: 40, L: 'cabbage', R: 'cliff', tags: ['cabbages', 'guardR'] },
-      { len: 460, k: -0.0072, dy: 38, L: 'hills', R: 'cliff', tags: ['chalet', 'guardR'] },
+      { len: 480, k: 0.0068, dy: 40, L: 'cabbage', R: 'highland', tags: ['cabbages', 'guardR'] },
+      { len: 460, k: -0.0072, dy: 38, L: 'hills', R: 'highland', tags: ['chalet', 'guardR'] },
       { len: 520, k: 0.0064, dy: 42, roll: [6, 2], L: 'highland', R: 'highland', tags: ['sheep', 'chalet'] },
-      { len: 480, k: -0.007, dy: 36, L: 'highland', R: 'cliff', tags: ['sheep', 'guardR'] },
-      { len: 520, k: 0.0066, dy: 44, L: 'mountain', R: 'cliff', tags: ['guardR', 'hemlock'] },
+      { len: 480, k: -0.007, dy: 36, L: 'highland', R: 'highland', tags: ['sheep', 'guardR'] },
+      { len: 520, k: 0.0066, dy: 44, L: 'mountain', R: 'highland', tags: ['guardR', 'hemlock'] },
       { len: 480, k: -0.0068, dy: 30, roll: [5, 2], L: 'highland', R: 'highland', tags: ['hemlock', 'guardR'] },
       { len: 420, k: 0, dy: 10, L: 'highland', R: 'highland', tags: ['goal', 'wuling', 'pavilion'] },
     ],
@@ -1426,9 +1450,9 @@ function ramp(base, n, lo, hi) { const out = []; for (let i = 0; i < n; i++) out
 const SPR = {};          // name -> { id, pg, x, y, w, h, wh (world height m), ww (world width m), ax, glow, sway, shadow, collide }
 const SPRL = [];         // the same records by id
 const ATLAS = { size: 2048, pad: 8, pages: [], hazeCol: -1 };
-const _sprQueue = [];
+const _sprQueue = [],_sprQueueIndex=new Map();
 // worldH: height in metres when stood up beside the road (or the facade height for walls)
-function addSprite(name, pix, worldH, opts) { _sprQueue.push({ name, pix, wh: worldH, o: opts || {} }); }
+function addSprite(name, pix, worldH, opts) { const q={name,pix,wh:worldH,o:opts||{}},i=_sprQueueIndex.get(name);if(i==null){_sprQueueIndex.set(name,_sprQueue.length);_sprQueue.push(q);}else _sprQueue[i]=q; }
 const _varCache = {};
 function variants(name) { if (_varCache[name]) return _varCache[name]; const out = []; for (const k in SPR) if (k === name || k.startsWith(name + '#')) out.push(k); return (_varCache[name] = out); }
 function pickVar(name, rnd) { const v = variants(name); return v.length ? v[Math.floor(rnd() * v.length)] : null; }
@@ -1437,33 +1461,43 @@ function packAtlas() {
   const S = ATLAS.size, P = ATLAS.pad;
   _sprQueue.sort((a, b) => b.pix.h - a.pix.h || b.pix.w - a.pix.w);
   // shelf packing into pages; each page is then cut to the smallest power-of-two height that holds it
-  const pages = []; let page = null, x = 0, y = 0, rowH = 0;
+  // Aliases may intentionally share a Pix object. Place those pixels once;
+  // metadata and numeric sprite IDs still follow the complete legacy queue.
+  const pages = [], placements = new Map(); let page = null, x = 0, y = 0, rowH = 0;
+  let sharedAliases = 0, avoidedPixelBytes = 0, uniquePixelBytes = 0;
   const newPage = () => { page = { items: [], h: 0 }; pages.push(page); x = P; y = P; rowH = 0; };
   newPage();
   for (const q of _sprQueue) {
     const w = q.pix.w, h = q.pix.h;
     if (w + 2 * P > S || h + 2 * P > S) { console.warn('sprite too big', q.name, w, h); continue; }
+    if (placements.has(q.pix)) { sharedAliases++; avoidedPixelBytes += w * h * 4; continue; }
     if (x + w + P > S) { x = P; y += rowH + P * 2; rowH = 0; }
     if (y + h + P > S) newPage();
+    placements.set(q.pix, { pg: pages.length - 1, x, y }); uniquePixelBytes += w * h * 4;
     page.items.push({ q, x, y }); page.h = Math.max(page.h, y + h + P);
     x += w + P * 2; rowH = Math.max(rowH, h);
   }
-  pages.forEach((pg, pi) => {
+  pages.forEach((pg) => {
     let H = 64; while (H < pg.h) H *= 2;
     const c = canvas(S, H), g = c.getContext('2d');
     for (const it of pg.items) {
       const { q } = it, w = q.pix.w, h = q.pix.h;
       g.putImageData(new ImageData(q.pix.d, w, h), it.x, it.y);
-      const rec = {
-        id: SPRL.length, name: q.name, pg: pi, x: it.x, y: it.y, w, h,
-        wh: q.wh, ww: (q.wh * w) / h, ax: q.o.ax == null ? 0.5 : q.o.ax, glow: q.o.glow || 0, sway: q.o.sway || 0, shadow: q.o.shadow == null ? 0.6 : q.o.shadow,
-        collide: q.o.collide == null ? 0.25 : q.o.collide, meta: q.o.meta || null,
-      };
-      SPR[q.name] = rec; SPRL.push(rec);
     }
     ATLAS.pages.push({ lv: mipLevels(c), hz: [] });
   });
-  _sprQueue.length = 0;
+  for (const q of _sprQueue) {
+    const at = placements.get(q.pix); if (!at) continue;
+    const w = q.pix.w, h = q.pix.h;
+    const rec = {
+      id: SPRL.length, name: q.name, pg: at.pg, x: at.x, y: at.y, w, h,
+      wh: q.wh, ww: (q.wh * w) / h, ax: q.o.ax == null ? 0.5 : q.o.ax, glow: q.o.glow || 0, sway: q.o.sway || 0, shadow: q.o.shadow == null ? 0.6 : q.o.shadow,
+      collide: q.o.collide == null ? 0.25 : q.o.collide, meta: q.o.meta || null,
+    };
+    SPR[q.name] = rec; SPRL.push(rec);
+  }
+  ATLAS.packing = { sprites: SPRL.length, uniqueImages: placements.size, sharedAliases, uniquePixelBytes, avoidedPixelBytes };
+  _sprQueue.length = 0;_sprQueueIndex.clear();
   for (const k in _varCache) delete _varCache[k];
 }
 // mip levels: a 2x2 block is opaque if two of its pixels are (one, on a checkerboard) and takes the colour of
@@ -2928,6 +2962,12 @@ function paintSights() {
     ['rainbow', '彩虹教堂', 'Rainbow Church'], ['windmills', '旗津風車公園', 'Windmill Park'], ['ferry', '旗津渡輪', 'Cijin Ferry'],
     ['tuna', '東港黑鮪魚', 'Donggang Bluefin'], ['donglong', '東港東隆宮', 'Donglong Temple'], ['dapeng', '大鵬灣跨海大橋', 'Dapeng Bay Bridge'], ['liuqiu', '小琉球', 'Liuqiu Island'],
     ['cijinmazu', '旗津天后宮', 'Cijin Tianhou Temple'], ['beigang', '北港朝天宮', 'Beigang Chaotian Temple'],
+    ['beigangstreet', '北港老街', 'Beigang Old Street'], ['jiufenstreet', '九份老街', 'Jiufen Old Street'], ['marketstreet', '在地市集', 'Local Market'],
+    ['xiluo', '西螺大橋', 'Xiluo Bridge'], ['longteng', '龍騰斷橋', 'Longteng Bridge Ruins'], ['shitiping', '石梯坪海蝕平台', 'Shitiping Terraces'],
+    ['nanliaoharbor', '新竹南寮漁港', 'Hsinchu Nanliao Harbor'], ['nanliaokites', '南寮風箏草坪', 'Nanliao Kite Field'], ['coastkites', '海岸風箏', 'Coastal Kites'], ['shuinandong', '水湳洞漁港', 'Shuinandong Harbor'], ['shitiharbor', '石梯漁港', 'Shiti Harbor'],
+    ['gangzaivillage', '港仔聚落', 'Gangzai Village'], ['houwan', '後灣漁村', 'Houwan Village'], ['harborvillage', '海岸漁村', 'Coastal Village'],
+    ['shimencommunity', '牡丹・石門部落', 'Shimen · Mudan'], ['pisiliang', '比西里岸部落', 'Pisiliang Community'], ['shitipingvillage', '石梯坪部落', 'Tidaan Community'],
+    ['kangji', '南庄康濟吊橋', 'Kangji Bridge · Nanzhuang'], ['footbridge', '溪谷吊橋', 'River Footbridge'], ['coastwind', '海岸風力發電', 'Coastal Wind Farm'], ['eluanbicoast', '鵝鑾鼻海岸', 'Eluanbi Coast'], ['coastshops', '海岸商街', 'Coastal Shops'],
     ['fangliao', '枋寮', 'Fangliao'], ['mango', '枋山愛文芒果', 'Fangshan Mango'], ['sandimen', '三地門', 'Sandimen'], ['glassbridge', '山川琉璃吊橋', 'Shanchuan Glass Bridge'], ['dawu', '大武山', 'Mt. Dawu'],
     ['aquarium', '國立海洋生物博物館', 'Aquarium'], ['guanshan', '關山夕照', 'Guanshan Sunset'], ['baisha', '白沙灣', 'Baisha Bay'], ['houbihu', '後壁湖', 'Houbihu Harbour'], ['maobitou', '貓鼻頭', 'Maobitou'],
     ['hengchun', '恆春古城', 'Hengchun Old Town'], ['kenting', '墾丁大街', 'Kenting Street'], ['nanwan', '南灣', 'Nanwan Beach'], ['sailrock', '船帆石', 'Sail Rock'], ['eluanbi', '鵝鑾鼻燈塔', 'Eluanbi Lighthouse'], ['longpan', '龍磐公園', 'Longpan Park'],
@@ -4089,10 +4129,16 @@ class Deco {
   spr(name, s, x, o) {
     o = o || {};
     if (s < 0 || s > this.p.L) return null;
+    if(this.p.id==='s3m'&&(this.p.sec(s).tags||[]).includes('cypress')&&/^(palm|royal|betel|mango|banyan|casuarina)(#|$)/.test(name)){
+      const source=SPR[name]||SPR[pickVar(name,()=>.5)],tree=SPR['cypress#'+(Math.abs(Math.floor(s/17))%2)];
+      if(source&&tree){o={...o,scale:(o.scale||1)*source.wh/tree.wh};name=tree.name;}
+    }
     if (window.FormosaClassicStreetArt) name = window.FormosaClassicStreetArt.spriteName(this, name, s);
     const nm = SPR[name] ? name : pickVar(name, this.rnd);
     if (!nm) return null;
     const S = SPR[nm], sc = o.scale || 1;
+    let omitPlant=false;
+    if(window.FormosaClassicStreetArt?.placement){const adjusted=window.FormosaClassicStreetArt.placement(this,S,s,x,o,sideBands);x=adjusted.x;o=adjusted.o;omitPlant=!!adjusted.reject;}
     // The Jiji branch has its own right-of-way. Keep its ballast clear of
     // decorative farm plants; the road-side camphor row stays outside it.
     const section = this.p.sec(s), edge = this.p.outerL(Math.round(clamp(s, 0, this.p.L) / DS));
@@ -4104,7 +4150,9 @@ class Deco {
       const i = Math.round(clamp(s, 0, this.p.L) / DS), sg = x < 0 ? -1 : 1;
       if (sg === -this.p.side) { const edge = sg < 0 ? this.p.outerL(i) : this.p.outerR(i), d = sg < 0 ? edge - x : x - edge; if (d + (S.ww * sc * (o.sx || 1)) / 2 > this.p.innerFree[i]) return null; }
     }
-    this.p.sprites.push({ s, x, id: S.id, sc, flip: o.flip != null ? !!o.flip : this.rnd() < 0.5, y: o.y || 0, sway: o.sway != null ? o.sway : S.sway, ph: this.rnd() * TAU, glow: o.glow != null ? o.glow : S.glow, sx: o.sx || 1, lm: o.landmark ? 1 : 0 });
+    const sprite={ s, x, id: S.id, sc, flip: o.flip != null ? !!o.flip : this.rnd() < 0.5, y: o.y || 0, sway: o.sway != null ? o.sway : S.sway, ph: this.rnd() * TAU, glow: o.glow != null ? o.glow : S.glow, sx: o.sx || 1, lm: o.landmark ? 1 : 0 };
+    if(omitPlant)return null; // Consume the same deterministic wind/flip draws.
+    this.p.sprites.push(sprite);
     if (S.collide > 0 && o.collide !== false) this.collide(s, x, (S.ww * sc * (o.sx || 1) * S.collide) / 2 + 0.15, 0.6, o.kind || 'solid');
     return S;
   }
@@ -4114,7 +4162,7 @@ class Deco {
     o = o || {};
     if (s1 <= 0 || s0 >= this.p.L) return;
     const S = SPR[tex], SS = o.side && SPR[o.side];
-    this.p.walls.push({ s0, s1, sg, off, depth, h, tex: S ? S.id : -1, side: SS ? SS.id : -1, col: o.col == null ? 0xd8d0c4 : o.col, sideCol: o.sideCol == null ? shadeHex(o.col == null ? 0xd8d0c4 : o.col, 0.78) : o.sideCol, y: o.y || 0, u0: o.u0 || 0, u1: o.u1 == null ? 1 : o.u1, tile: o.tile || 0, glow: o.glow || 0, layer: o.layer || 0 });
+    this.p.walls.push({ s0, s1, sg, off, depth, h, tex: S ? S.id : -1, side: SS ? SS.id : -1, capStart:o.capStart!==false, col: o.col == null ? 0xd8d0c4 : o.col, sideCol: o.sideCol == null ? shadeHex(o.col == null ? 0xd8d0c4 : o.col, 0.78) : o.sideCol, y: o.y || 0, u0: o.u0 || 0, u1: o.u1 == null ? 1 : o.u1, tile: o.tile || 0, glow: o.glow || 0, layer: o.layer || 0 });
     if (off < 40 && o.collide !== false) for (let s = s0; s < s1; s += 6) this.collide(Math.min(s + 3, s1), this.lat(s + 3, sg, off + depth / 2), depth / 2 + 0.2, 3.2, 'wall');
   }
   // a low barrier strip along the road: kind 'guard' (W-beam), 'concrete', 'parapet', 'railing', 'fence', 'hedge'
@@ -4123,7 +4171,7 @@ class Deco {
     const T = typeof RAIL_TEX !== 'undefined' && RAIL_TEX[kind], tex = T && SPR['rail_' + kind];
     s0 = Math.max(0, s0); s1 = Math.min(this.p.L, s1);
     if (!tex) { this.p.rails.push(Object.assign({ s0, s1, sg, off, kind }, o || {})); return; }
-    for (let s = s0; s < s1 - 0.05; s += T.L) { const e = Math.min(s1, s + T.L); this.wall(s, e, sg, off, 0, T.h, 'rail_' + kind, { collide: false, u1: (e - s) / T.L, col: 0, sideCol: 0 }); }
+    for (let s = s0; s < s1 - 0.05; s += T.L) { const e = Math.min(s1, s + T.L), reverse=tex.meta?.paintedCliff&&(Math.round((s-s0)/T.L)&1); this.wall(s, e, sg, off, 0, T.h, 'rail_' + kind, { collide: false, u0:reverse?1:0,u1:reverse?1-(e-s)/T.L:(e-s)/T.L, col: 0, sideCol: 0 }); }
     // a solid rail is a wall to the car: brushing it costs speed, there is no driving through a stone wall
     if (T.solid && !(o && o.collide === false)) for (let s = s0; s < s1; s += 4) this.collide(Math.min(s + 2, s1), this.lat(s + 2, sg, off), 0.3, 2.2, 'wall');
   }
@@ -4256,6 +4304,9 @@ function decoratePiece(p) {
     for (const sg of [-1, 1]) if ((sg < 0 ? sec.L : sec.R) === 'harbor') dressHarborWalk(D, s0, s1, sg, sec);
   });
   D.sec = null;
+  if(window.FormosaWorldLife)window.FormosaWorldLife.configurePiece(D);
+  if(window.FormosaRailCrossing)window.FormosaRailCrossing.configure(D);
+  if(window.FormosaRoadBoundary)window.FormosaRoadBoundary.configure(D,SPRL);
   D.finish();
 }
 // ---------- the dressing that comes with a side type, before the section's own tags ----------
@@ -4268,6 +4319,8 @@ const SIDE_DRESS = {
     every(s0, s1, 9, 2.5, r, (s) => D.spr(r() < 0.6 ? 'palm' : 'terminalia', s, D.lat(s, sg, r.range(2.2, 3.6)), { scale: r.range(0.9, 1.1), collide: false }));
     every(s0, s1, 7, 2, r, (s) => D.spr(r.pick(['mango', 'banyan', 'mango']), s, D.lat(s, sg, r.range(4, 7)), { scale: r.range(1.0, 1.3), collide: false }));
     // the hill itself: big wooded mounds overlapping each other up the slope, the far ones taller
+    // Keep the established deterministic decoration stream, including its
+    // random draws; the landscape renderer suppresses these coarse hill cards.
     every(s0, s1, 20, 4, r, (s) => D.spr('hill', s, D.lat(s, sg, r.range(8, 11)), { scale: r.range(0.9, 1.15), collide: false, flip: sg > 0, sway: 0 }));
     every(s0, s1, 30, 8, r, (s) => D.spr('hill', s, D.lat(s, sg, r.range(20, 30)), { scale: r.range(1.8, 2.4), collide: false, flip: sg > 0, sway: 0 }));
   },
@@ -4336,7 +4389,7 @@ Object.assign(LIFE, {
   paddy: { near: [14, ['betel', 'banyan', 'palm'], [1.0, 3]], under: [0.2, ['tuft', 'tuft', 'flowers'], [0.3, 3]], mid: [70, ['farmhouse', 'tinhouse', 'betel'], [16, 60], [1, 3]], far: [10, ['betel', 'banyan', 'casuarina'], [50, 150]], hill: [20, ['banyan', 'casuarina'], [150, 400]] },
   cane: { near: [12, ['betel', 'banana', 'mango'], [1.0, 3]], under: [0.3, ['tuft', 'tuft'], [0.3, 4]], mid: [60, ['farmhouse', 'banana', 'betel'], [14, 50], [1, 3]], far: [12, ['betel', 'banyan'], [40, 140]] },
   pineapple: { near: [12, ['mango', 'betel', 'banana'], [1.0, 3]], under: [0.28, ['tuft', 'flowers'], [0.3, 4]], mid: [60, ['farmhouse', 'tinhouse', 'mango'], [14, 50], [1, 3]], far: [11, ['mango', 'banyan'], [40, 140]], hill: [16, ['banyan', 'mango'], [140, 400]] },
-  salt: { near: [20, ['casuarina', 'bush'], [1.0, 3]], under: [0.14, ['tuft', 'reeds'], [0.3, 4]], mid: [80, ['tinhouse'], [30, 70], [1, 2]], far: [20, ['casuarina'], [60, 160]] },
+  salt: { near: [0], under: [0.11, ['tuft', 'bush'], [0.4, 1.2]] },
   milkfish: { near: [14, ['betel', 'palm', 'casuarina'], [1.0, 3]], under: [0.26, ['tuft', 'reeds'], [0.3, 4]], far: [14, ['betel', 'banyan'], [60.6, 62.4]] },
   tea: { near: [10, ['betel', 'casuarina', 'bush'], [1.0, 3]], under: [0.3, ['tuft', 'bush'], [0.3, 4]], mid: [40, ['stonehouse', 'casuarina'], [10, 36], [1, 2]], far: [8, ['casuarina', 'banyan'], [40, 120]], hill: [8, ['casuarina', 'banyan'], [120, 380]] },
   daylily: { near: [12, ['casuarina', 'betel', 'bush'], [1.0, 3]], under: [0.3, ['tuft', 'flowers', 'flowers'], [0.3, 5]], mid: [50, ['stonehouse', 'tinhouse'], [12, 40], [1, 2]], far: [8, ['casuarina', 'banyan'], [40, 120]], hill: [8, ['casuarina', 'banyan'], [120, 380]] },
@@ -4415,6 +4468,10 @@ function worldToRoad(p, wx, wz) {
   return { s: bi * DS, x: dx * Math.cos(h) + dz * Math.sin(h) };
 }
 const TAGS = {
+  redbridge(D,s0,s1,sec){const q=window.FormosaRegionalArt?.place(D,'redbridge',s0,s1,sec);if(q)sightSign(D,q.s-100,q.side,q.id);},
+  jiufen(D,s0,s1,sec){const q=window.FormosaRegionalArt?.place(D,'jiufen',s0,s1,sec);if(q)sightSign(D,q.s-100,q.side,q.id);},
+  redlanterns(D,s0,s1,sec){window.FormosaRegionalArt?.place(D,'redlanterns',s0,s1,sec);},
+  shitipingrocks(D,s0,s1,sec){const q=window.FormosaRegionalArt?.place(D,'shitipingrocks',s0,s1,sec);if(q)sightSign(D,q.s-100,q.side,q.id);},
   // ---------------- 高雄港 ----------------
   start(D, s0) {
     const s = s0 + 70;
@@ -4465,12 +4522,10 @@ const TAGS = {
     D.p.grounds = D.p.grounds || [];
     D.p.grounds.push({ s0, s1, sg: -1, o0: 7.5, o1: 15.5, a: 0x7cbc4c, b: 0x74b246, per: 6, rails: [9.8, 11.2, 12.6, 14.0] });
     D.p.anim.push({ kind: 'tram', s0, s1, sg: -1, off: 11.9 });
-    // a level crossing in the middle: the tracks turn across the road, lights and bells, the tram comes through
-    const xs = Math.round((s0 + s1) / 2 / DS) * DS;
-    D.p.grounds.push({ s0: xs - 2.2, s1: xs + 2.2, sg: 1, o0: -40, o1: 0, a: 0x9a9690, b: 0x9a9690, per: 100, rails: [] });
-    for (const sg of [-1, 1]) { D.spr('xinglight', xs - 9, D.lat(xs - 9, sg, 0.6), { flip: sg > 0, collide: false, sway: 0 }); }
-    sightSign(D, xs - 150, 1, 'lrtxing');
-    tramCrossing(D.p, xs); (D.p.xings = D.p.xings || []).push(xs);
+    // Keep this ground-level right-of-way coherent. The old combination of
+    // surface rails and an unsupported elevated crossing was contradictory.
+    // An actual signalled road crossing needs a driveable alternative route;
+    // until that terrain exists, this section is explicitly parallel light rail.
   },
   tower85(D) {
     if(window.FormosaClassicStreetArt?.state.images.skyline)return;
@@ -4491,7 +4546,7 @@ const TAGS = {
   containers(D, s0, s1) {
     const r = D.rnd, harbor = D.p.sec(s0).R === 'harbor';
     let s = s0 + r.range(0, 20);
-    while (s < s1 - 12) { const L = r.range(18, 40); D.wall(s, s + L, 1, harbor ? r.range(158, 170) : r.range(12, 40), 12, 10.4, pickVar('boxes', r), { collide: !harbor, col: 0x8a3a2a }); s += L + r.range(4, 14); }
+    while (s < s1 - 12) { const L = r.range(18, 40),off=harbor?r.range(158,170):r.range(12,40),tex=pickVar('boxes',r); D.wall(s, s + L, 1, off, 12, 10.4, tex, { side:tex, collide: !harbor, col: 0x8a3a2a }); s += L + r.range(4, 14); }
   },
   overpass(D, s0, s1) { D.rail(s0, s1, -1, 0.2, 'concrete'); D.rail(s0, s1, 1, 0.2, 'concrete'); },
   airport(D, s0, s1) {
@@ -4557,11 +4612,22 @@ const TAGS = {
   liuqiu(D, s0, s1) { sightSign(D, s0 + 60, 1, 'liuqiu'); },
   // ---------------- 山線 ----------------
   temple(D, s0, s1) { const s = (s0 + s1) / 2; D.spr('shrine', s, D.lat(s, D.rnd() < 0.5 ? -1 : 1, D.rnd.range(4, 9)), { flip: false }); },
-  tribalgate(D, s0, s1) { sightSign(D, s0 + (s1 - s0) * 0.4 - 140, 1, 'sandimen'); const s = s0 + (s1 - s0) * 0.4; D.spr('tribalgate', s, D.lat(s, 1, 6), { flip: false }); D.spr('totem', s - 20, D.lat(s, 1, 2)); D.spr('totem', s + 20, D.lat(s, 1, 2)); },
+  tribalgate(D, s0, s1) { const local={s3sm:'sandimen',s4d:'shimencommunity',s5o:'pisiliang',s5p:'shitipingvillage'}[D.p.id]; if(local)sightSign(D, s0 + (s1 - s0) * 0.4 - 140, 1, local); const s = s0 + (s1 - s0) * 0.4; D.spr('tribalgate', s, D.lat(s, 1, 6), { flip: false }); D.spr('totem', s - 20, D.lat(s, 1, 2)); D.spr('totem', s + 20, D.lat(s, 1, 2)); },
   totem(D, s0, s1) { every(s0, s1, 70, 20, D.rnd, (s) => D.spr('totem', s, D.lat(s, D.rnd() < 0.5 ? -1 : 1, D.rnd.range(1.5, 4)))); },
   stonehouse(D, s0, s1) { every(s0, s1, 90, 30, D.rnd, (s) => D.spr('stonehouse', s, D.lat(s, D.rnd() < 0.5 ? -1 : 1, D.rnd.range(8, 24)))); },
-  coffee(D, s0, s1) { const s = (s0 + s1) / 2; D.spr('coffee', s, D.lat(s, 1, 2), { flip: false }); D.spr('stonehouse', s + 12, D.lat(s, 1, 9)); },
-  mango(D, s0, s1) { every(s0, s1, 11, 3, D.rnd, (s) => { const sg = D.rnd() < 0.5 ? -1 : 1; D.spr('mango', s, D.lat(s, sg, D.rnd.range(5, 50))); }); },
+  coffee(D, s0, s1) {
+    const s=(s0+s1)/2,site=window.FormosaClassicStreetArt?.buildingSite;
+    if(!site){D.spr('coffee',s,D.lat(s,1,2),{flip:false});D.spr('stonehouse',s+12,D.lat(s+12,1,9));return;}
+    const house=SPR[pickVar('stonehouse',()=>.5)];
+    // Keep the coffee sign and its building together on a complete dry bank.
+    // A right-side lake is not permission to float the house over the water.
+    for(const sg of [1,-1]){
+      const signSite=site(D,SPR.coffee,s,sg,2,{flip:false},sideBands),houseSite=site(D,house,s+12,sg,9,{},sideBands);
+      if(!signSite||!houseSite)continue;
+      D.spr('coffee',s,signSite.x,{flip:false});D.spr('stonehouse',s+12,houseSite.x);return;
+    }
+  },
+  mango(D, s0, s1) { if(D.p.id==='s4h'&&!D.p._fangshanMangoSign){D.p._fangshanMangoSign=true;sightSign(D,s0+80,-1,'mango');} every(s0, s1, 11, 3, D.rnd, (s) => { const sg = D.rnd() < 0.5 ? -1 : 1; D.spr('mango', s, D.lat(s, sg, D.rnd.range(5, 50))); }); },
   // ---------------- 枋山海岸 ----------------
   station(D, s0) { sightSign(D, s0 + 40, -1, 'fangliao'); const s = s0 + 160; { const x = D.lat(s, -1, 6 + SPR.station.ww / 2); D.spr('station', s, x, { flip: false, collide: false }); D.collide(s, x, SPR.station.ww / 2, 4, 'wall'); } D.spr('lamp2', s - 22, D.lat(s, -1, 1)); D.spr('lamp2', s + 22, D.lat(s, -1, 1)); },
   railway(D, s0, s1) {
@@ -4578,15 +4644,17 @@ const TAGS = {
   guardR(D, s0, s1) { D.rail(s0, s1, 1, 0.5, 'guard'); },
   // ---------------- 墾丁 ----------------
   oldgate(D, s0, s1) { sightSign(D, s1 - 230, -1, 'hengchun'); const s = s1 - 80; D.spr('oldgate', s, D.lat(s, -1, 18), { flip: false }); D.spr('shrine', s + 30, D.lat(s, -1, 6), { flip: false }); },
-  beachshops(D, s0, s1) {
-    sightSign(D, s0 + 30, 1, 'nanwan');
+  beachshops(D, s0, s1, sec) {
+    const tags=sec?.tags||[],named=['shadao','wanlitong','xiaowan','nanwan'].find(t=>tags.includes(t));
+    const local=named||({s4e:'nanwan',s5j:'nanwan',s5h:'eluanbicoast',s5i:'wanlitong'}[D.p.id])||'coastshops';
+    sightSign(D, s0 + 30, 1, local);
     // the strip of shops facing the beach: ice, swimwear, surf, rooms to let; bougainvillea between them
     houseRow(D, s0, s1, -1, 4.6, { kind: 'beachshop', noStore: true });
     every(s0, s1, 14, 4, D.rnd, (s) => D.spr(D.rnd() < 0.6 ? 'bougain' : 'hibiscus', s, D.lat(s, -1, 3.2), { collide: false, scale: 1.2 }));
   },
   surf(D, s0, s1) { every(s0, s1, 12, 4, D.rnd, (s) => { D.spr('umbrella', s, D.lat(s, 1, D.rnd.range(8, 24)), { collide: false }); if (D.rnd() < 0.8) D.spr('walkers', s + 4, D.lat(s, 1, D.rnd.range(8, 26)), { collide: false }); }); },
   nightmarket(D, s0, s1) {
-    sightSign(D, s0 + 30, -1, 'kenting');
+    sightSign(D, s0 + 30, -1, ({s4e:'kenting',s4f:'beigangstreet',s5n:'jiufenstreet'}[D.p.id])||'marketstreet');
     houseRow(D, s0, s1, -1, 6.5, { noStore: false }); houseRow(D, s0, s1, 1, 6.5);
     every(s0, s1, 13, 2, D.rnd, (s) => { const sg = D.rnd() < 0.5 ? -1 : 1; D.spr('stall', s, D.lat(s, sg, 1.6), { flip: false }); if (D.rnd() < 0.7) D.spr('walkers', s + 4, D.lat(s, sg, 3.4), { collide: false }); });
   },
@@ -4596,21 +4664,22 @@ const TAGS = {
   lighthouse(D, s0) { sightSign(D, s0 + 20, 1, 'eluanbi'); const s = s0 + 160; D.spr('lighthouse', s, D.lat(s, 1, 30), { flip: false }); D.p.lighthouse = { s }; },
   // ---------------- 貓鼻頭 ----------------
   aquarium(D, s0, s1) { sightSign(D, (s0 + s1) / 2 - 200, -1, 'aquarium'); const s = (s0 + s1) / 2; D.spr('aquarium', s, D.lat(s, -1, 60), { flip: false, collide: false }); D.spr('sign_aquarium', s - 120, D.lat(s, -1, 1.5), { flip: false }); },
-  fishvillage(D, s0, s1) { sightSign(D, s0 + 40, -1, 'houbihu'); every(s0, s1, 40, 10, D.rnd, (s) => D.spr(D.rnd() < 0.5 ? 'tinhouse' : 'farmhouse', s, D.lat(s, -1, D.rnd.range(6, 18)))); every(s0, s1, 60, 20, D.rnd, (s) => D.spr('fishboat', s, D.lat(s, 1, D.rnd.range(42, 70)), { collide: false })); },
+  fishvillage(D, s0, s1) { const local={s4d:'gangzaivillage',s5l:'nanliaoharbor',s5n:'shuinandong',s5o:'chenggong',s5p:'shitiharbor',s5i:'houwan'}[D.p.id]||'harborvillage'; sightSign(D, s0 + 40, -1, local); every(s0, s1, 40, 10, D.rnd, (s) => D.spr(D.rnd() < 0.5 ? 'tinhouse' : 'farmhouse', s, D.lat(s, -1, D.rnd.range(6, 18)))); every(s0, s1, 60, 20, D.rnd, (s) => D.spr('fishboat', s, D.lat(s, 1, D.rnd.range(42, 70)), { collide: false })); },
   coral(D, s0, s1) { every(s0, s1, 9, 3, D.rnd, (s) => D.spr('coral', s, D.lat(s, 1, D.rnd.range(26, 44)), { scale: D.rnd.range(1, 2.2), collide: false })); },
   catrock(D, s0) { sightSign(D, s0 + 60, 1, 'maobitou'); const s = s0 + 260; D.spr('catrock', s, D.lat(s, 1, 60), { flip: false, collide: false }); },
   pavilion(D, s0) { const s = s0 + 200; D.spr('pavilion', s, D.lat(s, 1, 6), { flip: false }); },
   // ---------------- the sights of Kaohsiung ----------------
   tower85sign(D, s0) { sightSign(D, s0 + 150, -1, 'tower85'); },
-  kpmc(D, s0, s1) { sightSign(D, s0 + 30, 1, 'kpmc'); const s = s0 + 330; D.spr('kpmc', s, D.lat(s, 1, 9), { flip: false, collide: false }); },
+  kpmc(D, s0, s1) { sightSign(D, s0 + 30, 1, 'kpmc'); const s = s0 + 330; D.spr('kpmc', s, D.lat(s, 1, 45), { flip: false, collide: false }); },
   harborbridge(D, s0, s1) { sightSign(D, s0 + 180, 1, 'harborbridge'); const s = s0 + 150; D.spr('harborbridge', s, D.lat(s, 1, 24), { flip: false, collide: false }); },
   pier2(D, s0, s1) {
     // the warehouses in a row along the quay, murals on their fronts, the big figures between them, people about
     sightSign(D, s0 + 60, 1, 'pier2');
+    if(window.FormosaClassicStreetArt?.warehouses){window.FormosaClassicStreetArt.warehouses(D,s0,s1);return;}
     for (let s = s0 + 40; s < s1 - 40; s += 40) { if (s > s0 + 240 && s < s0 + 420) continue; const nm = pickVar('pier2', D.rnd), x = D.lat(s + 10, 1, 3.6 + SPR[nm].ww / 2); D.spr(nm, s + 10, x, { flip: false, collide: false }); D.collide(s + 10, x, SPR[nm].ww / 2, 10, 'wall'); }
     every(s0, s1, 16, 5, D.rnd, (s) => D.spr(D.rnd() < 0.6 ? 'walkers' : 'planter', s, D.lat(s, 1, D.rnd.range(1.2, 2.6)), { collide: false, flip: D.rnd() < 0.5 }));
   },
-  dome(D, s0, s1) { sightSign(D, s0 + 40, -1, 'dome'); const s = s0 + 240; D.spr('dome', s, D.lat(s, -1, 3.2), { flip: false }); every(s - 40, s + 40, 12, 3, D.rnd, (q) => D.spr('walkers', q, D.lat(q, -1, D.rnd.range(2, 5)), { collide: false })); },
+  dome(D, s0, s1) { sightSign(D, s0 + 40, -1, 'dome'); const s = s0 + 240; if(window.FormosaWorldLife)window.FormosaWorldLife.metroEntrance(D,s); every(s - 40, s + 40, 12, 3, D.rnd, (q) => D.spr('walkers', q, D.lat(q, -1, D.rnd.range(2, 5)), { collide: false })); },
   lrtstop(D, s0, s1) { sightSign(D, s0 + 20, -1, 'lrt'); for (let s = s0 + 130; s < s1 - 60; s += 260) D.spr(pickVar('lrtstop', D.rnd), s, D.lat(s, -1, 6.4), { flip: false, collide: false }); },
   pagodas(D, s0, s1) { sightSign(D, s0 + 30, -1, 'pagodas'); const s = s0 + 230; D.spr('pagodas', s, D.lat(s, -1, 14), { flip: false, collide: false }); },
   underpasssign(D, s0) { sightSign(D, s0 - 120, 1, 'underpass'); },
@@ -4627,7 +4696,8 @@ const TAGS = {
     every(s0, s1, 90, 20, D.rnd, (q) => D.spr('ferry', q, D.lat(q, 1, D.rnd.range(70, 110)), { flip: D.rnd() < 0.5, collide: false }));
   },
   rainbowchurch(D, s0) { sightSign(D, s0 + 30, 1, 'rainbow'); const s = s0 + 200; D.spr('rainbowchurch', s, D.lat(s, 1, 6), { flip: false }); every(s - 30, s + 30, 10, 3, D.rnd, (q) => D.spr('walkers', q, D.lat(q, 1, D.rnd.range(4, 9)), { collide: false })); },
-  windmills(D, s0, s1) { sightSign(D, s0 + 260, 1, 'windmills'); for (let s = s0 + 330; s < s1 + 60; s += 70) D.spr(pickVar('windmill', D.rnd), s, D.lat(s, 1, D.rnd.range(13, 22)), { flip: false, collide: false }); },
+  windmills(D, s0, s1) { sightSign(D, s0 + 260, 1, ({s2s:'windmills',s4a:'gaomei',s5k:'gaomei'}[D.p.id])||'coastwind'); for (let s = s0 + 330; s < s1 + 60; s += 70) D.spr(pickVar('windmill', D.rnd), s, D.lat(s, 1, D.rnd.range(13, 22)), { flip: false, collide: false }); },
+  windmill(D,s0,s1,sec){TAGS.windmills(D,s0,s1,sec);},
   ferry(D, s0, s1) { sightSign(D, s0 + 90, -1, 'ferry'); every(s0 + 120, s1, 160, 30, D.rnd, (s) => D.spr('ferry', s, D.lat(s, -1, D.rnd.range(50, 90)), { flip: D.rnd() < 0.5, collide: false })); },
   // ---------------- Pingtung ----------------
   tuna(D, s0, s1) { const s = s0 + (s1 - s0) * 0.7; sightSign(D, s - 150, 1, 'tuna'); D.spr('tuna', s, D.lat(s, 1, 4), { flip: false }); },
@@ -4683,6 +4753,12 @@ const landmark = (D, s, sg, name, dist, signId, signAt, o) => {
   if (S && (dist < 8 || o.gap)) D.gap(s - (o.gap || clamp(S.ww * 2.5, 56, 80)), s + Math.max(8, S.ww * 0.3), sg);
   if (signId) sightSign(D, s - (signAt || 160), sg, signId);
   D.spr(name, s, D.lat(s, sg, dist), { flip: false, collide: false, landmark: true, y: o.y || 0 });
+  if(S&&(dist<8||o.gap)&&!o.y){
+    // A landmark forecourt clears buildings, not daily life. Small planters
+    // and visitors occupy the setback while its entry and pavement stay open.
+    for(let j=0;j<3;j++){const q=s-18-j*13;D.spr('planter',q,D.lat(q,sg,4.5+j%2*2),{flip:false,collide:false,landmark:true});}
+    for(let j=0;j<2;j++){const q=s-26-j*15;D.spr('walkers',q,D.lat(q,sg,8+j*2),{flip:sg>0,collide:false,landmark:true});}
+  }
 };
 const rowOf = (D, s0, s1, step, jitter, sg, name, d0, d1, o) => every(s0, s1, step, jitter, D.rnd, (s) => D.spr(name, s, D.lat(s, sg, D.rnd.range(d0, d1)), o));
 // a procession, registered here, walked out onto the road by the hazards once the player is near
@@ -4700,7 +4776,7 @@ Object.assign(TAGS, {
   parade_xigang(D, s0, s1) { sightSign(D, s0 + 20, 1, 'xigang'); parade(D, s0 + 200, 'mazu'); },
   // ---------------- 北門 · 布袋 · 鹿港 ----------------
   saltmountain(D, s0, s1) { landmark(D, s0 + 300, 1, 'saltmountain', 12, 'saltmountain'); },
-  saltworks(D, s0, s1) { rowOf(D, s0, s1, 60, 15, -1, 'farmhouse', 30, 60); },
+  saltworks(D, s0, s1) { for(let s=s0+95;s<s1-45;s+=145)D.spr('walkers',s,D.lat(s,-1,2.8),{scale:.85,flip:false,collide:false}); },
   crystalchurch(D, s0, s1) { landmark(D, s0 + 240, -1, 'crystalchurch', 10, 'crystalchurch'); },
   beehive(D, s0, s1) { sightSign(D, s0 + 40, -1, 'beehive'); for (let s = s0 + 160; s < s1 - 60; s += 120) D.spr('beehive', s, D.lat(s, D.rnd() < 0.5 ? -1 : 1, 2.5), { flip: false }); },
   wangye(D, s0, s1) { const s = s0 + (s1 - s0) * 0.6; D.spr('bigtemple', s, D.lat(s, 1, 10), { flip: false, collide: false }); },
@@ -4721,15 +4797,24 @@ Object.assign(TAGS, {
   linbian(D, s0) { sightSign(D, s0 + 40, -1, 'linbian'); },
   hakka(D, s0, s1) { const named = D.p.id === 's3se'; landmark(D, s0 + 240, -1, named ? 'hakkahouse' : 'hakkahouse_generic', 3.4, named ? 'hakka' : null); },
   // ---------------- 台中 · 大甲 · 三義 ----------------
-  // the great Buddha sits on his hill above 彰化: the hill first, the statue on its crown, the fields before it left open
-  bagua(D, s0, s1) { const s = s0 + 240; landmark(D, s, -1, 'bagua', 26, 'bagua', 180, { gap: 130, y: 8.5 }); D.spr('hill', s + 1, D.lat(s + 1, -1, 18), { flip: false, collide: false, landmark: true }); },
+  // The painted Buddha includes its stone terrace. Its foot must meet the
+  // visible ground once the old separate hill card is replaced by parallax.
+  bagua(D, s0, s1) { const s = s0 + 240, grounded=!!window.FormosaLandscape?.state.layers.forest; landmark(D, s, -1, 'bagua', 26, 'bagua', 180, { gap: 130, y: grounded?0:8.5 }); D.spr('hill', s + 1, D.lat(s + 1, -1, 18), { flip: false, collide: false, landmark: true }); },
   gaomei(D, s0, s1) { sightSign(D, s0 + 40, 1, 'gaomei'); },
   boardwalk(D, s0, s1) { for (let s = s0 + 120; s < s1 - 60; s += 140) D.spr('boardwalk', s, D.lat(s, 1, 16), { flip: false, collide: false }); },
   zhenlan(D, s0, s1) { landmark(D, s0 + 260, -1, 'zhenlan', 3.2, 'zhenlan'); },
   parade_dajia(D, s0, s1) { sightSign(D, s0 + 20, 1, 'dajia'); parade(D, s0 + 300, 'mazu'); },
   sanyi(D, s0, s1) { landmark(D, s0 + 200, -1, 'sanyi', 3, 'sanyi'); rowOf(D, s0 + 240, s1, 90, 20, -1, 'sanyi', 3, 5, { flip: false }); },
   tung(D, s0, s1) { if (!D.p._tungsign) { D.p._tungsign = 1; sightSign(D, s0 + 30, 1, 'tung'); } rowOf(D, s0, s1, 16, 5, D.rnd() < 0.5 ? -1 : 1, 'tung', 3, 14); },
-  hakkavillage(D, s0, s1) { rowOf(D, s0, s1, 110, 30, D.rnd() < 0.5 ? -1 : 1, D.p.id === 's3se' ? 'hakkahouse' : 'hakkahouse_generic', 8, 20, { flip: false }); },
+  hakkavillage(D, s0, s1) {
+    const sg=D.rnd()<.5?-1:1,name=D.p.id==='s3se'?'hakkahouse':'hakkahouse_generic',o={flip:false};
+    every(s0,s1,110,30,D.rnd,s=>{
+      const off=D.rnd.range(8,20),site=window.FormosaClassicStreetArt?.buildingSite;
+      const S=SPR[name],inward=S.ww*(sg>0?S.ax:1-S.ax);
+      const q=site?site(D,S,s,sg,off+inward,o,sideBands):{x:D.lat(s,sg,off+inward)};
+      if(q)D.spr(name,s,q.x,o);
+    });
+  },
   // ---------------- 南投 · 集集 ----------------
   jiji(D, s0, s1) { landmark(D, s0 + 220, -1, 'jijistation', 3.2, 'jiji'); D.spr('lamp2', s0 + 196, D.lat(s0 + 196, -1, 1)); D.spr('lamp2', s0 + 244, D.lat(s0 + 244, -1, 1)); },
   ontracks(D, s0, s1) { sightSign(D, s0 - 160, 1, 'ontracks'); D.spr('xinglight', s0 - 40, D.lat(s0 - 40, 1, 1), { flip: false }); D.spr('xinglight', s0 - 40, D.lat(s0 - 40, -1, 1), { flip: true }); D.spr('xinglight', s1 + 20, D.lat(s1 + 20, 1, 1), { flip: false }); },
@@ -4743,6 +4828,16 @@ Object.assign(TAGS, {
     D.p.anim.push({kind:'train',s0,s1,sg:-1,off:7,length:28,speed:10,tex:'jijitrain',height:3.4,phase:180,contained:true});
     sightSign(D,s0-140,1,'jiji_parallel');
     sightSign(D,s1-120,1,'jiji');
+  },
+  ali_parallel(D, s0, s1) {
+    if(D.p.id!=='s3m')return;
+    // The forest railway has its own ballast and right-of-way. Asphalt,
+    // road width and gradient continue unchanged beside the moving train.
+    D.p.grounds=D.p.grounds||[];
+    D.p.grounds.push({s0,s1,sg:-1,o0:5.1,o1:8.9,a:0x948c7a,b:0x837e70,per:1.1,rails:[6.35,7.65]});
+    D.rail(s0,s1,-1,3.8,'railing',{collide:true});
+    D.p.anim.push({kind:'train',s0,s1,sg:-1,off:7,length:28,speed:8,tex:'alitrain',height:3.4,phase:180,contained:true});
+    sightSign(D,s0-120,1,'alitrain');
   },
   jijitrain(D, s0, s1) { for (let s = s0 + 140; s < s1 - 40; s += 240) D.spr('jijitrain', s, D.lat(s, -1, 5.5), { flip: false, collide: false }); D.rail(s0, s1, -1, 4.4, 'kerb'); },
   greentunnel(D, s0, s1, sec) {
@@ -4790,7 +4885,8 @@ Object.assign(TAGS, {
   ximending(D, s0) { sightSign(D, s0 + 80, 1, 'ximending'); },
   taipei101(D, s0, s1) { const s = s0 + 200; sightSign(D, s0 + 20, 1, 'taipei101'); D.spr('taipei101', s, D.lat(s, 1, 24), { flip: false, collide: false }); },
   // ---------------- 北海岸 ----------------
-  kites(D, s0, s1) { sightSign(D, s0 + 40, 1, 'kites'); every(s0, s1, 60, 20, D.rnd, (s) => D.spr('kite', s, D.lat(s, 1, D.rnd.range(6, 30)), { y: D.rnd.range(6, 16), collide: false })); },
+  kites(D, s0, s1) { sightSign(D, s0 + 40, 1, ({s5b:'kites',s5l:'nanliaokites'}[D.p.id])||'coastkites'); every(s0, s1, 60, 20, D.rnd, (s) => D.spr('kite', s, D.lat(s, 1, D.rnd.range(6, 30)), { y: D.rnd.range(6, 16), collide: false })); },
+  kite(D,s0,s1,sec){TAGS.kites(D,s0,s1,sec);},
   fuguijiao(D, s0, s1) { landmark(D, s0 + 240, 1, 'fuguijiao', 18, 'fuguijiao'); },
   jinshan(D, s0) { sightSign(D, s0 + 60, -1, 'jinshan'); },
   yehliurocks(D, s0, s1) { sightSign(D, s0 + 40, 1, 'yehliu'); rowOf(D, s0, s1, 50, 12, 1, 'yehliurocks', 10, 30, { collide: false }); },
@@ -4814,11 +4910,11 @@ Object.assign(TAGS, {
   amis(D, s0, s1) { sightSign(D, s0 + 240, -1, 'amis'); rowOf(D, s0 + 260, s1, 60, 15, -1, 'totem', 2, 5); },
   jinzun(D, s0) { sightSign(D, s0 + 60, 1, 'jinzun'); },
   chenggong(D, s0) { sightSign(D, s0 + 60, 1, 'chenggong'); },
-  sanxiantai(D, s0) { const s = s0 + 200; D.spr('sanxiantai', s, D.lat(s, 1, 16), { flip: false, collide: false }); },
+  sanxiantai(D, s0, s1, sec) { sightSign(D,s0+40,1,'sanxiantai'); if(!(sec?.tags||[]).includes('goal'))return; const s = s0 + 200; D.spr('sanxiantai', s, D.lat(s, 1, 16), { flip: false, collide: false }); },
   // ---------------- 花蓮 · 太魯閣 ----------------
   qixingtan(D, s0) { sightSign(D, s0 + 60, 1, 'qixingtan'); },
   qingshui(D, s0) { sightSign(D, s0 + 60, 1, 'qingshui'); },
-  tarokogate(D, s0, s1) { sightSign(D, s0 + 30, -1, 'tarokogate'); overRoad(D, 'tarokogate', s0 + 200, 0); },
+  tarokogate(D, s0, s1) { const s=s0+200,S=SPR.tarokogate;landmark(D,s,-1,'tarokogate',S.ww*.5+4,'tarokogate',170,{gap:90}); },
   truku(D, s0) { sightSign(D, s0 + 300, -1, 'truku'); },
   marble(D, s0, s1, sec) { if (sec.L === 'gorge') D.rail(s0, s1, -1, 1.2, 'marble'); if (sec.R === 'gorge' && D.rnd() < 0.7) D.rail(s0, s1, 1, 6, 'marble'); },
   swallowgrotto(D, s0) { sightSign(D, s0 + 60, 1, 'swallowgrotto'); },
@@ -4832,7 +4928,7 @@ Object.assign(TAGS, {
   turtleisland(D, s0) { sightSign(D, s0 + 300, 1, 'turtleisland'); },
   lanyang(D, s0) { landmark(D, s0 + 220, 1, 'lanyang', 10, 'lanyang', 190, { gap: 200 }); },
   // ---------------- 恆春半島南端 ----------------
-  ropebridge(D, s0, s1) { landmark(D, s0 + 150, 1, 'ropebridge', 14, 'ropebridge', 120); },
+  ropebridge(D, s0, s1) { const local={s5g:'ropebridge',s5m:'kangji'}[D.p.id]||'footbridge'; landmark(D, s0 + 150, 1, 'ropebridge', 14, local, 120); },
   jialeshui(D, s0, s1) { landmark(D, s0 + 260, 1, 'jialeshui', 12, 'jialeshui'); },
   fengchuisha(D, s0, s1) { sightSign(D, s0 + 40, 1, 'fengchuisha'); rowOf(D, s0, s1, 40, 10, 1, 'dune', 8, 30, { collide: false }); },
   hawks(D, s0, s1) { every(s0, s1, 70, 20, D.rnd, (s) => D.spr('hawk', s, D.lat(s, 1, D.rnd.range(4, 30)), { y: D.rnd.range(8, 20), collide: false })); },
@@ -5441,7 +5537,7 @@ function drawPlayerCar(spr) {
   // the shadow on the road: hard-edged rows, wider than the car, tapering
   VG.fillStyle = 'rgba(10,6,22,0.42)';
   VG.fillRect(x - bw / 2 - 3, yG - 2, bw + 6, 3); VG.fillRect(x - bw / 2 - 1, yG + 1, bw + 2, 2); VG.fillRect(x - bw / 2 + 4, yG + 3, bw - 8, 1);
-  if (PIXEL_PLAYER && PIXEL_PLAYER.draw(VG,{pc:PC,spr,x,ground:yG,lift,spinning:HAZ.spinT>0,braking:PC.brake>.1||RACE.state==='goal'})) return;
+  if (PIXEL_PLAYER && PIXEL_PLAYER.draw(VG,{pc:PC,spr,x,ground:yG,lift,spinning:HAZ.spinT>0,spinAngle:HAZ.spinDir*TAU*sstep(clamp(HAZ.spinT/HAZ.spinDur,0,1)),braking:PC.brake>.1||RACE.state==='goal',crew:CREW[PC.spec.id]||[],cheer:FX.cheer,crewInertia:{x:FX.hx,y:FX.hy}})) return;
   if (PC.crash) {
     VG.save(); VG.translate(x, yG - lift - 30); VG.rotate(PC.roll * 0.8 + Math.sin(PC.crash.t * 6) * 0.1); VG.drawImage(img, -spr.ax, -spr.ay + 30); VG.restore();
     return;
@@ -5992,10 +6088,11 @@ function rpmFor(v, g) { return g > 0 ? (v / PC.vmax[g]) * PC.redline : 0; }
 
 function pcShift(to) {
   to = clamp(to | 0, 0, PC.gears);
-  if (to === PC.gear && !PC.neutral) return false;
+  if ((to === 0 && PC.neutral) || (to === PC.gear && !PC.neutral)) return false;
+  const from = PC.neutral ? 0 : PC.gear;
   PC.shiftTo = to; PC.shiftT = to === 0 ? 0 : 0.18; PC.neutral = to === 0;
   if (to !== 0) PC.gear = to;
-  sfxShift(to);
+  sfxShift(to, from);
   return true;
 }
 // one physics step; inputs already set on PC (throttle, brake, steerIn)
@@ -6048,7 +6145,7 @@ function pcStep(dt, track) {
   }
   a -= PC.kd * PC.v * PC.v + (PC.v > 0.5 ? 0.35 : 0);
   // the hill: gravity along the slope, so a climb bleeds speed and a descent gives it back; a sharp crest at speed lifts the car
-  { const p = PC.piece, gr = (p.at(p.Y, Math.min(p.L, PC.s + 3)) - p.at(p.Y, Math.max(0, PC.s - 3))) / 6; a -= 9.8 * gr * 0.9;
+  { const p = PC.piece, gr = (p.at(p.Y, Math.min(p.L, PC.s + 3)) - p.at(p.Y, Math.max(0, PC.s - 3))) / 6+(p.railCrossing?window.FormosaRailCrossing.grade(p,PC.s,PC.x):0); a -= 9.8 * gr * 0.9;
     if (PC.lastGr > 0.035 && gr < 0.005 && PC.v > 38 && typeof FX !== 'undefined') { FX.hopV = Math.min(FX.hopV, -(30 + (PC.v - 38) * 1.4)); } PC.lastGr = gr; }
   a -= PC.brake * 26;
   // drifting costs a little speed every second, much less than braking would
@@ -6221,7 +6318,7 @@ const CTL = {
   keys: {}, touches: new Map(), pads: {}, shift: null, knob: { x: -1, y: -1, active: false, t: 0 }, lastGestureT: -9, guide: true,
   steerTouch: null, padRects: null, seqFlash: { up: 0, dn: 0 },
 };
-const SHIFT_UNIT = 46;   // css px from neutral to the end of a slot
+const SHIFT_UNIT = 40;   // shorter thumb travel; one deliberate stroke per shift
 // gate slots: column -1, 0, 1 at the top (odd gears) and bottom (even gears)
 function gateSlot(g) { if (g <= 0) return { x: 0, y: 0 }; const c = Math.min(2, Math.floor((g - 1) / 2)) - 1; return { x: c, y: g % 2 ? -1 : 1 }; }
 function slotGear(cx, sy, gears) { const g = (cx + 1) * 2 + (sy < 0 ? 1 : 2); return g <= gears ? g : 0; }
@@ -6258,6 +6355,7 @@ function layoutPads() {
   CTL.pads.box = { x: W - pw * 2 - 34, y: Math.max(64, CTL.pads.gas.y - 150), w: pw * 2 + 16, h: 132 };
   if (CTL.mode === 'tilt') { CTL.pads.gate = { x: 0, y: H * 0.22, w: W * 0.42, h: H * 0.78 }; CTL.pads.steer = null; }
   else { CTL.pads.gate = { x: 0, y: H * 0.16, w: W * 0.36, h: H * 0.42 }; CTL.pads.steer = { x: 0, y: H * 0.58, w: W * 0.42, h: H * 0.42 }; }
+  if(!PC.auto&&!PC.seq){const gate=CTL.pads.gate;CTL.pads.box={x:18,y:Math.max(64,gate.y),w:Math.min(210,gate.w-30),h:Math.min(132,gate.h-8)};}
   // the simple manual: two big paddles on the left, up a gear above, down a gear below
   const sw = Math.min(150, W * 0.15), top = CTL.mode === 'tilt' ? H * 0.3 : H * 0.14, span = CTL.mode === 'tilt' ? H * 0.64 : H * 0.42, gap = 12;
   CTL.pads.up = { x: 18, y: top, w: sw, h: (span - gap) / 2 };
@@ -6281,8 +6379,9 @@ function touchDown(id, x, y) {
     if (inR(P.up, x, y)) { CTL.touches.set(id, { kind: 'up' }); seqShift(1); return; }
     if (inR(P.dn, x, y)) { CTL.touches.set(id, { kind: 'dn' }); seqShift(-1); return; }
   } else if (!PC.auto && inR(P.gate, x, y)) {
+    if([...CTL.touches.values()].some(t=>t.kind==='gate'))return;
     const s0 = gateSlot(PC.neutral ? 0 : PC.gear);
-    CTL.touches.set(id, { kind: 'gate', ox: x, oy: y, kx: s0.x, ky: s0.y, path: [] });
+    CTL.touches.set(id, { kind: 'gate', ox: x, oy: y, kx: s0.x, ky: s0.y, path: [],startGear:PC.gear,startNeutral:PC.neutral,spec:PC.spec,distance:0,committed:false,crossedNeutral:PC.neutral,neutralSince:null });
     CTL.knob.active = true; CTL.knob.x = s0.x; CTL.knob.y = s0.y; CTL.lastGestureT = G.t; return;
   }
   if (P.steer && inR(P.steer, x, y)) { CTL.touches.set(id, { kind: 'steer', ox: x, oy: y, x }); CTL.steerTouch = id; return; }
@@ -6292,41 +6391,56 @@ function touchDown(id, x, y) {
 function touchMove(id, x, y) {
   const t = CTL.touches.get(id); if (!t) return;
   if (t.kind === 'steer') t.x = x;
-  else if (t.kind === 'gate') { gateFollow(t, (x - t.ox) / SHIFT_UNIT + t.kx, (y - t.oy) / SHIFT_UNIT + t.ky); t.path.push([x, y]); if (t.path.length > 40) t.path.shift(); }
+  else if (t.kind === 'gate') {
+    t.distance=Math.max(t.distance||0,Math.hypot(x-t.ox,y-t.oy));if(t.distance<8)return;
+    const r=CTL.pads.gate;if(x<r.x-60||x>r.x+r.w+60||y<r.y-60||y>r.y+r.h+60){gateCancel(t);t.kind='none';return;}
+    gateFollow(t, (x - t.ox) / SHIFT_UNIT + t.kx, (y - t.oy) / SHIFT_UNIT + t.ky); t.path.push([x, y]); if (t.path.length > 40) t.path.shift();
+  }
 }
-function touchUp(id) {
+function touchUp(id,cancelled=false) {
   const t = CTL.touches.get(id); if (!t) return;
-  if (t.kind === 'gate') gateRelease(t);
+  if (t.kind === 'gate') cancelled?gateCancel(t):gateRelease(t);
   if (t.kind === 'steer') CTL.steerTouch = null;
   CTL.touches.delete(id);
 }
 // the knob follows the finger but only along the gate: across the neutral row, up and down the three channels
 function gateFollow(t, tx, ty) {
+  if(t.committed||t.cancelled)return;
   const K = CTL.knob, gears = PC.gears;
   tx = clamp(tx, -1, 1); ty = clamp(ty, -1, 1);
   const want = Math.round(tx);
-  if (Math.abs(K.y) > 0.12) {
+  if (Math.abs(K.y) > 0.22) {
     // in a channel the lever only moves up and down; to change column it must come back to neutral first
     const col = Math.round(K.x); K.x = col;
-    if (want !== col) K.y = (Math.abs(ty) < 0.12 || Math.sign(ty) !== Math.sign(K.y)) ? 0 : (K.y > 0 ? Math.min(K.y, ty) : Math.max(K.y, ty));
-    else { K.y = ty; if (Math.abs(K.y) > 0.12 && !slotGear(col, K.y, gears)) K.y = 0; }
+    if (want !== col) K.y = (Math.abs(ty) < 0.22 || Math.sign(ty) !== Math.sign(K.y)) ? 0 : (K.y > 0 ? Math.min(K.y, ty) : Math.max(K.y, ty));
+    else { K.y = ty; if (Math.abs(K.y) > 0.22 && !slotGear(col, K.y, gears)){K.y=0;t.invalid=true;} }
   }
-  if (Math.abs(K.y) <= 0.12) {
+  if (Math.abs(K.y) <= 0.22) {
     // on the neutral row: slide across, drop into a channel once lined up with it
-    K.y = 0; K.x = tx;
+    K.y = 0; K.x = tx;t.crossedNeutral=true;
     const col = Math.round(tx);
-    if (Math.abs(tx - col) < 0.25 && Math.abs(ty) > 0.15 && slotGear(col, ty, gears)) { K.x = col; K.y = ty; }
+    if (Math.abs(tx-col)<.34&&Math.abs(ty)>.3){if(slotGear(col,ty,gears)){K.x=col;K.y=ty;t.invalid=false;}else t.invalid=true;}
   }
-  if (Math.abs(K.y) >= 0.82) {
+  if (Math.abs(K.y) >= 0.78) {
     const col = Math.round(K.x), g = slotGear(col, K.y, gears);
-    if (g && (g !== PC.gear || PC.neutral)) { pcShift(g); PC.neutral = false; CTL.lastGestureT = G.t; }
+    if (g && (g !== PC.gear || PC.neutral)) { pcShift(g); PC.neutral = false;t.committed=true; CTL.lastGestureT = G.t; }
     K.y = Math.sign(K.y);
-  } else if (Math.abs(K.y) < 0.12 && !PC.neutral && G.state === 'race') PC.neutral = true;
+  } else if(Math.abs(K.y)<.22&&G.state==='race'){PC.neutral=true;if(t.neutralSince==null)t.neutralSince=G.t;}
+  if(Math.abs(K.y)>.22)t.neutralSince=null;
+}
+function gateCancel(t){
+  if(!t.committed&&(!t.spec||t.spec===PC.spec)){PC.gear=t.startGear||PC.gear;PC.neutral=!!t.startNeutral;}
+  const s=gateSlot(PC.neutral?0:PC.gear);Object.assign(CTL.knob,{x:s.x,y:s.y,active:false});t.cancelled=true;CTL.lastGestureT=G.t;
 }
 function gateRelease(t) {
+  if(t.cancelled)return;
   const K = CTL.knob;
-  if (Math.abs(K.y) >= 0.45) { const col = Math.round(K.x), g = slotGear(col, K.y, PC.gears); if (g) { K.x = col; K.y = Math.sign(K.y); if (g !== PC.gear || PC.neutral) pcShift(g); PC.neutral = false; } }
-  else { K.y = 0; }
+  if(!t.committed){
+    if(t.distance<8||t.invalid){gateCancel(t);return;}
+    if(Math.abs(K.y)>=.55&&Math.abs(K.x-Math.round(K.x))<.34){const col=Math.round(K.x),g=slotGear(col,K.y,PC.gears);if(g){K.x=col;K.y=Math.sign(K.y);if(g!==PC.gear||PC.neutral)pcShift(g);PC.neutral=false;t.committed=true;}}
+    else if(t.crossedNeutral&&Math.abs(K.y)<.22&&t.neutralSince!=null&&G.t-t.neutralSince>=.16){K.y=0;PC.neutral=true;}
+    else{gateCancel(t);return;}
+  }
   K.active = false; CTL.lastGestureT = G.t;
 }
 // keyboard: arrows / A D steer, Z or up = gas, X or down = brake, Q / E or 1-6 to shift, Space = drift tap
@@ -6345,6 +6459,7 @@ addEventListener('keydown', (e) => {
 addEventListener('keyup', (e) => { CTL.keys[e.code] = false; });
 // Browsers may lose keyup/pointerup when a tab or window loses focus.
 function controlsReset() {
+  for(const t of CTL.touches.values())if(t.kind==='gate')gateCancel(t);
   CTL.keys = {}; CTL.touches.clear(); CTL.steerTouch = null;
   CTL.gas = 0; CTL.brake = 0; CTL.steer = 0; CTL.knob.active = false;
   CTL.tilt.last = 0; PC.throttle = 0; PC.brake = 0; PC.steerIn = 0; PC.lockT = 0;
@@ -6354,7 +6469,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) contr
 glCanvas.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse' && e.button !== 0) return; glCanvas.setPointerCapture && glCanvas.setPointerCapture(e.pointerId); touchDown(e.pointerId, e.clientX, e.clientY); });
 glCanvas.addEventListener('pointermove', (e) => touchMove(e.pointerId, e.clientX, e.clientY));
 glCanvas.addEventListener('pointerup', (e) => touchUp(e.pointerId));
-glCanvas.addEventListener('pointercancel', (e) => touchUp(e.pointerId));
+glCanvas.addEventListener('pointercancel', (e) => touchUp(e.pointerId,true));
 addEventListener('resize', layoutPads);
 
 // read everything into the car's inputs, once per frame
@@ -6381,6 +6496,14 @@ function readControls(dt) {
 }
 
 // ===================== sound: a synthesized engine for each car, tyres, wind, crashes, UI =====================
+let GAME_AUDIO=null, STREAM_RADIO=null;
+async function loadGameAudio(){try{GAME_AUDIO=await import('./render/audio.js');}catch(e){console.warn('External audio adapter unavailable; original radio retained.',e);}}
+function musicStreamContext(){if(STREAM_RADIO){if(UI.musicTrack&&UI.musicTrack!=='auto')STREAM_RADIO.request(UI.musicTrack);else STREAM_RADIO.requestContext(PC.piece?.id,G.mode);STREAM_RADIO.tick();}}
+function sfxObservePass(owner,distance,lateral,relativeSpeed,type){
+  if(!GAME_AUDIO)return;
+  const event=GAME_AUDIO.passes.observe(owner,{distance,lateral,relativeSpeed,speed:PC.v,time:G.t,piece:PC.piece?.id,eligible:RACE.state==='run'&&!PC.crash&&G.mode==='play'&&!G.paused});
+  if(event)sfxPass(event.strength,event.pan,type);
+}
 const AU = { ctx: null, master: null, sfx: null, music: null, eng: null, on: true, vol: { music: 0.6, sfx: 0.9 }, noise: null };
 function audioInit() {
   if (AU.ctx) { if (AU.ctx.state === 'suspended') AU.ctx.resume(); return; }
@@ -6395,6 +6518,7 @@ function audioInit() {
   const nb = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), d = nb.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
   AU.noise = nb;
+  if(GAME_AUDIO)STREAM_RADIO=new GAME_AUDIO.SeamlessRadio(ctx,AU.music,{onActive:(active,when,duration)=>{if(MUS.bus){MUS.bus.gain.cancelScheduledValues(when);MUS.bus.gain.setValueAtTime(MUS.bus.gain.value,when);MUS.bus.gain.linearRampToValueAtTime(active?0:.55,when+duration);}}});
 }
 function noiseSrc(loop) { const s = AU.ctx.createBufferSource(); s.buffer = AU.noise; s.loop = !!loop; return s; }
 function distCurve(k) { const n = 512, c = new Float32Array(n); for (let i = 0; i < n; i++) { const x = (i / (n - 1)) * 2 - 1; c[i] = ((1 + k) * x) / (1 + k * Math.abs(x)); } return c; }
@@ -6482,10 +6606,10 @@ function tone(t, type, f0, f1, peak, dur, dest) {
   const o = AU.ctx.createOscillator(), g = AU.ctx.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
   o.connect(g); g.connect(dest || AU.sfx); env(g, t, 0.005, peak, dur); o.start(t); o.stop(t + dur + 0.05);
 }
-function sfxShift(g) { if (!AU.ctx) return; const t = AU.ctx.currentTime; noiseHit(t, 'bandpass', 2400, 3, 0.12, 0.05); tone(t, 'square', 110, 70, 0.06, 0.06); if (AU.eng && AU.eng.V.whistle && g > 1) noiseHit(t, 'highpass', 3000, 0.7, 0.08, 0.3); }
+function sfxShift(to, from) { if (!AU.ctx || AU.ctx.state !== 'running' || G.paused || document.hidden || !GAME_AUDIO) return; GAME_AUDIO.playShift(AU.ctx,AU.sfx,{mode:PC.auto?'at':PC.seq?'seq':'mt',to,from,load:PC.throttle}); }
 let _skidOn = false; function sfxSkid(on) { _skidOn = on; }
-// the chirp of the tyres on a power shift
-function sfxChirp() { if (!AU.ctx) return; const t = AU.ctx.currentTime; noiseHit(t, 'bandpass', 2600, 3, 0.4, 0.16); }
+// A brief rubber scrub only when the original solver reports tyre slip.
+function sfxChirp() { if (!AU.ctx || AU.ctx.state !== 'running' || G.paused || document.hidden || !GAME_AUDIO || PC.crash || !(PC.slip>.25 || PC.drift>0)) return; GAME_AUDIO.playTyreBite(AU.ctx,AU.sfx,{strength:clamp(PC.slip||PC.drift,.15,.9)}); }
 let _scrT = 0; function sfxScrape() { if (!AU.ctx) return; const t = AU.ctx.currentTime; if (t - _scrT < 0.1) return; _scrT = t; noiseHit(t, 'bandpass', 3200, 2, 0.34, 0.14); tone(t, 'sawtooth', 1900 + Math.random() * 300, 1500, 0.05, 0.14); }
 function sfxThud(k) { if (!AU.ctx) return; const t = AU.ctx.currentTime; tone(t, 'sine', 120, 40, 0.4 * k, 0.25); noiseHit(t, 'lowpass', 600, 1, 0.3 * k, 0.15); }
 function sfxCrash(k) {
@@ -6502,15 +6626,8 @@ function sfxWarn() { if (!AU.ctx) return; const t = AU.ctx.currentTime; tone(t, 
 // the whoosh of going past someone: a rush of air sweeping down in pitch as it passes, panned to their side,
 // a deeper and longer one for the big trucks and buses
 function sfxPass(k, pan, type) {
-  if (!AU.ctx) return; const t = AU.ctx.currentTime;
-  const big = type === 'bus' || type === 'gravel' || type === 'rebar' || type === 'logs', dur = big ? 0.75 : 0.5;
-  const s = noiseSrc(false), f = AU.ctx.createBiquadFilter(), g = AU.ctx.createGain(), p = AU.ctx.createStereoPanner ? AU.ctx.createStereoPanner() : null;
-  f.type = 'bandpass'; f.frequency.setValueAtTime(big ? 1800 : 3200, t); f.frequency.exponentialRampToValueAtTime(big ? 160 : 260, t + dur); f.Q.value = 0.9;
-  s.connect(f); f.connect(g); if (p) { p.pan.setValueAtTime(clamp(pan, -1, 1) * 0.8, t); p.pan.linearRampToValueAtTime(clamp(pan, -1, 1) * 0.3, t + dur); g.connect(p); p.connect(AU.sfx); } else g.connect(AU.sfx);
-  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime((big ? 1.0 : 0.85) * k, t + 0.06); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.start(t, Math.random()); s.stop(t + dur + 0.1);
-  // the slap of the air as the gap closes, and their engine note dropping away behind — the doppler of a car going by
-  noiseHit(t, 'highpass', 5000, 0.7, 0.3 * k, 0.08, p || AU.sfx);
-  tone(t, 'sawtooth', big ? 180 : 320, big ? 70 : 120, 0.14 * k, dur * 0.9, p || AU.sfx);
+  if(!AU.ctx||AU.ctx.state!=='running'||G.paused||document.hidden)return;
+  GAME_AUDIO?.playPass(AU.ctx,AU.sfx,{strength:k,pan,type});
 }
 // metal on metal: a crunch, a ring, and the clatter after
 function sfxClang(k) {
@@ -6599,14 +6716,18 @@ function musicBus() {
 }
 function musicPlay(i) {
   if (!AU.ctx) return;
-  musicBus(); musicStop();
-  MUS.song = SONGS[(i + SONGS.length) % SONGS.length]; MUS.step = 0; MUS.next = AU.ctx.currentTime + 0.08; MUS.on = true;
+  musicBus();
+  const selected=SONGS[(i+SONGS.length)%SONGS.length];
+  if(MUS.on&&MUS.song===selected){musicStreamContext();return;}
+  musicStop();
+  MUS.song = selected; MUS.step = 0; MUS.next = AU.ctx.currentTime + 0.08; MUS.on = true;
   MUS.delay.delayTime.value = (60 / MUS.song.bpm) * 0.75;
   MUS.timer = setInterval(musicTick, 25);
 }
 function musicStop() { if (MUS.timer) clearInterval(MUS.timer); MUS.timer = null; MUS.on = false; }
 function musicTick() {
-  const c = AU.ctx, S = MUS.song; if (!c || !S) return;
+  const c = AU.ctx, S = MUS.song; if (!c || !S || c.state==='suspended') return;
+  musicStreamContext();
   const st = 60 / S.bpm / 4;
   while (MUS.next < c.currentTime + 0.15) { musicStep(S, MUS.step, MUS.next, st); MUS.next += st * (MUS.step % 2 ? 1 - S.swing : 1 + S.swing); MUS.step++; }
 }
@@ -6661,8 +6782,10 @@ function mLead(f, t, dur, type) {
 const TRAFFIC = { list: [], pool: {}, oncoming: [], spawnS: 0, density: 1, passCD: 0, lastPass: 0 };
 const VTYPES = {
   sedan: { len: 4.5, wid: 1.8, massKg: 1450 }, taxi: { len: 4.6, wid: 1.8, massKg: 1500 }, pickup: { len: 5.0, wid: 1.9, massKg: 1900 }, bluetruck: { len: 4.8, wid: 1.7, massKg: 1800 },
-  bus: { len: 11.5, wid: 2.5, massKg: 12500 }, gravel: { len: 8.0, wid: 2.5, massKg: 24000 }, scooter: { len: 1.9, wid: 0.8, massKg: 180 },
-  suv: { len: 4.8, wid: 1.9, massKg: 2100 }, wagon: { len: 4.7, wid: 1.8, massKg: 1750 }, rebar: { len: 17, wid: 2.5, massKg: 30000 }, logs: { len: 16, wid: 2.5, massKg: 28000 },
+  semi: {len:17.5,wid:2.5,massKg:36000,heavy:true,accel:.8,brake:4.2,headway:2.4}, flatbed: {len:11.8,wid:2.5,massKg:18000,heavy:true,accel:1,brake:4.5,headway:2.1},
+  tanker: {len:12,wid:2.5,massKg:26000,heavy:true,accel:.75,brake:4,headway:2.5}, motorbike: {len:2.25,wid:.92,massKg:310,accel:2.8,brake:6,headway:1.2},
+  bus: { len: 11.5, wid: 2.5, massKg: 12500, heavy:true,accel:1.1,brake:4.5,headway:2 }, gravel: { len: 8.0, wid: 2.5, massKg: 24000, heavy:true,accel:.8,brake:4.1,headway:2.3 }, scooter: { len: 1.9, wid: 0.8, massKg: 180 },
+  suv: { len: 4.8, wid: 1.9, massKg: 2100 }, wagon: { len: 4.7, wid: 1.8, massKg: 1750 }, rebar: { len: 17, wid: 2.5, massKg: 30000,heavy:true,accel:.75,brake:4.2,headway:2.4 }, logs: { len: 16, wid: 2.5, massKg: 28000,heavy:true,accel:.8,brake:4.2,headway:2.4 },
 };
 // manners by stage: how often a vehicle changes lanes, how long it signals first, how close ahead of you it dares to,
 // and how likely it is to weave straight back. Stage 1 is polite; by stage 4 it is Taiwan at rush hour.
@@ -6671,7 +6794,7 @@ function manners() {
   return { every: 14 - n * 3, signal: 1.4 - n * 0.35, ahead: 70 - n * 15, weave: 0.1 + n * 0.25, cut: n * 0.2 };
 }
 // Shared physical occupancy: cars, scooters, trains, people, parades and roadside solids.
-// The lateral tram crossing is elevated: its bridge leaves the driving plane open.
+// Rail, roadside solids and road vehicles all contribute real occupied width.
 const GAP_CAR = 2.4;
 const GAP_CLEAR = 0.32;
 const TRAFFIC_MARGIN = 0.24;
@@ -6718,12 +6841,14 @@ function trafficReset() {
   TRAFFIC.list.length = 0; TRAFFIC.oncoming.length = 0; TRAFFIC.spawnS = PC.s + 120;
   TRAFFIC.edgeS = PC.s + 180; TRAFFIC.edgeSide = 1;
   TRAFFIC.safetyPlan=null;
+  if(typeof ROUTE!=='undefined')for(const p of ROUTE.pieces)for(const q of p.challengeZones||[])q.done=false;
 }
 function pickType(mix) { let tot = 0; for (const k in mix) tot += mix[k]; let r = Math.random() * tot; for (const k in mix) { r -= mix[k]; if (r <= 0) return k; } return 'sedan'; }
 const rnd = (a, b) => a + Math.random() * (b - a);
 const _iv = [];
 function nearIntervals(p, s, len, skip, gap) {
   _iv.length = 0; gap = gap || 0;
+  if(p.railCrossing&&window.FormosaRailCrossing)for(const b of window.FormosaRailCrossing.blocks(p.railCrossing,s,len+gap*2,false))_iv.push(b);
   const add = (o, ol, ow) => { if (o === skip || o.p !== p || o.smoke || o.hit) return;
     if (Math.abs(o.s - s) < (ol + len) / 2 + gap) _iv.push([o.x - ow / 2 - GAP_CLEAR, o.x + ow / 2 + GAP_CLEAR]); };
   for (const o of TRAFFIC.list) add(o, o.len || 4.5, o.wid || 1.8);
@@ -6748,7 +6873,11 @@ function gapLeft(p, s, iv, x, wid) {
 function trafficFree(p, s) {
   const body = playerWidth() / 2 + TRAFFIC_MARGIN, edge = roadLimits(p, s), lo = edge[0] + body, hi = edge[1] - body;
   if (hi < lo) return [];
-  const blocks = nearIntervals(p, s, playerLength(), null, 0).map(a => [a[0] - body, a[1] + body]).sort((a,b) => a[0] - b[0]);
+  const occupied=nearIntervals(p,s,playerLength(),null,0).slice();
+  // Reserve the underpass BEFORE a red signal, so a new train cycle cannot
+  // invalidate the only traffic corridor after the driver chose a lane.
+  if(p.railCrossing&&window.FormosaRailCrossing)occupied.push(...window.FormosaRailCrossing.blocks(p.railCrossing,s,playerLength(),true));
+  const blocks = occupied.map(a => [a[0] - body, a[1] + body]).sort((a,b) => a[0] - b[0]);
   const free = []; let cursor = lo;
   for (const [a,b] of blocks) { if (b <= lo || a >= hi) continue; if (a > cursor) free.push([cursor, Math.min(a,hi)]); cursor = Math.max(cursor,b); if (cursor >= hi) break; }
   if (cursor < hi) free.push([cursor,hi]); return free;
@@ -6758,6 +6887,7 @@ function trafficFree(p, s) {
 function trafficCorridorOpen(p, from, to, plan) {
   from = Math.max(0, from); to = Math.min(p.L, to); if (to <= from) return true;
   const rows=[from,to], mark=(s,len)=>{ const h=(len+playerLength())/2; for(const q of [s-h-.02,s-h+.02,s,s+h-.02,s+h+.02]) if(q>from&&q<to) rows.push(q); };
+  if(p.railCrossing&&window.FormosaRailCrossing)for(const s of window.FormosaRailCrossing.rows(p.railCrossing))mark(s,2.4);
   for(const o of TRAFFIC.list) if(o.p===p) mark(o.s,o.len||4.5);
   if(typeof HAZ!=='undefined') for(const o of HAZ.list) if(o.p===p&&!o.smoke&&!o.hit) mark(o.s,hazardSize(o).len);
   if(typeof HAZ!=='undefined') for(const o of HAZ.xings) if(o.p===p&&o.on&&o.elevated===false) mark(o.s,3.4);
@@ -6790,10 +6920,13 @@ function trafficCorridorOpen(p, from, to, plan) {
   return true;
 }
 function trafficEnsurePlan(p, force) {
-  const cached=TRAFFIC.safetyPlan, start=p===PC.piece?Math.max(0,PC.s-12):0, now=typeof G!=='undefined'?G.t:0;
-  if(!force&&cached&&cached.p===p&&now-cached.t<.25&&Math.abs(start-cached.start)<15) return cached.points;
+  // Contact separation can move the player's centre a little backwards. Keep
+  // an already traversable approach behind the visible dodge corridor, rather
+  // than dropping that approach exactly at a lorry's rear bumper.
+  const cached=TRAFFIC.safetyPlan, start=p===PC.piece?Math.max(0,PC.s-40):0, now=typeof G!=='undefined'?G.t:0;
+  if(!force&&cached&&cached.p===p&&now-cached.t<.25&&start>=cached.start&&start-cached.start<15) return cached.points;
   const points=[];
-  if(!trafficCorridorOpen(p,start,Math.min(p.L,start+840),points)) return cached&&cached.p===p?cached.points:null;
+  if(!trafficCorridorOpen(p,start,Math.min(p.L,Math.max(start,PC.piece===p?PC.s:0)+840),points)) return cached&&cached.p===p?cached.points:null;
   TRAFFIC.safetyPlan={p,start,t:now,points}; return points;
 }
 function trafficPlanClear(o,s,x) {
@@ -6809,6 +6942,7 @@ function trafficPlanClear(o,s,x) {
   return true;
 }
 function trafficTryMove(o, s, x) {
+  if(o.p.railCrossing&&window.FormosaRailCrossing){const next={s,x,v:o.v,vx:o.vx||0},hit=window.FormosaRailCrossing.constrain(o.p.railCrossing,next,{s:o.s,x:o.x},(o.len||4.5)/2,(o.wid||1.8)/2);if(hit){s=next.s;x=next.x;o.brake=1;if(hit!=='divider')o.v=0;}}
   if(o.smoke||o.hit||trafficPlanClear(o,s,x)) {o.s=s;o.x=x;return true;} return false;
 }
 function trafficSpawnHazard(o) {
@@ -6827,9 +6961,66 @@ function trafficEdgeFlow() {
   const v=spawnVehicle(p,s,{type:'scooter',x}); if(!v) return;
   v.v=v.v0=rnd(8,12); v.edgeUser=true; v.lcT=rnd(4,8); TRAFFIC.list.push(v);
 }
+// Authored passages provide readable alternating overtakes, rather than a solid
+// wall of vehicles. The same continuous-corridor validator approves each row.
+function trafficChallengeUpdate() {
+  const p=PC.piece;if(RACE.state!=='run')return;
+  for(const q of p.challengeZones||[]){
+    const distance=q.s-PC.s;if(q.done||distance>440)continue;
+    q.done=true;if(distance<180)continue;
+    let spawned=0;
+    for(let row=0;row<3;row++){
+      const s=q.s+row*76;if(s>p.L-120||p.sec(s).track||p.sec(s).bridge)continue;
+      const side=q.side*(row%2?-1:1),hw=p.hw(s),x=side*Math.max(.8,hw-1.35);
+      const v=spawnVehicle(p,s,{type:row===1?'bluetruck':'sedan',x});if(!v)continue;
+      v.challenge=true;v.v=v.v0=15+row*.7;v.lcT=30;TRAFFIC.list.push(v);spawned++;
+    }
+    q.spawned=spawned;
+    if(spawned)hudMsg(q.kind==='bend'?'連續彎道車流':'交錯超車區','提前選線，保留出彎空間','#ffda72',2.0,false);
+  }
+}
+function trafficMix(p,s){
+  const mix={...(p.def.traffic?.mix||{sedan:1})},sec=p.sec(s),tags=sec.tags||[],sides=[sec.L,sec.R];
+  const freight=sides.some(x=>x==='industrial'||x==='harbor')||tags.some(x=>['containers','refinery','chimney'].includes(x));
+  const narrow=p.hw(s)<5.2||sec.track||sec.bridge||tags.some(x=>['nightmarket','lukang','cypress','taroko','waterfall'].includes(x));
+  if(freight&&!narrow){mix.semi=1.2;mix.flatbed=.8;mix.tanker=tags.includes('refinery')?1.6:.4;}
+  else {delete mix.semi;delete mix.flatbed;delete mix.tanker;}
+  // Long loads stay out of town lanes and high mountain sightseeing sections.
+  if(narrow||sides.includes('town')||sides.includes('mountain')){delete mix.logs;delete mix.rebar;if(narrow)delete mix.gravel;}
+  if(!sec.track)mix.motorbike=sides.some(x=>['coast','bay','beach','grass','mountain'].includes(x))?1.3:.55;
+  return mix;
+}
+function trafficFollowTarget(v){
+  const T=VTYPES[v.type]||VTYPES.sedan,headway=T.headway||1.25,minGap=T.heavy?5:3,brake=T.brake||6;
+  let target=v.v0;
+  const consider=o=>{if(o===v||o.p!==v.p||o.s<=v.s)return;
+    const ox=o.lc?clamp(o.lc.x,Math.min(o.x,o.lc.x),Math.max(o.x,o.lc.x)):o.x;
+    if(Math.min(Math.abs(o.x-v.x),Math.abs(ox-v.x))>=(o.wid+v.wid)/2+.3)return;
+    const gap=o.s-v.s-((o.len||3)+v.len)/2,closing=Math.max(0,v.v-(o.v||0));
+    const need=minGap+v.v*headway+closing*closing/(2*brake);
+    if(gap<need)target=Math.min(target,Math.max(0,(o.v||0)+(gap-minGap-v.v*headway)/headway));
+  };
+  for(const o of TRAFFIC.list)consider(o);
+  for(const o of HAZ.list)if(o.parade&&!o.smoke)consider(o);
+  return target;
+}
+function trafficLaneSafe(v,nx,wait){
+  const p=v.p,T=VTYPES[v.type]||VTYPES.sedan,duration=T.heavy?3:1.8,horizon=wait+duration;
+  const overlap=(x,w,otherX,otherW)=>Math.abs(x-otherX)<(w+otherW)/2+.4;
+  for(const o of TRAFFIC.list){if(o===v||o.p!==p)continue;const end=o.lc?o.lc.x:o.x;
+    if(!overlap(nx,v.wid,o.x,o.wid)&&!overlap(nx,v.wid,end,o.wid)&&!(Math.min(o.x,end)<nx&&Math.max(o.x,end)>nx))continue;
+    const half=(v.len+o.len)/2+5,rel=o.s-v.s,delta=(o.v-v.v)*horizon;
+    if(Math.min(rel,rel+delta)<half&&Math.max(rel,rel+delta)>-half)return false;
+  }
+  if(p===PC.piece&&overlap(nx,v.wid,PC.x,playerWidth())){
+    const rel=PC.s-v.s,delta=(PC.v*WORLD_K-v.v)*horizon,half=(playerLength()+v.len)/2+6;
+    if(Math.min(rel,rel+delta)<half&&Math.max(rel,rel+delta)>-half)return false;
+  }
+  return true;
+}
 function spawnVehicle(p, s, options) {
   options = options || {};
-  const mix = p.def.traffic ? p.def.traffic.mix : { sedan: 1 };
+  const mix = trafficMix(p,s);
   const type = options.type || pickType(mix);
   const T = VTYPES[type] || VTYPES.sedan, set = TRAFFIC_SPR[type] || TRAFFIC_SPR.sedan;
   const vi = Math.floor(Math.random() * set.rear.length), spr = SPR[set.rear[vi]], turn = set.turn ? set.turn[vi] : null;
@@ -6849,7 +7040,7 @@ function spawnVehicle(p, s, options) {
   }
   if (x == null) return null;
   let v;
-  if (type === 'scooter') v = rnd(10, 15); else if (type === 'bus' || type === 'gravel' || type === 'rebar' || type === 'logs') v = rnd(14, 19); else if (type === 'suv') v = rnd(18, 26); else v = rnd(16, 25);
+  if (type === 'scooter') v = rnd(10, 15); else if (T.heavy) v = rnd(14, 19); else if(type==='motorbike')v=rnd(20,28);else if (type === 'suv') v = rnd(18, 26); else v = rnd(16, 25);
   const M = manners();
   return { spr, turn, type, p, s, x, v, v0: v, vPrev: v, brake: 0, len: T.len, wid: T.wid, lane: x, oncoming: false, passed: false, hitT: 0, push: 0, lc: null, lcT: rnd(2, M.every), sig: 0, sigT: 0, manners: M };
 }
@@ -6910,6 +7101,7 @@ function trafficUpdate(dt) {
     if (s < p.L - 20 && !p.sec(s).track && !TRAFFIC.list.some((v) => v.p === p && Math.abs(v.s - s) < 12)) { const veh = spawnVehicle(p, s); if (veh) TRAFFIC.list.push(veh); }
   }
   trafficEnsurePlan(p,false);
+  trafficChallengeUpdate();
   trafficEdgeFlow();
   trainsUpdate(dt);
   if (RACE.state === 'countdown' && TRAFFIC.list.length < 3) { const veh = spawnVehicle(p, PC.s + 90 + TRAFFIC.list.length * 70); if (veh) TRAFFIC.list.push(veh); }
@@ -6928,14 +7120,11 @@ function trafficUpdate(dt) {
       if (!v.horned && v.s - PC.s < 260) { v.horned = true; sfxTrainHorn(); hudMsg('火車！', '換到另一條軌道', '#ff4f6d', 1.6, false); }
       if (v.s < PC.s - 60) { TRAFFIC.list.splice(i, 1); continue; }
       trafficPlayerContact(v);
+      if(v.p===PC.piece&&typeof sfxObservePass==="function")sfxObservePass(v,v.s-PC.s,v.x-PC.x,PC.v-v.v/WORLD_K,'train');
       continue;
     }
     const previousX = v.x;
-    let lead = Infinity;
-    for (const o of TRAFFIC.list) if (o !== v && o.p === v.p && o.s > v.s && Math.abs(o.x - v.x) < 1.6) lead = Math.min(lead, o.s - v.s);
-    let target = lead < 22 ? Math.min(v.v0, lead < 10 ? 0 : v.v0 * (lead - 10) / 12) : v.v0;
-    // a procession ahead in this lane: ease up and crawl behind it, the way a street fills up behind one
-    for (const o of HAZ.list) if (o.parade && !o.smoke && o.p === v.p && Math.abs(o.x - v.x) < (o.wid + v.wid) / 2 && o.s > v.s) { const d = o.s - v.s; if (d < 26) target = Math.min(target, d < 8 ? Math.max(0, o.v - 0.2) : v.v0 * (d - 8) / 18 + o.v); }
+    let target=trafficFollowTarget(v);
     // pulling alongside would close the road: whoever is not in front hangs back a touch behind the leader of the group
     if (v.v > 4) {
       const sN = v.s + v.v * dt, iv = nearIntervals(v.p, sN, v.len, v, 8);
@@ -6946,22 +7135,24 @@ function trafficUpdate(dt) {
         else if (!TRAFFIC.list.some((o) => o !== v && o.p === v.p && Math.abs(o.s - sN) < (o.len + v.len) / 2 + 8 && o.v0 < v.v0)) target = Math.min(target, Math.max(0, v.v0 - 3));   // dead level: the quicker one eases off
       }
     }
-    v.vPrev = v.v; v.v = lerp(v.v, target, clamp(dt * (target < v.v ? 3 : 1.5), 0, 1)); v.brake = lerp(v.brake, v.v < v.vPrev - 0.02 || target < 1 ? 1 : 0, clamp(dt * 8, 0, 1));
+    v.vPrev = v.v; const dynamics=VTYPES[v.type]||VTYPES.sedan;v.v+=clamp(target-v.v,-(dynamics.brake||6)*dt,(dynamics.accel||2.2)*dt); v.brake = lerp(v.brake, v.v < v.vPrev - 0.02 || target < 1 ? 1 : 0, clamp(dt * 8, 0, 1));
     if(!trafficTryMove(v,v.s+v.v*dt,v.x)) { v.v=0; v.brake=1; }
     laneChange(v, dt);
     if (v.hitT > 0) { v.hitT -= dt; trafficTryMove(v,v.s,v.x+v.push*dt); v.push *= 0.9; }
     if (v.wob > 0) v.wob -= dt;
     const hw = v.p.hw(v.s);
-    v.x = clamp(v.x, -hw + v.wid / 2, hw + Math.max(0, v.p.shoulder(v.s) - 0.3) - v.wid / 2);
+    const boundedX=clamp(v.x, -hw + v.wid / 2, hw + Math.max(0, v.p.shoulder(v.s) - 0.3) - v.wid / 2);
+    if(boundedX!==v.x&&!trafficTryMove(v,v.s,boundedX)){v.v=0;v.brake=1;}
     if (v.s < PC.s - 90 || v.s > v.p.L - 4) { TRAFFIC.list.splice(i, 1); continue; }
     // the player meets them
     if (!PC.crash && v.p === PC.piece) {
       const ds = v.s - PC.s, dx = v.x - PC.x;
       v.contactVx = dt > 0 ? (v.x - previousX) / dt : v.contactVx || v.push || 0;
       trafficPlayerContact(v);
+      if(typeof sfxObservePass==="function")sfxObservePass(v,ds,dx,PC.v-v.v/WORLD_K,v.type);
       if (!v.passed && ds < -2 && Math.abs(dx) < 4.5) {
         v.passed = true; const close = Math.abs(dx) < 2.6;
-        sfxPass(clamp((PC.v - v.v) / 16, 0.35, 1), clamp(dx / 4, -1, 1), v.type); RACE.score += close ? 300 : 100;
+        RACE.score += close ? 300 : 100;
         if (typeof fxPassed === 'function') fxPassed(v, close);
       }
     }
@@ -6974,17 +7165,16 @@ function laneChange(v, dt) {
   if (v.lc) {
     // signalling first, then sliding over; the indicator stays on until the car is in its new lane
     v.sigT += dt;
-    if (v.sigT > v.lc.wait) { const nx=lerp(v.x,v.lc.x,clamp(dt*(v.type==='scooter'?1.2:2.2),0,1)); if(!trafficTryMove(v,v.s,nx)) { v.brake=1; return; } if (Math.abs(v.x - v.lc.x) < 0.1) { v.x = v.lc.x; v.lane = v.x; v.sig = 0; const weave = Math.random() < M.weave; v.lc = null; v.lcT = weave ? rnd(0.3, 1.2) : rnd(M.every * 0.6, M.every * 1.6); } }
+    if (v.sigT > v.lc.wait) { if(!trafficLaneSafe(v,v.lc.x,0)){v.brake=1;return;}const nx=lerp(v.x,v.lc.x,clamp(dt*((VTYPES[v.type]||{}).heavy?.75:v.type==='scooter'?1.2:2.2),0,1)); if(!trafficTryMove(v,v.s,nx)) { v.brake=1; return; } if (Math.abs(v.x - v.lc.x) < 0.1 && trafficTryMove(v,v.s,v.lc.x)) { v.lane = v.x; v.sig = 0; const weave = Math.random() < M.weave; v.lc = null; v.lcT = weave ? rnd(0.3, 1.2) : rnd(M.every * 0.6, M.every * 1.6); } }
     return;
   }
   v.lcT -= dt; if (v.lcT > 0 || lanes < 2) return;
   v.lcT = rnd(M.every * 0.6, M.every * 1.6);
   const cur = clamp(Math.round((v.x + hw) / LANE - 0.5), 0, lanes - 1), dir = cur === 0 ? 1 : cur === lanes - 1 ? -1 : (Math.random() < 0.5 ? -1 : 1), nx = -hw + LANE * (cur + dir + 0.5);
-  // not into someone beside, never closing the road, and not right in front of the player unless the manners allow it
-  for (const o of TRAFFIC.list) if (o !== v && o.p === p && Math.abs(o.s - v.s) < (o.len + v.len) / 2 + 6 && Math.abs(o.x - nx) < 2.4) return;
-  const iv = nearIntervals(p, v.s, v.len, v, 8); if (iv.length && !gapLeft(p, v.s, iv, nx, v.wid)) return;
-  if (p === PC.piece) { const ds = v.s - PC.s, closing = Math.max(0, PC.v - v.v), need = closing * (M.signal + 1.5) + 8; if (ds > 0 && ds < Math.max(need, M.ahead * 0.5) && Math.abs(nx - PC.x) < 2.4 && Math.random() > M.cut) return; }
-  v.lc = { x: nx, wait: M.signal * rnd(0.7, 1.3) }; v.sig = dir; v.sigT = 0;
+  const wait=Math.max((VTYPES[v.type]||{}).heavy?1.6:.6,M.signal*rnd(.7,1.3));
+  if(!trafficLaneSafe(v,nx,wait))return;
+  const iv=nearIntervals(p,v.s,v.len,v,8);if(iv.length&&!gapLeft(p,v.s,iv,nx,v.wid))return;
+  v.lc={x:nx,wait};v.sig=dir;v.sigT=0;
 }
 // a vehicle on screen: a soft shadow, the picture, its brake lights glowing when it slows
 // yv: the view angle (radians, + when the nose points right on screen); the nearest painted turn is used
@@ -7003,6 +7193,11 @@ function drawVehicle(v, x, y, k, clip, fog, yv) {
   if (wob > 0) { VG.save(); VG.translate(x, y); VG.rotate(Math.sin(G.t * 38) * 0.09 * wob * (v.push < 0 ? -1 : 1)); VG.translate(-x, -y + Math.round(Math.sin(G.t * 50) * 2 * wob)); }
   drawSpr(S, x, y, hpx, 1, false, clip, fog, 0);
   if (wob > 0) VG.restore();
+  if(v.cargoWarnAt!=null&&!v.cargoDropped){
+    const cy=y-hpx-13-Math.abs(Math.sin(G.t*9))*2,mark=pixText('!',{s:2,fill:0x291b16,out:0xffe68a,it:0});
+    VG.fillStyle='#30211b';VG.beginPath();VG.moveTo(x,cy-12);VG.lineTo(x+12,cy);VG.lineTo(x,cy+12);VG.lineTo(x-12,cy);VG.closePath();VG.fill();
+    VG.fillStyle=Math.floor(G.t*6)%2?'#ffd34b':'#ffa934';VG.beginPath();VG.moveTo(x,cy-10);VG.lineTo(x+10,cy);VG.lineTo(x,cy+10);VG.lineTo(x-10,cy);VG.closePath();VG.fill();blitC(mark,x,cy-mark.height/2,'center');
+  }
   const L = S.meta && S.meta.lights;
   if (v.sig && (Math.floor(G.t * 3) & 1) && y - hpx < clip) {
     const sc = hpx / S.h, x0 = x - wpx / 2, cx = x0 + (v.sig < 0 ? 0.12 : 0.88) * wpx, cy = y - hpx * (v.type === 'bus' || v.type === 'gravel' || v.type === 'rebar' || v.type === 'logs' ? 0.3 : 0.42), r = Math.max(2, wpx * 0.07);
@@ -7030,10 +7225,14 @@ function drawVehicle(v, x, y, k, clip, fog, yv) {
 // ahead of you in towns and cities and amble to the other side. Hit one and the car spins a full turn and loses
 // its speed; the one you hit is knocked flying (and lands on the far pavement, cross, but fine — it is a cartoon).
 const HAZ = { list: [], nextS: 0, spinT: 0, spinDur: 0, spinDir: 1, xings: [] };
+function roadEventsApi(){return {PC,ROUTE,TRAFFIC,HAZ,G,SPR,spawn:trafficSpawnHazard,move:trafficTryMove,corridor:trafficCorridorOpen,refresh:trafficEnsurePlan,edges:roadLimits,width:playerWidth,length:playerLength,hud:hudMsg,contact:trafficPlayerContact};}
 function hazardsReset() {
+  if(window.FormosaRoadEvents)window.FormosaRoadEvents.reset(roadEventsApi());
   HAZ.list.length = 0; HAZ.nextS = PC.s + 260; HAZ.spinT = 0;
   for (const x of HAZ.xings) { x.t = -1; x.hitT = 0; x.on = false; x.warnOn = false; x.bellT = 0; x.x = -999; }
   for (const p of ROUTE.pieces) for (const q of p.parades || []) q.done = false;
+  for(const p of ROUTE.pieces)for(const q of p.wildlifeZones||[])q.done=false;
+  for(const p of ROUTE.pieces)if(p.railCrossing){p.railCrossing.notice=false;p.railCrossing.bellT=0;window.FormosaRailCrossing.update(p.railCrossing,0);}
 }
 // a tram crossing: registered by the lightrail tag; the tram comes across every so often, bells and lights first
 // the tram crosses once, timed to you: the bells start when you are as far away as the whole crossing takes at your speed,
@@ -7110,9 +7309,25 @@ function paintHazards() {
   for (let i = 0; i < 2; i++) addSprite('scootside#' + i, paintScooterSide(4300 + i * 13), 1.5, { collide: 0, shadow: 0.4 });
 }
 const HAZ_SIDES = { city: 1, town: 1, harbor: 1, plaza: 1, beach: 0.5, bay: 0.6 };
+function wildlifeUpdate() {
+  const p=PC.piece,frames=window.FormosaWorldLife?.state.bearFrames||0;if(!frames)return;
+  for(const q of p.wildlifeZones||[]){
+    const port=q.crossing;if(!port)continue;
+    const distance=port.s-PC.s;if(q.done||distance>360)continue;q.done=true;
+    if(distance<180)continue;
+    const edge=roadLimits(p,port.s),from=q.side<0?edge[0]-2.2:edge[1]+2.2,to=q.side<0?edge[1]+2.8:edge[0]-2.8;
+    const h={p,s:port.s,crossing:port,x:from,to,dir:-q.side,v:1.7,bear:true,len:1.15,wid:1.7,t:0,warning:2.4,hit:0,y:0,vy:0,vx:0};
+    if(trafficSpawnHazard(h))hudMsg('前方有臺灣黑熊','減速保持距離，從空隙繞行','#ffda72',3.5,false);
+  }
+}
 function hazardsUpdate(dt) {
   const p = PC.piece; if (!p || RACE.state !== 'run') return;
-  tramXUpdate(dt); paradeUpdate(dt);
+  if(p.railCrossing){const q=p.railCrossing;window.FormosaRailCrossing.update(q,RACE.elapsed);
+    if(!q.notice&&q.s-PC.s<400&&PC.s<q.s){q.notice=true;hudMsg('前方平交道','右側地下道可持續通行','#ffda72',4,false);}
+    if(q.warnOn&&Math.abs(q.s-PC.s)<320){q.bellT-=dt;if(q.bellT<=0){q.bellT=.55;sfxBell();}}
+  }
+  tramXUpdate(dt); paradeUpdate(dt);wildlifeUpdate();
+  if(window.FormosaRoadEvents)window.FormosaRoadEvents.update(roadEventsApi(),dt);
   // spawn: in built-up stretches, one every 200-400 m, stepping off one kerb and heading for the other
   if (PC.s > HAZ.nextS) {
     const s = PC.s + 150 + Math.random() * 120, sec = p.sec(Math.min(p.L - 1, s)), w = Math.max(HAZ_SIDES[sec.L] || 0, HAZ_SIDES[sec.R] || 0);
@@ -7122,16 +7337,20 @@ function hazardsUpdate(dt) {
       const i = Math.round(s / DS), kind = Math.floor(Math.random() * 3), hw = p.hw(s);
       trafficSpawnHazard({ p, s, x: hw - 0.9 - Math.random() * 0.6, to: 0, dir: 0, v: kind === 0 ? 6 + Math.random() * 3 : kind === 1 ? 4 + Math.random() * 2 : 8 + Math.random() * 3, scoot: false, rider: true, kind, t: Math.random() * 10, hit: 0, vy: 0, y: 0, vx: 0, wob: 0, var: Math.random() < 0.5 ? 0 : 1 });
     } else if (s < p.L - 30 && Math.random() < w) {
-      const sg = Math.random() < 0.5 ? -1 : 1, scoot = Math.random() < 0.35, i = Math.round(s / DS);
-      const from = sg < 0 ? p.outerL(i) - 0.8 : p.outerR(i) + 0.8, to = -from;
-      const kind = Math.floor(Math.random() * 3);
-      trafficSpawnHazard({ p, s, x: from, to, dir: -sg, v: scoot ? 7 + Math.random() * 3 : (kind === 2 ? 2.6 : 1.1 + Math.random() * 0.5), scoot, kind, t: Math.random() * 10, hit: 0, vy: 0, y: 0, vx: 0 });
+      const port=window.FormosaRoadBoundary?.crossingFor(p,s,PC.s+120,Math.min(p.L-45,PC.s+310));
+      if(port){
+        const sg=Math.random()<.5?-1:1,scoot=Math.random()<.35,edges=roadLimits(p,port.s),kind=Math.floor(Math.random()*3);
+        const from=sg<0?edges[0]-2.2:edges[1]+2.2,to=sg<0?edges[1]+2.8:edges[0]-2.8;
+        trafficSpawnHazard({p,s:port.s,crossing:port,x:from,to,dir:-sg,v:scoot?7+Math.random()*3:(kind===2?2.6:1.1+Math.random()*.5),scoot,kind,len:scoot?.8:.7,wid:scoot?1.9:.65,t:0,warning:1.2,hit:0,vy:0,y:0,vx:0});
+      }
     }
   }
   for (let i = HAZ.list.length - 1; i >= 0; i--) {
     const h = HAZ.list[i], beforeS=h.s, beforeX=h.x;
     h.t += dt;
+    if(h.eventKind&&window.FormosaRoadEvents){if(!window.FormosaRoadEvents.step(roadEventsApi(),h,dt))HAZ.list.splice(i,1);continue;}
     if (h.hit) { h.hit += dt; h.x += h.vx * dt; h.vy -= 22 * dt; h.y = Math.max(0, h.y + h.vy * dt); if (h.hit > 1.6) HAZ.list.splice(i, 1); continue; }
+    if((h.bear||h.crossing)&&h.t<h.warning)continue;
     if (h.parade) { if (!paradeStep(h, dt)) { HAZ.list.splice(i, 1); continue; } }
     else if (h.rider) {
       // along the road with the traffic, a wobble into the lane every so often
@@ -7144,11 +7363,19 @@ function hazardsUpdate(dt) {
       if (h.p !== p || (h.dir > 0 ? h.x > h.to : h.x < h.to) || h.s < PC.s - 30) { HAZ.list.splice(i, 1); continue; }
     }
     const proposedS=h.s, proposedX=h.x; h.s=beforeS; h.x=beforeX;
-    trafficTryMove(h,proposedS,proposedX);
+    if(h.crossing&&window.FormosaRoadEvents)window.FormosaRoadEvents.crossMove(roadEventsApi(),h,proposedS,proposedX);else trafficTryMove(h,proposedS,proposedX);
     // Collision uses the actual selected vehicle's physical footprint.
     const ds = h.s - PC.s, dx = h.x - PC.x;
     if (h.smoke) continue;
-    if (!PC.crash && !HAZ.spinT && Math.abs(ds)<(playerLength()+hazardSize(h).len)/2 && Math.abs(dx)<(playerWidth()+hazardSize(h).wid)/2) {
+    if (!PC.crash && !HAZ.spinT && !(h.contactCooldown>h.t) && Math.abs(ds)<(playerLength()+hazardSize(h).len)/2 && Math.abs(dx)<(playerWidth()+hazardSize(h).wid)/2) {
+      if(h.bear){
+        // An animal encounter is a braking/avoidance event. No airborne animal
+        // animation: it retreats toward the closest forest edge on contact.
+        const edges=roadLimits(p,h.s),side=h.x<(edges[0]+edges[1])*.5?-1:1;
+        h.dir=side;h.to=side<0?edges[0]-3:edges[1]+3;h.v=4;h.contactCooldown=h.t+1.5;
+        PC.v*=.55;PC.vx-=Math.sign(dx||1)*1.1;sfxThud(.45);shake(.2);
+        RACE.score=Math.max(0,RACE.score-500);hudMsg('保持野生動物距離','收油並繞開，讓牠回到森林','#ffda72',2,false);continue;
+      }
       // hit: the car spins once and loses its speed; the one hit is tossed toward the far kerb
       h.hit = 0.001; h.vx = h.dir * 6 + Math.sign(dx || 1) * 3; h.vy = 7 + PC.v * 0.05; h.y = 0.01;
       HAZ.spinT = 0.001; HAZ.spinDur = 0.9; HAZ.spinDir = dx > 0 ? -1 : 1;
@@ -7180,10 +7407,11 @@ function drawTramX(xg, x, y, k, clip, fog) {
 // drawn among the strip's items like the traffic
 function drawHazard(h, x, y, k, clip, fog) {
   if (h.parade) return drawParadeOne(h, x, y, k, clip, fog);
-  const name = h.rider ? 'rider' + h.kind + '#' + h.var : h.scoot ? 'scootside#' + (h.kind % 2) : 'ped' + h.kind + '_' + (Math.floor(h.t * 6) & 1), S = SPR[name]; if (!S) return;
+  const name = h.eventKind?window.FormosaRoadEvents.sprite(roadEventsApi(),h):h.bear?'world_bear#'+(Math.floor(h.t*5)%(window.FormosaWorldLife?.state.bearFrames||1)):h.rider ? 'rider' + h.kind + '#' + h.var : h.scoot ? 'scootside#' + (h.kind % 2) : 'ped' + h.kind + '_' + (Math.floor(h.t * 6) & 1), S = SPR[name]; if (!S) return;
   const hpx = S.wh * k, yy = y - h.y * k;
   if (yy - hpx >= clip) return;
   if (h.y < 0.05) { VG.fillStyle = 'rgba(0,0,0,0.25)'; VG.beginPath(); VG.ellipse(x, y - 0.5, hpx * 0.3, Math.max(1, hpx * 0.06), 0, 0, TAU); VG.fill(); }
+  if(h.eventKind==='cargo'){VG.save();VG.translate(x,yy-hpx*.5);VG.rotate(h.roll||0);drawSpr(S,0,hpx*.5,hpx,1,false,clip-(yy-hpx*.5),fog,0);VG.restore();return;}
   // a hit one tumbles: drawn upside down for the middle of its flight
   if (h.hit && h.hit > 0.25 && h.hit < 1.1) { VG.save(); VG.translate(x, yy - hpx / 2); VG.rotate(Math.PI * Math.min(1, (h.hit - 0.25) / 0.6) * 2); VG.translate(-x, -(yy - hpx / 2)); drawSpr(S, x, yy, hpx, 1, h.dir < 0, clip, fog, 0); VG.restore(); }
   else drawSpr(S, x, yy, hpx, 1, h.dir < 0, clip, fog, 0);
@@ -7218,7 +7446,8 @@ function paradeStep(h, dt) {
   return h.p === PC.piece && h.s > PC.s - 40 && h.s < h.p.L - 10;
 }
 function drawParadeOne(h, x, y, k, clip, fog) {
-  const S = SPR[h.spr] || SPR[pickVar(h.spr, Math.random)]; if (!S) return;
+  const name=['marchers','palanquin'].includes(h.spr)?h.spr+'#'+(Math.floor(h.t*5)%4):h.spr;
+  const S = SPR[name] || SPR[pickVar(name,()=>.5)]; if (!S) return;
   const hpx = S.wh * k, yy = y - h.y * k;
   if (yy - hpx >= clip) return;
   if (h.smoke) { VG.globalAlpha = 0.6 * (1 - (h.t % 2.5) / 2.5); drawSpr(S, x, yy, hpx * (1 + (h.t % 2.5) * 0.4), 1, false, clip, fog, 0); VG.globalAlpha = 1; return; }
@@ -7332,6 +7561,7 @@ function drawHud(dt) {
   if (CTL.pads.gas) drawPedals();
   if (CTL.pads.steer && !BOT.on) drawSteerPad();
   if (!PC.auto && PC.seq) drawSeqPads(dt); else if (!PC.auto) drawShiftBox(dt);
+  if(NET.on&&NET.phase==='race')drawNetworkStandings();
   // messages are drawn on the game screen; here they only age
   for (const m of HUD.msgs) m.t += dt;
   HUD.msgs = HUD.msgs.filter((m) => m.t < m.dur);
@@ -7387,6 +7617,19 @@ function drawSteerPad() {
   if (!CTL.steerTouch && R_firstLap()) otext('按住左右拖曳轉向', cx, r.y + r.h - 8, 12, '#fff3dc', F_TC, 'center', '#140c2a', 3);
 }
 function R_firstLap() { return RACE.elapsed < 12; }
+function drawNetworkStandings(){
+  const list=netStandings();if(!list.length)return;
+  const W=innerWidth,H=innerHeight,columns=IS_TOUCH?2:1,w=IS_TOUCH?276:W<800?144:180,row=H<430?15:19,rows=Math.ceil(list.length/columns),y=H<430?72:100;
+  const x=IS_TOUCH?Math.max(!PC.auto&&!PC.seq?(CTL.pads.box?.x||0)+(CTL.pads.box?.w||0)+8:8,Math.min(W-w-12,W*.5-w*.5)):W-w-10;
+  const mine=list.find(q=>q.me),size=H<430?10:12;arcBox(x,y,w,24+rows*row,.86);
+  otext('POS '+(mine?.rank||'–')+' / '+list.length,x+8,y+18,13,'#ffd23a',F_NUM);
+  list.forEach((q,i)=>{const xx=x+Math.floor(i/rows)*w/columns,yy=y+24+(i%rows)*row;if(q.me){hud.fillStyle='rgba(255,210,58,.16)';hud.fillRect(xx+5,yy,w/columns-10,row);}
+    const color=q.disconnected?'#9c9eaf':q.me?'#ffdf79':'#f5f5ff';
+    hud.font=size+'px '+F_TC;hud.textBaseline='alphabetic';hud.textAlign='left';hud.fillStyle=color;
+    hud.fillText(q.rank+'. '+q.name.slice(0,W<800||IS_TOUCH?4:6),xx+8,yy+row-3);
+    hud.textAlign='right';hud.fillText(q.disconnected?'斷線':q.fin?(q.fin.time==null?'未完賽':'完賽'):Math.round(q.progress*100)+'%',xx+w/columns-8,yy+row-3);
+  });NET.hudLayout={x,y,w,h:24+rows*row,count:list.length};
+}
 // the shift box: the H-gate with every gear numbered and a gloved hand on the lever
 function drawShiftBox(dt) {
   const b = CTL.pads.box; if (!b) return;
@@ -7418,18 +7661,25 @@ function drawShiftBox(dt) {
   }
   if (PC.gears === 5) otext('×', gx + u, gy + vu - 2, 13, '#5a5480', F_NUM, 'center', '#0c0820', 2);
   // the lever: from a boot at the bottom of the box to the knob
-  const K = CTL.knob, kx = gx + K.x * u, ky = gy + K.y * vu;
+  const K = CTL.knob;K.vx??=K.x;K.vy??=K.y;
+  const blend=clamp(dt*24,0,1);
+  if(K.active){K.vx=K.x;K.vy=K.y;}
+  else if(Math.abs(K.vx-K.x)>.04&&Math.abs(K.vy)>.04)K.vy=lerp(K.vy,0,blend);
+  else if(Math.abs(K.vx-K.x)>.04)K.vx=lerp(K.vx,K.x,blend);
+  else{K.vx=K.x;K.vy=lerp(K.vy,K.y,blend);}
+  const kx=Math.round(gx+K.vx*u),ky=Math.round(gy+K.vy*vu);
   const bx = gx, by = b.y + b.h - 6;
-  hud.strokeStyle = '#8a8ea0'; hud.lineWidth = 5; hud.beginPath(); hud.moveTo(bx, by); hud.quadraticCurveTo((bx + kx) / 2, by - 10, kx, ky + 8); hud.stroke();
-  hud.fillStyle = '#1a1a1e'; hud.beginPath(); hud.ellipse(bx, by, 16, 6, 0, 0, TAU); hud.fill();
-  hud.fillStyle = '#e8e2d0'; hud.beginPath(); hud.arc(kx, ky, 8, 0, TAU); hud.fill();
-  // a driving glove gripping the knob, fingers wrapped over the top
-  hud.save(); hud.translate(kx, ky); hud.rotate(K.x * 0.12);
-  hud.fillStyle = '#5a2a1a'; rrect(-14, -6, 28, 22, 7); hud.fill();                  // palm and back of the hand
-  hud.fillStyle = '#7a3a22'; for (let i = 0; i < 4; i++) { rrect(-13 + i * 7, -13, 6, 12, 3); hud.fill(); } // fingers
-  hud.fillStyle = '#6a3220'; rrect(10, -2, 9, 7, 3); hud.fill();                     // thumb
-  hud.fillStyle = '#d8d2c0'; hud.fillRect(-12, 14, 24, 4);                           // the glove's cuff
-  hud.fillStyle = 'rgba(255,255,255,.25)'; hud.fillRect(-10, -4, 20, 2);
+  // Hard-edged pixel glove/metal lever, drawn at integral pixels like the cars.
+  for(let j=0;j<4;j++){hud.fillStyle=j%2?'#424758':'#171b2c';hud.fillRect(Math.round(bx-18+j*3),Math.round(by-2-j*3),36-j*6,3);}
+  hud.strokeStyle='#c0d3df';hud.lineWidth=4;hud.lineCap='butt';hud.beginPath();hud.moveTo(Math.round(bx),Math.round(by-9));hud.lineTo(kx,ky+5);hud.stroke();
+  hud.save();hud.translate(kx,ky);
+  hud.fillStyle='#080d21';hud.fillRect(-13,-12,26,29);hud.fillRect(-17,-6,33,19);
+  hud.fillStyle='#d6e8ed';hud.fillRect(-8,-12,16,15);hud.fillStyle='#fff9df';hud.fillRect(-6,-12,11,3);
+  hud.fillStyle='#8c4730';hud.fillRect(-13,-6,25,19);hud.fillRect(-9,12,21,5);
+  hud.fillStyle='#ca8050';for(let i=0;i<4;i++){hud.fillRect(-13+i*6,-10,5,10);hud.fillStyle='#e0a66f';hud.fillRect(-12+i*6,-10,3,3);hud.fillStyle='#ca8050';}
+  hud.fillStyle='#713626';hud.fillRect(-11,4,19,7);hud.fillStyle='#b86d45';hud.fillRect(10,-2,7,9);
+  hud.fillStyle='#f3e8ca';hud.fillRect(-9,16,22,4);hud.fillStyle='#365a89';hud.fillRect(-9,20,22,9);
+  hud.fillStyle='#9bc3e2';hud.fillRect(-8,21,4,7);
   hud.restore();
   otext(PC.neutral ? 'N' : String(PC.gear), b.x + 10, b.y + 22, 16, PC.neutral ? '#ff4f6d' : '#ffd23a', F_NUM, 'left', '#0c0820', 3);
   hud.restore();
@@ -7524,7 +7774,7 @@ function drawPixHud(dt) {
   if (!HUD.show) return;
   const R = RACE;
   // ---- the place board, top left ----
-  const label = PC.piece ? (PC.piece.def.label || PC.piece.def.name) : '';
+  const label = PC.piece ? (window.FormosaLandmarkArt?.regionalLabel(PC.piece,PC.s) || PC.piece.def.label || PC.piece.def.name) : '';
   const L = pixLabel(label, 12, 0xffffff, 0x05081c);
   pixBox(5, 5, L.width + 10, 21); blitC(L, 10, 7);
   // ---- time, top centre ----
@@ -7597,6 +7847,7 @@ function drawPixHud(dt) {
 // ===================== the race: countdown, time limit, checkpoints, forks, goal; the chase camera =====================
 const RACE = { state: 'idle', time: 0, elapsed: 0, score: 0, countdown: 0, route: [], stageNo: 1, splits: [], checked: new Set(), goal: null, crashes: 0, lastBeep: 4, carIdx: 0, overT: 0, goalT: 0 };
 function raceStart(carIdx, auto, seq) {
+  if(typeof GAME_AUDIO!=="undefined")GAME_AUDIO?.passes.reset();
   RACE.carIdx = carIdx;
   const spec = CARS[carIdx];
   PC.spr = carSprites(spec);
@@ -7635,12 +7886,20 @@ function raceUpdate(dt) {
   }
   if (RACE.state === 'run') { RACE.time = Math.max(0, RACE.time - dt); RACE.elapsed += dt; }
   if (RACE.state === 'timeup' || RACE.state === 'goal') { PC.throttle = 0; PC.brake = RACE.state === 'goal' ? 0.3 : 0.15; PC.steerIn = 0; }
+  const rail=PC.piece.railCrossing,railPrevious={s:PC.s,x:PC.x,v:PC.v};
   pcStep(dt);
+  if(rail){const hit=window.FormosaRailCrossing.constrain(rail,PC,railPrevious,playerLength()/2,playerWidth()/2);
+    if(hit&&railPrevious.v>6&&performance.now()-PC.lastHit>400){PC.lastHit=performance.now();sfxThud(.55);shake(.2);if(hit!=='divider'&&railPrevious.v>20&&!PC.crash)pcCrash(.5);else if(hit==='divider')PC.v*=.96;}
+  }
+  if(PC.piece.roadBoundaryRows){const hit=window.FormosaRoadBoundary.constrain(PC.piece,PC,railPrevious,playerWidth()/2);if(hit){pcVisualContact('wall',hit.boundary,hit.beforeVx,hit.afterVx,hit.normalX,{height:hit.boundary.height,speedMps:railPrevious.v});if(PC.v>6&&performance.now()-PC.lastHit>300){PC.lastHit=performance.now();PC.v*=.9;PC.scrape=.25;sfxScrape();shake(.12);fxScrape(-hit.normalX);}else if(PC.v>6)PC.v*=1-.25*dt;}}
+  if(NET.on&&NET.phase==='race')netForkGuide(dt);
   // ---- crossing into the next stage piece, or choosing a branch at a fork ----
   while (PC.s > PC.piece.L) {
     const p = PC.piece;
     if (p.children.length) {
-      const left = PC.x < (p.forkDiv || 0), c = p.children[left ? 0 : 1], off = p.forkOff[left ? 0 : 1];
+      const side=NET.on&&NET.phase==='race'?netForkChoice(p):(PC.x<(p.forkDiv||0)?0:1);
+      if(side<0){PC.s=p.L-.01;break;} // Await the reliable host decision; never enter a different branch.
+      const c=p.children[side],off=p.forkOff[side];
       PC.x -= off; CAM.lat -= off; PC.s -= p.L; PC.piece = c;     // the camera's lateral is in road coordinates too: carry it across, or it lurches
       RACE.route.push(c.id);
     } else if (p.next) { PC.s -= p.L; PC.piece = p.next; RACE.route.push(p.next.id); }
@@ -7688,7 +7947,7 @@ function updateCamera(dt) {
   CAM.yaw = lerp(CAM.yaw, (PC.yaw || 0) * 0.12, clamp(dt * 4, 0, 1));
   setView(PC.piece, PC.s - C.back, lat, hgt, CAM.yaw);
   // tilt with the grade between the camera and the car, so the car stays on the road over crests and dips
-  const want = clamp((PC.piece.yAt(clamp(PC.s, 0, PC.piece.L)) - CV.roadY) / C.back, -0.14, 0.14);
+  const want = clamp((PC.piece.yAt(clamp(PC.s, 0, PC.piece.L))+railRoadHeight(PC.piece,PC.s,PC.x) - CV.roadY) / C.back, -0.14, 0.14);
   CAM.slope = CAM.init2 ? lerp(CAM.slope, want, clamp(dt * 9, 0, 1)) : want; CAM.init2 = true;
   CV.slope = CAM.slope;
 }
@@ -8085,8 +8344,8 @@ const CV = { p: null, s: 0, lat: 0, x: 0, y: 0, z: 0, h: 0, sh: 0, ch: 1, hgt: 2
 // so the road under the car always lands on the same rows and the horizon rises and falls over the hills
 const horizonY = () => Y0 + CV.slope * FOC;
 function renderResize() {
-  RV.gcv = canvas(RW, RH); RV.gctx = RV.gcv.getContext('2d');
-  RV.img = RV.gctx.createImageData(RW, RH); RV.fb = new Uint32Array(RV.img.data.buffer);
+  RV.gcv = canvas(RW * DETAIL, RH * DETAIL); RV.gctx = RV.gcv.getContext('2d');
+  RV.img = RV.gctx.createImageData(RW * DETAIL, RH * DETAIL); RV.fb = new Uint32Array(RV.img.data.buffer);
   RV.fx = canvas(RW, RH); RV.fx2 = canvas(RW, RH);
   // the motion-blur mask: clear in the middle, strongest at the corners
   RV.mask = canvas(RW, RH); const mg = RV.mask.getContext('2d'), rg = mg.createRadialGradient(X0, Y0 + 20, RH * 0.18, X0, Y0 + 20, RW * 0.62);
@@ -8103,11 +8362,13 @@ function fogPx(hex, f) {
 const fogAt = (z) => { const t = (z - RV.fogN) / (RV.fogF - RV.fogN); return t <= 0 ? 0 : (t >= 1 ? 1 : t * t * (3 - 2 * t)) * RV.fogMax; };
 // ---------- the camera ----------
 const _cp = { x: 0, y: 0, z: 0 };
+function railRoadHeight(p,s,x){return window.FormosaRailCrossing?window.FormosaRailCrossing.height(p,s,x):0;}
 function setView(p, s, lat, hgt, yaw) {
   // behind the start of a fork child the camera is still on the trunk
   while (s < 0 && p.parent) { if (p.side) lat += p.parent.forkOff[p.side < 0 ? 0 : 1]; s += p.parent.L; p = p.parent; }
   CV.p = p; CV.s = s; CV.lat = lat; CV.hgt = hgt;
   p.pos(s, lat, _cp);
+  _cp.y+=railRoadHeight(p,s,lat);
   CV.x = _cp.x; CV.y = _cp.y + hgt; CV.z = _cp.z; CV.roadY = _cp.y;
   CV.h = p.heading(s) + (yaw || 0); CV.sh = Math.sin(CV.h); CV.ch = Math.cos(CV.h);
 }
@@ -8192,17 +8453,45 @@ const ASPH = [0x64676e, 0x5a5d64], ASPH_SC = [0x6e7077, 0x64666d], ASPH_DOTS = [
 let _row = 0, _f = 0, _hy = 0;
 // how far to each side the ground is painted: a hill far ahead is a hump against the sky, not a green band across it
 const GROUND_REACH = 340, HILL_REACH = 90;
-function fillSpan(x0, x1, c) { x0 = x0 < 0 ? 0 : x0 | 0; x1 = x1 > RW ? RW : x1 | 0; if (x1 > x0) RV.fb.fill(c, _row + x0, _row + x1); }
+// A tree can only stand where this frame actually rastered terrain. Road hills
+// have a finite lateral extent; otherwise distant crowns acquire roots in sky.
+function sceneryGrounded(S, o, ip, xs, ys, piece, s, waterClip) {
+  if(window.FormosaLandscape?.state.layers.forest&&/^(hill|hillface)(#|$)/.test(S.name))return false;
+  if(piece?.def.pano==='cingjing'&&s>piece.L*.36&&ip.cz>110&&/^(hemlock|cypress|camphor|casuarina)(#|$)/.test(S.name))return false;
+  if(o.lm||o.y||!/^(pixel_palm|palm|royal|betel|banana|banyan|mango|casuarina|terminalia|pandanus|cypress|hemlock|camphor|sakura|tung|world_alpine_shrub|bush|bougain|hibiscus|hedge|flowers|tuft|mangrove|reeds|hakkahouse|hakkahouse_generic|tank|stack|chimney)(#|$)/.test(S.name))return true;
+  // A far-bank object whose foot is hidden by a bridge's water horizon cannot
+  // stand on that horizon. Reveal it only when its dry root is visible.
+  if(waterClip!=null&&ys>=waterClip-1)return false;
+  const reach=ys<_hy-1?HILL_REACH:GROUND_REACH;
+  const offset=o.x<ip.oL?ip.oL-o.x:o.x>ip.oR?o.x-ip.oR:0;
+  if(offset>reach||ys<0)return false;
+  // Off-screen roots can still support a foreground canopy entering the frame.
+  if(xs<0||xs>=RW||ys>=RH-2)return true;
+  const w=RW*DETAIL,h=RH*DETAIL,x=Math.floor(xs*DETAIL),y=Math.floor(ys*DETAIL);
+  for(let dy=0;dy<=2*DETAIL;dy++)for(let dx=-DETAIL;dx<=DETAIL;dx++){
+    const px=x+dx,py=y+dy;
+    if(px>=0&&px<w&&py>=0&&py<h){
+      const pixel=RV.fb[py*w+px],r=pixel&255,g=(pixel>>>8)&255,b=(pixel>>>16)&255;
+      // A bridge can occlude the far bank with its water plane. Trees and
+      // refinery tanks must wait for visible dry support, never root in blue
+      // water merely because that water has an opaque raster pixel.
+      const water=b>r*1.28&&b>g*.82&&g>r*1.18&&g>85;
+      if((pixel>>>24)&&!water)return true;
+    }
+  }
+  return false;
+}
+function fillSpan(x0, x1, c) { x0 = x0 < 0 ? 0 : x0 | 0; x1 = x1 > (RW * DETAIL) ? (RW * DETAIL) : x1 | 0; if (x1 > x0) RV.fb.fill(c, _row + x0, _row + x1); }
 const DKC = new Map();
-function dkHex(h) { let v = DKC.get(h); if (v === undefined) { v = shadeHex(h, 0.94); DKC.set(h, v); } return v; }
+function dkHex(h) { let v = DKC.get(h); if (v === undefined) { v = shadeHex(h, 0.975); DKC.set(h, v); } return v; }
 let _y = 0, _gcx = 0, _girk = 0, _gcell = 0;
 const LTC = new Map();
-function ltHex(h) { let v = LTC.get(h); if (v === undefined) { v = shadeHex(h, 1.08); LTC.set(h, v); } return v; }
+function ltHex(h) { let v = LTC.get(h); if (v === undefined) { v = shadeHex(h, 1.035); LTC.set(h, v); } return v; }
 // a fast integer hash for the grain, 0..1023
 function gh(a, b) { let h = Math.imul(a | 0, 374761393) + Math.imul(b | 0, 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return (h ^ (h >>> 16)) & 1023; }
 // a span of ground with grain: dark, base and light grains on a 0.2 m world grid, so the texture stays put as the road moves
 function fillSpanD(x0, x1, hex) {
-  x0 = x0 < 0 ? 0 : x0 | 0; x1 = x1 > RW ? RW : x1 | 0; if (x1 <= x0) return;
+  x0 = x0 < 0 ? 0 : x0 | 0; x1 = x1 > (RW * DETAIL) ? (RW * DETAIL) : x1 | 0; if (x1 <= x0) return;
   const a = fogPx(hex, _f), b = fogPx(dkHex(hex), _f), c = fogPx(ltHex(hex), _f), fb = RV.fb, base = _row, cx = _gcx, irk = _girk, row = _gcell;
   for (let x = x0; x < x1; x++) { const h = gh(((x - cx) * irk) | 0, row); fb[base + x] = h < 260 ? b : h > 880 ? c : a; }
 }
@@ -8210,7 +8499,7 @@ function fillSpanD(x0, x1, hex) {
 function lineAt(xc, wpx, col, under) {
   if (wpx >= 1) { fillSpan(Math.round(xc - wpx / 2), Math.round(xc + wpx / 2), fogPx(col, _f)); return; }
   if (wpx < 0.18) return;
-  const x = Math.round(xc - 0.5); if (x < 0 || x >= RW) return;
+  const x = Math.round(xc - 0.5); if (x < 0 || x >= (RW * DETAIL)) return;
   RV.fb[_row + x] = fogPx(mixHex(under, col, Math.min(1, wpx * 1.25)), _f);
 }
 // speckles: stable on the ground because they belong to a 0.5 m world grid
@@ -8218,11 +8507,11 @@ function dots(x0, x1, sRow, sNext, cols, dn, salt) {
   if (!cols || !dn) return;
   const g0 = Math.floor(sRow * 2), g1 = Math.floor(sNext * 2);
   if (g1 === g0) return;
-  const w = Math.min(x1, RW) - Math.max(x0, 0); if (w < 2) return;
+  const w = Math.min(x1, (RW * DETAIL)) - Math.max(x0, 0); if (w < 2) return;
   const n = Math.min(40, Math.round((x1 - x0) * dn / 100));
   for (let i = 0; i < n; i++) {
     const h = hash2(g1 + salt, i * 7.31), x = Math.round(x0 + h * (x1 - x0));
-    if (x < 0 || x >= RW) continue;
+    if (x < 0 || x >= (RW * DETAIL)) continue;
     RV.fb[_row + x] = fogPx(cols[(hash2(i, g1) * cols.length) | 0], _f);
   }
 }
@@ -8235,20 +8524,27 @@ function bandCol(b, gs, t) {
   return (Math.floor(gs / b.per) & 1) ? b.b : b.a;
 }
 // one side's ground bands between the paved edge `xe` and the screen edge (dir -1 left, +1 right); stop at `lim`
-function sideRow(bands, xe, rk, dir, gs, gsN, lim) {
+function sideRow(bands, xe, rk, dir, gs, gsN, lim, terrainType, pano) {
+  if(terrainType==='salt'&&window.FormosaSaltFields){
+    const reach=_y/DETAIL<_hy-1?HILL_REACH:GROUND_REACH,end=xe+dir*reach*rk;
+    let a0=dir<0?end:xe,a1=dir<0?xe:end;
+    if(lim!=null){if(dir<0)a0=Math.max(a0,lim);else a1=Math.min(a1,lim);}
+    window.FormosaSaltFields.paint(RV.fb,_row,Math.max(0,Math.round(a0)),Math.min(RW*DETAIL,Math.round(a1)),xe,rk,gs,_f,RV.haze);return;
+  }
   const n = bands.length, t = RV.t;
   const edge = (w) => xe + dir * w * rk;
   // outermost band first, all the way to the screen edge (or the limit), then each inner band over it
-  const reach = _y < _hy - 1 ? HILL_REACH : GROUND_REACH;
+  const reach = _y / DETAIL < _hy - 1 ? HILL_REACH : GROUND_REACH;
   for (let i = n - 1; i >= 0; i--) {
     const b = bands[i], inner = i > 0 ? edge(Math.min(bands[i - 1].w, reach)) : xe, outer = edge(Math.min(b.w, reach));
     let a0 = dir < 0 ? outer : inner, a1 = dir < 0 ? inner : outer;
     if (lim != null) { if (dir < 0) a0 = Math.max(a0, lim); else a1 = Math.min(a1, lim); }
-    if (a1 <= 0 || a0 >= RW || a1 <= a0) continue;
-    if (b.k === 0 && b.w > 3) fillSpanD(Math.round(a0), Math.round(a1), bandCol(b, gs, t)); else fillSpan(Math.round(a0), Math.round(a1), fogPx(bandCol(b, gs, t), _f));
-    if (b.k === 4 && rk > 3) { const pc = b.dots ? b.dots[0] : shadeHex(b.a, 0.86); for (let o = Math.ceil(((i > 0 ? bands[i - 1].w : 0)) / 1.2) * 1.2, oe = Math.min(b.w, (i > 0 ? bands[i - 1].w : 0) + 60); o < oe; o += 1.2) { const x = Math.round(edge(o)); if (x >= 0 && x < RW && x > a0 && x < a1) RV.fb[_row + x] = fogPx(pc, _f); } }
+    if (a1 <= 0 || a0 >= (RW * DETAIL) || a1 <= a0) continue;
+    const textured=window.FormosaLandscape?.groundBand(terrainType,i,n)&&window.FormosaLandscape.paintGround(RV.fb,_row,Math.max(0,Math.round(a0)),Math.min(RW*DETAIL,Math.round(a1)),xe,rk,gs,terrainType,pano,_f,RV.haze);
+    if(!textured){if (b.k === 0 && b.w > 3) fillSpanD(Math.round(a0), Math.round(a1), bandCol(b, gs, t)); else fillSpan(Math.round(a0), Math.round(a1), fogPx(bandCol(b, gs, t), _f));}
+    if (b.k === 4 && rk > 3) { const pc = b.dots ? b.dots[0] : shadeHex(b.a, 0.86); for (let o = Math.ceil(((i > 0 ? bands[i - 1].w : 0)) / 1.2) * 1.2, oe = Math.min(b.w, (i > 0 ? bands[i - 1].w : 0) + 60); o < oe; o += 1.2) { const x = Math.round(edge(o)); if (x >= 0 && x < (RW * DETAIL) && x > a0 && x < a1) RV.fb[_row + x] = fogPx(pc, _f); } }
     if (b.dots) dots(a0, a1, gs, gsN, b.dots, b.dn * (b.k === 1 ? 0.8 : 1), i * 13 + (dir < 0 ? 0 : 7));
-    if (b.k === 1 && (hash2(Math.floor(gs * 0.5), Math.floor(t * 6)) > 0.6)) { const x = Math.round(lerp(a0, a1, hash2(Math.floor(gs), Math.floor(t * 3)))); if (x >= 0 && x < RW) RV.fb[_row + x] = fogPx(0xffffff, _f * 0.5); }
+    if (b.k === 1 && (hash2(Math.floor(gs * 0.5), Math.floor(t * 6)) > 0.6)) { const x = Math.round(lerp(a0, a1, hash2(Math.floor(gs), Math.floor(t * 3)))); if (x >= 0 && x < (RW * DETAIL)) RV.fb[_row + x] = fogPx(0xffffff, _f * 0.5); }
   }
 }
 // one row of one road: asphalt, both shoulders, the lane lines, the edge lines, the fork split
@@ -8292,46 +8588,61 @@ function roadRow(cx, rk, R, gs, gsN) {
   if (R.p.pixelShadeRows && rk > FOC / 190) {
     const shadows = R.p.pixelShadeRows.get(Math.floor((gs - R.p.gS) * 2));
     if (shadows) {
-      const lo = Math.max(0, Math.ceil(X(oL))), hi = Math.min(RW, Math.floor(X(oR))), fb = RV.fb;
+      const lo = Math.max(0, Math.ceil(X(oL))), hi = Math.min((RW * DETAIL), Math.floor(X(oR))), fb = RV.fb;
       for (const sh of shadows) {
         const a = Math.max(lo, Math.round(X(sh[0]))), b = Math.min(hi, Math.round(X(sh[1])));
         for (let x = a; x < b; x++) {
           const i = _row + x, c = fb[i], r = c & 255, g = (c >>> 8) & 255, blue = (c >>> 16) & 255;
           // Cool, translucent shade retains road/paint detail and never turns black.
-          fb[i] = (255 << 24) | (Math.round(blue * .75 + 18) << 16) | (Math.round(g * .73 + 13) << 8) | Math.round(r * .69 + 9);
+          fb[i] = (255 << 24) | (Math.round(blue * .65 + 16) << 16) | (Math.round(g * .56 + 11) << 8) | Math.round(r * .50 + 9);
         }
       }
     }
+  }
+  cargoWarningRow(cx,rk,R,gs,asph);
+}
+// World-space warnings are mixed into the existing road pixels before any
+// cars or people draw. Lane paint and texture remain visible under the tint.
+function cargoWarningRow(cx,rk,R,gs,asph){
+  if(!RV.cargoWarnings?.length)return;
+  const s=gs-R.p.gS,fb=RV.fb,W=RW*DETAIL;
+  for(const warning of RV.cargoWarnings){
+    if(warning.p!==R.p)continue;const span=window.FormosaRoadEvents.warningSlice(warning,s);if(!span)continue;
+    const left=Math.max(R.oL+.16,span.left),right=Math.min(R.oR-.16,span.right);if(right<=left)continue;
+    const xa=Math.max(0,Math.round(cx+left*rk)),xb=Math.min(W,Math.round(cx+right*rk)),c=fogPx(0xffb234,_f),a=.25;
+    for(let x=xa;x<xb;x++){const i=_row+x,old=fb[i];fb[i]=(255<<24)|(Math.round((old&255)*(1-a)+(c&255)*a))|(Math.round(((old>>>8)&255)*(1-a)+((c>>>8)&255)*a)<<8)|(Math.round(((old>>>16)&255)*(1-a)+((c>>>16)&255)*a)<<16);}
+    if(Math.floor((s-warning.s0)/3)%2===0){lineAt(cx+left*rk,Math.max(1.05,.2*rk),0xffcf48,asph);lineAt(cx+right*rk,Math.max(1.05,.2*rk),0xffcf48,asph);}
+    if(s-warning.s0<.35||warning.s1-s<.35)fillSpan(xa,xb,fogPx(0xffcf48,_f));
   }
 }
 function rasterStrip(A, B, nA, nB) {
   const yN = A[0].sy, yF = B[0].sy;
   if (!(yF < yN)) return;
-  const yTop = Math.max(0, Math.ceil(yF)), yBot = Math.min(RH - 1, Math.ceil(yN) - 1, RV.clipY - 1);
+  const yTop = Math.max(0, Math.ceil(yF * DETAIL)), yBot = Math.min(RH * DETAIL - 1, Math.ceil(yN * DETAIL) - 1, Math.ceil(RV.clipY * DETAIL) - 1);
   if (yBot < yTop) return;
   const iza = 1 / A[0].cz, izb = 1 / B[0].cz, ga = A[0].gs * iza, gb = B[0].gs * izb;
   for (let y = yBot; y >= yTop; y--) {
-    const t = (yN - (y + 0.5)) / (yN - yF), iz = iza + (izb - iza) * t, z = 1 / iz;
-    const gs = (ga + (gb - ga) * t) * z, tN = (yN - (y - 0.5)) / (yN - yF), gsN = (ga + (gb - ga) * tN) / (iza + (izb - iza) * tN);
-    _row = y * RW; _y = y; _f = fogAt(z); _gcell = (gs * 5) | 0;
+    const t = (yN - ((y + 0.5) / DETAIL)) / (yN - yF), iz = iza + (izb - iza) * t, z = 1 / iz;
+    const gs = (ga + (gb - ga) * t) * z, tN = (yN - ((y - 0.5) / DETAIL)) / (yN - yF), gsN = (ga + (gb - ga) * tN) / (iza + (izb - iza) * tN);
+    _row = y * (RW * DETAIL); _y = y; _f = fogAt(z); _gcell = (gs * 15) | 0;
     if (nB === 1) {
-      const a = A[0], b = B[0], cx = a.sx + (b.sx - a.sx) * t, rk = a.rk + (b.rk - a.rk) * t, R = t < 0.5 ? a : b;
-      _gcx = cx; _girk = 5 / Math.max(0.01, rk);
+      const a = A[0], b = B[0], cx = (a.sx + (b.sx - a.sx) * t) * DETAIL, rk = (a.rk + (b.rk - a.rk) * t) * DETAIL, R = t < 0.5 ? a : b;
+      _gcx = cx; _girk = 15 / Math.max(0.01, rk);
       const xl = cx + R.oL * rk, xr = cx + R.oR * rk;
-      sideRow(sideBands(R.sec.L), xl, rk, -1, gs, gsN, null);
-      sideRow(sideBands(R.sec.R), xr, rk, 1, gs, gsN, null);
+      sideRow(sideBands(R.sec.L), xl, rk, -1, gs, gsN, null, R.sec.L, R.p.def.pano);
+      sideRow(sideBands(R.sec.R), xr, rk, 1, gs, gsN, null, R.sec.R, R.p.def.pano);
       groundOverlays(R.p, gs - R.p.gS, cx, rk, R, gs);
       roadRow(cx, rk, R, gs, gsN);
     } else {
       // two roads side by side: the left one's outer ground, the gap between them, the right one's outer ground
       const a0 = A[0], b0 = B[0], a1 = A[1], b1 = B[1];
-      const cx0 = a0.sx + (b0.sx - a0.sx) * t, rk0 = a0.rk + (b0.rk - a0.rk) * t, R0 = t < 0.5 ? a0 : b0;
-      _gcx = cx0; _girk = 5 / Math.max(0.01, rk0);
-      const cx1 = a1.sx + (b1.sx - a1.sx) * t, rk1 = a1.rk + (b1.rk - a1.rk) * t, R1 = t < 0.5 ? a1 : b1;
+      const cx0 = (a0.sx + (b0.sx - a0.sx) * t) * DETAIL, rk0 = (a0.rk + (b0.rk - a0.rk) * t) * DETAIL, R0 = t < 0.5 ? a0 : b0;
+      _gcx = cx0; _girk = 15 / Math.max(0.01, rk0);
+      const cx1 = (a1.sx + (b1.sx - a1.sx) * t) * DETAIL, rk1 = (a1.rk + (b1.rk - a1.rk) * t) * DETAIL, R1 = t < 0.5 ? a1 : b1;
       const x0r = cx0 + R0.oR * rk0, x1l = cx1 + R1.oL * rk1, mid = (x0r + x1l) / 2;
-      sideRow(sideBands(R0.sec.L), cx0 + R0.oL * rk0, rk0, -1, gs, gsN, null);
-      sideRow(sideBands(R1.sec.R), cx1 + R1.oR * rk1, rk1, 1, gs, gsN, null);
-      if (x1l > x0r) { sideRow(sideBands(R0.sec.R), x0r, rk0, 1, gs, gsN, mid); sideRow(sideBands(R1.sec.L), x1l, rk1, -1, gs, gsN, mid); }
+      sideRow(sideBands(R0.sec.L), cx0 + R0.oL * rk0, rk0, -1, gs, gsN, null, R0.sec.L, R0.p.def.pano);
+      sideRow(sideBands(R1.sec.R), cx1 + R1.oR * rk1, rk1, 1, gs, gsN, null, R1.sec.R, R1.p.def.pano);
+      if (x1l > x0r) { sideRow(sideBands(R0.sec.R), x0r, rk0, 1, gs, gsN, mid, R0.sec.R, R0.p.def.pano); sideRow(sideBands(R1.sec.L), x1l, rk1, -1, gs, gsN, mid, R1.sec.L, R1.p.def.pano); }
       // A fork's neighbouring road must not suppress the current road's
       // independent railway/tram ballast and other physical ground strips.
       groundOverlays(R0.p, gs - R0.p.gS, cx0, rk0, R0, gs);
@@ -8339,7 +8650,7 @@ function rasterStrip(A, B, nA, nB) {
       roadRow(cx0, rk0, R0, gs, gsN); roadRow(cx1, rk1, R1, gs, gsN);
     }
   }
-  RV.clipY = Math.min(RV.clipY, yTop);
+  RV.clipY = Math.min(RV.clipY, yTop / DETAIL);
 }
 // lawns with tram tracks, railway ballast: strips laid over the ground bands by tags
 function groundOverlays(p, s, cx, rk, R, gs) {
@@ -8357,7 +8668,7 @@ function drawSpr(S, x, yb, hpx, sx, flip, clip, fog, skew) {
   const wpx = hpx * (S.w / S.h) * sx, x0 = x - (flip ? 1 - S.ax : S.ax) * wpx, yt = yb - hpx;
   if (x0 > RW || x0 + wpx < 0 || yt >= clip || hpx < 0.6) return;
   const pg = ATLAS.pages[S.pg];
-  let L = 0; while (L + 1 < pg.lv.length && S.h / (1 << (L + 1)) >= hpx) L++;
+  let L = 0; while (L + 1 < pg.lv.length && S.h / (1 << (L + 1)) >= hpx * DETAIL) L++;
   const sc = 1 << L, srcX = Math.floor(S.x / sc), srcY = Math.floor(S.y / sc), srcW = Math.max(1, Math.floor(S.w / sc)), srcH = Math.max(1, Math.floor(S.h / sc));
   let dh = hpx, sh = srcH;
   if (yb > clip) { dh = clip - yt; sh = Math.max(1, Math.round(srcH * dh / hpx)); }
@@ -8381,22 +8692,30 @@ function drawWallFace(S, xa, yba, yta, za, ua, xb, ybb, ytb, zb, ub, clip, fog, 
   const iza = 1 / za, izb = 1 / zb, U = (t) => (ua * iza + (ub * izb - ua * iza) * t) / (iza + (izb - iza) * t);
   if (S) {
     const pg = ATLAS.pages[S.pg], hmax = Math.max(yba - yta, ybb - ytb);
-    let L = 0; while (L + 1 < pg.lv.length && S.h / (1 << (L + 1)) >= hmax) L++;
+    let L = 0; while (L + 1 < pg.lv.length && S.h / (1 << (L + 1)) >= hmax * DETAIL) L++;
     const sc = 1 << L, img = pg.lv[L], srcX = S.x / sc, srcY = Math.floor(S.y / sc), srcW = S.w / sc, srcH = Math.floor(S.h / sc);
-    const n = Math.max(1, Math.min(10, Math.ceil(wpx / 30)));
+    const n = Math.max(1, Math.min(32, Math.ceil(wpx / 12)));
     // only the slices on screen
     const i0 = Math.max(0, Math.floor((0 - xa) / wpx * n)), i1 = Math.min(n - 1, Math.floor((RW - xa) / wpx * n));
     for (let i = i0; i <= i1; i++) {
       const t0 = i / n, t1 = (i + 1) / n, x0 = xa + wpx * t0, x1 = xa + wpx * t1;
-      const yt0 = yta + (ytb - yta) * t0, yt1 = yta + (ytb - yta) * t1, yb0 = yba + (ybb - yba) * t0;
+      const yt0 = yta + (ytb - yta) * t0, yt1 = yta + (ytb - yta) * t1, yb0 = yba + (ybb - yba) * t0, yb1=yba+(ybb-yba)*t1;
       if (yt0 >= clip && yt1 >= clip) continue;
       let u0 = U(t0), u1 = U(t1), hh = yb0 - yt0, sh = srcH;
-      if (yb0 > clip) { const f = (clip - yt0) / hh; if (f <= 0) continue; hh *= f; sh = Math.max(1, srcH * f); }
+      const paintedCliff=!!S.meta?.paintedCliff;
+      if(paintedCliff){
+        // A perspective wall has different heights at both slice ends. Cover
+        // the taller end and clip to its exact trapezoid; the old parallelogram
+        // approximation left a sawtooth of sky/water under long rock faces.
+        hh=Math.max(yb0-yt0,yb1-yt1);
+        VG.setTransform(1,0,0,1,0,0);VG.save();VG.beginPath();VG.moveTo(x0-.35,yt0);VG.lineTo(x1+.35,yt1);VG.lineTo(x1+.35,Math.min(yb1+.35,clip));VG.lineTo(x0-.35,Math.min(yb0+.35,clip));VG.closePath();VG.clip();
+      }else if (yb0 > clip) { const f = (clip - yt0) / hh; if (f <= 0) continue; hh *= f; sh = Math.max(1, srcH * f); }
       // a face whose picture runs backward (the right side of the road) is drawn mirrored
       if (u1 < u0) { const q = u0; u0 = u1; u1 = q; VG.setTransform(x0 - x1, yt0 - yt1, 0, hh, x1 + 0.35, yt1); }
       else VG.setTransform(x1 - x0 + 0.35, yt1 - yt0, 0, hh, x0, yt0);
       VG.drawImage(img, srcX + u0 * srcW, srcY, Math.max(0.5, (u1 - u0) * srcW), sh, 0, 0, 1, 1);
       if (fog > 0.02 && L > 0 && pg.hz[L]) { VG.globalAlpha = fog; VG.drawImage(pg.hz[L], srcX + u0 * srcW, srcY, Math.max(0.5, (u1 - u0) * srcW), sh, 0, 0, 1, 1); VG.globalAlpha = 1; }
+      if(paintedCliff)VG.restore();
     }
     VG.setTransform(1, 0, 0, 1, 0, 0);
   } else {
@@ -8471,12 +8790,12 @@ function wallItem(W, a, b, gsA, gsB, clip) {
   const map = (u) => { u = W.u0 + (W.u1 - W.u0) * u; return p > 0 ? 1 - u : u; };
   const fog = fogAt((za + zb) / 2);
   // the end you see first as you approach: a flat face across the line of sight
-  if (s0 === W.gs0 && W.depth > 0) {
+  if (s0 === W.gs0 && W.depth > 0 && W.capStart !== false) {
     const e2 = p > 0 ? ea + W.depth : ea - W.depth, x2 = X0 + (pa.cx + pa.rx * e2) * ka, S = W.side >= 0 ? SPRL[W.side] : null;
     const xl = Math.min(xa, x2), xr = Math.max(xa, x2);
     if (xr > 0 && xl < RW && yta < clip) {
       const yb = Math.min(yba, clip);
-      if (S) { const pg = ATLAS.pages[S.pg], hh = yba - yta; let Lv = 0; while (Lv + 1 < pg.lv.length && S.h / (1 << (Lv + 1)) >= hh) Lv++; const sc = 1 << Lv; VG.drawImage(pg.lv[Lv], Math.floor(S.x / sc), Math.floor(S.y / sc), Math.max(1, Math.floor(S.w / sc)), Math.max(1, Math.floor(S.h / sc * (yb - yta) / hh)), xl, yta, xr - xl, yb - yta); }
+      if (S) { const pg = ATLAS.pages[S.pg], hh = yba - yta; let Lv = 0; while (Lv + 1 < pg.lv.length && S.h / (1 << (Lv + 1)) >= hh * DETAIL) Lv++; const sc = 1 << Lv; VG.drawImage(pg.lv[Lv], Math.floor(S.x / sc), Math.floor(S.y / sc), Math.max(1, Math.floor(S.w / sc)), Math.max(1, Math.floor(S.h / sc * (yb - yta) / hh)), xl, yta, xr - xl, yb - yta); }
       else { VG.fillStyle = cssHex(W.sideCol); VG.fillRect(xl, yta, xr - xl, yb - yta); }
       VG.fillStyle = 'rgba(0,0,0,0.22)'; VG.fillRect(xl, yta, xr - xl, yb - yta);
       if (fog > 0.02) { VG.globalAlpha = fog; VG.fillStyle = cssHex(RV.haze); VG.fillRect(xl, yta, xr - xl, yb - yta); VG.globalAlpha = 1; }
@@ -8498,7 +8817,16 @@ function drawStripItems(a, b, clip) {
   RV.stamp++;
   for (let ri = 0; ri < nr; ri++) {
     const p = _rng[ri][0], s0 = _rng[ri][1], s1 = _rng[ri][2];
+    if(p.railCrossing){const project=(s,x,y)=>{const world={},screen={};p.pos(s,x,world);return projW(world.x,world.y+y,world.z,screen)?screen:null;};
+      window.FormosaRailCrossing.drawStrip(VG,p.railCrossing,s0,s1,project,clip);
+      if(p.railCrossing.s>=s0&&p.railCrossing.s<s1)items.push(item(12,p.railCrossing,p.gS+p.railCrossing.s,0,p));
+    }
     if (!p.sprB) continue;
+    // The player's rear contact line belongs in the same depth ordering as
+    // people and traffic. Drawing the car last made a nearer walker's legs
+    // appear below the bumper while their torso was hidden behind the car.
+    const playerS=PC.s-CAR_REAR;
+    if(HUD.carVisible!==false&&p===PC.piece&&playerS>=s0&&playerS<s1&&!RV.playerDrawn)items.push(item(13,PC,p.gS+playerS,0,p));
     const b0 = Math.max(0, Math.floor(s0 / BUCKET)), b1 = Math.min(p.sprB.length - 1, Math.floor(s1 / BUCKET));
     for (let bk = b0; bk <= b1; bk++) {
       const SB = p.sprB[bk];
@@ -8515,6 +8843,7 @@ function drawStripItems(a, b, clip) {
       for (let j = 0; j < WB.length; j++) { const w = p.walls[WB[j]]; if (w._st !== RV.stamp && w.s1 > s0 && w.s0 < s1) { w._st = RV.stamp; w.gs0 = p.gS + w.s0; w.gs1 = p.gS + w.s1; if (w.h * kS >= 1.5) items.push(item(1, w, Math.max(w.gs0, gsA), 0, p)); } }
     }
     for (const r of p.rails) if (r.s1 > s0 && r.s0 < s1) items.push(item(2, r, Math.max(p.gS + r.s0, gsA), Math.min(p.gS + r.s1, gsB), p));
+    for(const m of p.landmarkMeshes||[])if(m.s>=s0&&m.s<s1)items.push(item(11,m,p.gS+m.s,0,p));
     const sec = (a.p === p ? a : b).sec;
     for (const v of TRAFFIC.list) if (v.p === p && v.s >= s0 && v.s < s1) items.push(item(5, v, p.gS + v.s, 0, p));
     for (const h of HAZ.list) if (h.p === p && h.s >= s0 && h.s < s1) items.push(item(8, h, p.gS + h.s, 0, p));
@@ -8533,11 +8862,16 @@ function drawStripItems(a, b, clip) {
   });
   for (let n = 0; n < items.length; n++) {
     const it = items[n];
+    if(it.k===13){drawPlayerCar(PC.spr);RV.playerDrawn=true;continue;}
+    if(it.k===12){const p=it.p,project=(s,x,y)=>{const world={},screen={};p.pos(s,x,world);return projW(world.x,world.y+y,world.z,screen)?screen:null;};
+      window.FormosaRailCrossing.drawJunction(VG,it.o,project,clip,(q,l,r)=>{if(window.FormosaRailCrossing.drawTrain(VG,q,l,r))return;const S=SPR.jijitrain;if(!S||!l||!r)return;const pg=ATLAS.pages[S.pg];VG.drawImage(pg.lv[0],S.x,S.y,S.w,S.h,l.x,l.y-3.4*l.k,r.x-l.x,3.4*l.k);});continue;
+    }
     if (it.k === 1) { wallItem(it.o, a, b, gsA, gsB, clip); continue; }
     if (it.k === 2) { drawRail(it.o, a, b, it.gs, it.gs1, clip, fogAt(a.cz)); continue; }
+    if(it.k===11){const m=it.o,p=it.p;window.FormosaWorldLife.drawMesh(VG,m,v=>{const s=m.s+v[0],i=Math.round(clamp(s,0,p.L)/DS),x=m.sg<0?p.outerL(i)-v[1]:p.outerR(i)+v[1],world={},screen={};p.pos(s,x,world);return projW(world.x,world.y+v[2],world.z,screen)?screen:null;},clip,RW,RH,RV.haze,fogAt(a.cz));continue;}
     const ip = interp(a, b, it.gs);
     if (ip.cz < 0.6) continue;
-    const xs = X0 + (ip.cx + ip.rx * it.o.x) * ip.k, ys = Y0 - ip.cy * ip.k, fog = fogAt(ip.cz);
+    const xs = X0 + (ip.cx + ip.rx * it.o.x) * ip.k, ys = Y0 - ip.cy * ip.k-((it.k===5||it.k===7||it.k===8||it.k===10)?railRoadHeight(it.p,it.gs-it.p.gS,it.o.x)*ip.k:0), fog = fogAt(ip.cz);
     if (it.k === 5) {
       // which way the vehicle shows itself: the road's heading here, less the bearing we see it at
       const hd = Math.atan2(b.cx - a.cx, Math.max(0.05, b.cz - a.cz)), br = Math.atan2(ip.cx + ip.rx * it.o.x, ip.cz);
@@ -8548,7 +8882,9 @@ function drawStripItems(a, b, clip) {
     if (it.k === 9) { drawTramX(it.o, X0 + ip.cx * ip.k, ys, ip.k, clip, fog); continue; }
     if (it.k === 10) { drawRival(it.o, xs, ys, ip.k, clip); continue; }
     const o = it.o, S = SPRL[o.id], h = S.wh * o.sc * ip.k;
-    const near = h > 26, sway = near && o.sway ? Math.sin(RV.t * 1.4 + o.ph) * 0.035 * o.sway : 0;
+    const cameraSection=CV.p.sec(CV.s),waterClip=[cameraSection.L,cameraSection.R].some(type=>sideBands(type).some(b=>b.k===1||b.k===2))?clip:null;
+    if(!sceneryGrounded(S,o,ip,xs,ys,it.p,it.gs-it.p.gS,waterClip)){RV.groundCulled++;continue;}
+    const near = h > 26, sway = near && o.sway ? (window.FormosaWorldLife?window.FormosaWorldLife.wind(o,RV.t):Math.sin(RV.t * 1.4 + o.ph)*0.035*o.sway) : 0;
     // small far things get their haze from the band laid over the horizon, not one by one
     drawSpr(S, xs, ys - o.y * ip.k, h, o.sx, (near || S.ax !== 0.5) && o.flip, clip, h >= 10 && ip.cz < HAZE_Z ? fog : 0, sway);
   }
@@ -8573,6 +8909,14 @@ function drawStripItems(a, b, clip) {
 }
 // moving set pieces: the light-rail tram, the train, the plane landing
 function animItems(an, p, s0, s1, items) {
+  if(an.kind==='walker'&&window.FormosaWorldLife){
+    if(an.s1<s0||an.s0>=s1)return;
+    const frame=window.FormosaWorldLife.walkerFrame(an,RV.t);if(frame.s<s0||frame.s>=s1)return;
+    const name='ped'+an.variant+'_'+frame.frame,S=SPR[name]||SPR['ped'+(an.variant%3)+'_'+frame.frame];if(!S)return;
+    const i=Math.round(clamp(frame.s,0,p.L)/DS),o=an._sprite||(an._sprite={sc:1,sx:1,y:0,sway:0,ph:an.phase,glow:0});
+    o.id=S.id;o.x=an.sg<0?p.outerL(i)-an.off:p.outerR(i)+an.off;o.flip=frame.dir<0;
+    items.push(item(0,o,p.gS+frame.s,0,p));return;
+  }
   if (an.kind === 'tram' || an.kind === 'train') {
     const L = an.length || (an.kind === 'tram' ? 34 : 120), sp = an.speed || (an.kind === 'tram' ? 9 : 24);
     const run = an.contained ? Math.max(1, an.s1 - an.s0 - L) : an.s1 - an.s0 + L;
@@ -8599,6 +8943,7 @@ function hazeBand(yNear) {
 // ---------- one frame ----------
 function renderFrame(T) {
   RV.t = G.t;
+  RV.playerDrawn=false;
   if (RV.haze !== T.haze) { RV.haze = T.haze; RV.col.clear(); }
   RV.fogN = T.fogN * 1.3; RV.fogF = T.fogF * 1.25; RV.fogMax = T.fogMax * 0.55;
   atlasHaze(T.haze);
@@ -8611,6 +8956,7 @@ function renderFrame(T) {
   // the road raster, near to far
   buildSlots();
   RV.fb.fill(0); RV.clipY = RH; _hy = horizonY();
+  RV.cargoWarnings=window.FormosaRoadEvents?window.FormosaRoadEvents.warnings(roadEventsApi()):[];
   const S = RV.slots, ns = RV.ns;
   for (let k = 0; k + 1 < ns; k++) {
     const A = S[k], B = S[k + 1];
@@ -8622,8 +8968,9 @@ function renderFrame(T) {
     rasterStrip(near, far, near.length, far.length);
   }
   const t2 = performance.now();
+  RV.groundCulled=0;
   RV.gctx.putImageData(RV.img, 0, 0);
-  VG.drawImage(RV.gcv, 0, 0);
+  VG.drawImage(RV.gcv, 0, 0, RW, RH);
   const t3 = performance.now();
   // everything standing on it, far to near; once the far distance is drawn, a band of haze settles over it
   let hazed = false;
@@ -8692,7 +9039,7 @@ let VW = 1, VH = 1;
 function resize() {
   VW = Math.max(1, innerWidth); VH = Math.max(1, innerHeight);
   RW = clamp(Math.round((RH * VW) / VH), 360, 640); RW += RW & 1; X0 = RW / 2;
-  view.width = RW; view.height = RH; vctx.imageSmoothingEnabled = false;
+  view.width = RW * DETAIL; view.height = RH * DETAIL; vctx.imageSmoothingEnabled = false; vctx.setTransform(1,0,0,1,0,0);
   renderResize();
   hudResize();
 }
@@ -8723,12 +9070,12 @@ function postFX() {
   const sp = clamp((PC.v - 22) / 55, 0, 1) * (RACE.state === 'run' ? 1 : 0.6);
   if (sp < 0.03 || reduceMotion || G.fx === false) return;
   const f = RV.fx.getContext('2d'), f2 = RV.fx2.getContext('2d');
-  f.globalCompositeOperation = 'copy'; f.drawImage(view, 0, 0);
+  f.globalCompositeOperation = 'copy'; f.imageSmoothingEnabled=false; f.drawImage(view, 0, 0, RW, RH);
   const zoom = (z, a) => { f2.globalAlpha = a; f2.drawImage(RV.fx, X0 - X0 * z, Y0 - Y0 * z, RW * z, RH * z); };
   f2.globalCompositeOperation = 'copy'; zoom(1 + 0.028 * sp, 1);
   f2.globalCompositeOperation = 'source-over'; zoom(1 + 0.06 * sp, 0.5); zoom(1 + 0.095 * sp, 0.3);
   f2.globalAlpha = 1; f2.globalCompositeOperation = 'destination-in'; f2.drawImage(RV.mask, 0, 0); f2.globalCompositeOperation = 'source-over';
-  vctx.globalAlpha = 0.92 * sp; vctx.drawImage(RV.fx2, 0, 0); vctx.globalAlpha = 1;
+  vctx.globalAlpha = 0.16 * sp; vctx.drawImage(RV.fx2, 0, 0); vctx.globalAlpha = 1;
 }
 function render() {
   if (!CV.p) return;
@@ -8738,7 +9085,7 @@ function render() {
   updateBackdrop(true);
   renderFrame(T);
   const a = performance.now();
-  if (HUD.carVisible !== false) { drawPlayerCar(PC.spr); fxDraw(); }
+  if (HUD.carVisible !== false) { if(!RV.playerDrawn)drawPlayerCar(PC.spr);fxDraw(); }
   const b = performance.now();
   postFX();
   if (RACE.state === 'ignition') drawIgnition(); else drawPixHud();
@@ -8785,11 +9132,27 @@ async function boot() {
   await loadFonts();
   if (typeof loadRefCars === 'function') await loadRefCars();
   await loadPixelPlayer();
+  await loadGameAudio();
   if (window.FormosaClassicStreetArt) await window.FormosaClassicStreetArt.loadAssets();
+  if (window.FormosaLandscape) await window.FormosaLandscape.loadAssets();
+  if(window.FormosaWorldLife)await window.FormosaWorldLife.loadAssets();
+  if(window.FormosaLandmarkArt)await window.FormosaLandmarkArt.loadAssets();
+  if(window.FormosaRegionalArt)await window.FormosaRegionalArt.loadAssets();
+  if(window.FormosaCliffArt)await window.FormosaCliffArt.loadAssets();
+  if(window.FormosaRailCrossing)await window.FormosaRailCrossing.loadAssets();
   const t0 = performance.now();
   paintNature(); paintTown(); paintLand(); paintSigns(); paintSights(); paintHazards(); paintBig(); paintCity(); paintRails(); paintTraffic(); paintTaiwan(); paintTrains();
+  if(window.FormosaWorldLife)window.FormosaWorldLife.registerSprites({canvas,Pix,addSprite,trafficSprites:TRAFFIC_SPR});
+  if(window.FormosaClassicStreetArt)window.FormosaClassicStreetArt.registerUprightPalms({canvas,Pix,addSprite,originals:_sprQueue});
+  if(window.FormosaRailCrossing)window.FormosaRailCrossing.registerSprites({Pix,addSprite});
+  if(window.FormosaLandmarkArt)window.FormosaLandmarkArt.registerSprites({canvas,Pix,addSprite,originals:_sprQueue});
+  if(window.FormosaRegionalArt)window.FormosaRegionalArt.registerSprites({canvas,Pix,addSprite});
+  if(window.FormosaCliffArt)window.FormosaCliffArt.registerSprites({canvas,Pix,addSprite,railTypes:RAIL_TEX});
   const tA = performance.now();
   packAtlas();
+  // Only compiled sources are released. Train drawing, player cars and the
+  // classic skyline still use their originals at runtime and keep them.
+  for (const art of [window.FormosaWorldLife,window.FormosaLandmarkArt,window.FormosaRegionalArt,window.FormosaCliffArt,window.FormosaLandscape]) art?.releaseSources?.();
   const tB = performance.now();
   buildWorld();
   const tC = performance.now();
@@ -8804,12 +9167,13 @@ async function boot() {
 }
 // ---------- debug hooks for automated tests ----------
 window.__kr = {
-  HUD, CREW, STAGES, VTYPES, WORLD_K, DS, get hd() { return window.FORMOSA_HD; },
+  HUD, CREW, STAGES, VTYPES, WORLD_K, DS, sideBands, get hd() { return window.FORMOSA_HD; },
   get END() { return END; }, get ENDINGS() { return ENDINGS; },
-  playerWidth, playerLength, trafficFree, trafficCorridorOpen, trafficTryMove, roadLimits,
-  playerMassKg, trafficMassKg, solveVehicleImpulse, trafficPlayerContact,
-  G, ROUTE, SPR, SPRL, ATLAS, PC, RACE, BOT, TRAFFIC, CTL, RV, CV, TRAFFIC_SPR, FX, CARS, AVATAR, carSprites, carTurn, carGeo, paintCarRear, carLamps, badgeSurprise, avatarSet, get IGN() { return IGN; }, gapLeft, nearIntervals,
-  netDebug: { slot:netSlot, players:netPlayers, position:netGridPosition, layout:netBuildGridLayout, now:netNow, message:netOnMsg, peer:netPeer, drop:netDrop, start:netStartRace, ignitionSkip:igniteSkip },
+  playerWidth, playerLength, trafficFree, trafficCorridorOpen, trafficTryMove, roadLimits, sceneryGrounded,
+  playerMassKg, trafficMassKg, solveVehicleImpulse, trafficPlayerContact, hazardsUpdate, wildlifeUpdate,
+  audioDebug:{get adapter(){return GAME_AUDIO;},get radio(){return STREAM_RADIO;},get buses(){return AU;},get synth(){return MUS;},init:audioInit,pass:sfxPass,observe:sfxObservePass,music:musicPlay,shift:pcShift,tyre:sfxChirp},
+  G, ROUTE, SPR, SPRL, ATLAS, PC, RACE, BOT, TRAFFIC, CTL, RV, CV, TRAFFIC_SPR, FX, CARS, AVATAR, carSprites, carTurn, carGeo, paintCarRear, carLamps, badgeSurprise, avatarSet, get IGN() { return IGN; }, roadEventsApi, gapLeft, nearIntervals,
+  netDebug: { slot:netSlot, players:netPlayers, standings:netStandings, progress:netCourseProgress, forkChoice:netForkChoice, forkGuide:netForkGuide, position:netGridPosition, layout:netBuildGridLayout, now:netNow, message:netOnMsg, peer:netPeer, drop:netDrop, start:netStartRace, ignitionSkip:igniteSkip },
   get SET() { return SET; }, get GHOST() { return GHOST; }, get HAZ() { return HAZ; }, get BG() { return BG; }, get NET() { return NET; }, get UI() { return UI; }, netHost, netJoin, netLeave, netHostStart, show(n) { show(n); }, showResult, openRecords, courseLayout, startEnding,
   race(i, auto) { G.state = 'race'; raceStart(i || 0, auto !== false); },
   bot(on, forks, skill) { BOT.on = on !== false; BOT.forks = forks || []; BOT.forkI = 0; BOT.skill = skill || 1; },
@@ -8819,12 +9183,13 @@ window.__kr = {
   sim(sec, h) { h = h || 1 / 60; const n = Math.round(sec / h); for (let i = 0; i < n; i++) { tick(h); if (RACE.state === 'goal' && RACE.goalT > 1 || RACE.state === 'timeup' && RACE.overT > 1) break; } return this.state(); },
   // the ending scene for a goal, drawn n frames in: the picture, for the tests
   ending(goal, n, car) { RACE.carIdx = car || 0; RACE.goal = goal; startEnding(); for (let i = 0; i < (n || 90); i++) drawEnding(1 / 30); return view.toDataURL('image/png'); },
+  endingFrame(dt = 0) { drawEnding(dt); return END.layout; },
   go(pi, s, x) { PC.piece = ROUTE.pieces[pi]; PC.s = s; PC.x = x == null ? PC.x : x; CAM.init = false; },
   run() { RACE.state = 'run'; RACE.countdown = 0; },
   cam(o) { Object.assign(CAM.cfg, o); CAM.init = false; return CAM.cfg; },
   car(i) { RACE.carIdx = i; PC.spec = CARS[i]; PC.spr = carSprites(CARS[i]); return CARS[i].name; },
   state() { return { st: RACE.state, piece: PC.piece.id, s: Math.round(PC.s), x: +PC.x.toFixed(2), v: Math.round(kmh(PC.v)), gear: PC.gear, time: +RACE.time.toFixed(1), el: +RACE.elapsed.toFixed(1), route: RACE.route.join('>'), crashes: RACE.crashes, splits: RACE.splits.map((q) => q.id + ':' + q.t.toFixed(1)), traffic: TRAFFIC.list.length }; },
-  info() { return { pieces: ROUTE.pieces.map((p) => [p.id, Math.round(p.L), p.sprites.length, p.walls.length]), slots: RV.ns, sprites: SPRL.length, pages: ATLAS.pages.map((pg) => pg.lv[0].width + 'x' + pg.lv[0].height), RW }; },
+  info() { return { pieces: ROUTE.pieces.map((p) => [p.id, Math.round(p.L), p.sprites.length, p.walls.length]), slots: RV.ns, sprites: SPRL.length, detailScale: DETAIL, physicalHeight: view.height, pages: ATLAS.pages.map((pg) => pg.lv[0].width + 'x' + pg.lv[0].height), RW }; },
   atlas(i) { return ATLAS.pages[i || 0].lv[0].toDataURL('image/png'); },
   // one fixed step with a drawn frame, for recording: returns the game screen as a PNG data URL
   step(dt) { const steps = Math.max(1, Math.ceil(dt / 0.02)), h = dt / steps; for (let i = 0; i < steps; i++) tick(h); if (G.state === 'race') { updateCamera(dt); updateBackdrop(); uiFrame(); } render(); drawHud(dt); return view.toDataURL('image/png'); },
@@ -8836,7 +9201,7 @@ boot();
 
 // ===================== screens: title, car select, setup, pause, results, records, settings =====================
 // The race keeps running behind the menus as an attract mode: the bot drives stage 1 with the HUD off.
-const UI = { scr: null, sel: 0, auto: true, gearbox: 'at', ctrl: 'tilt', song: 0, turn: null, turnRaf: 0, turnT: 0, unlocked: false, resultShown: false, from: 'title' };
+const UI = { scr: null, sel: 0, auto: true, gearbox: 'at', ctrl: 'tilt', song: 0, musicTrack: 'auto', turn: null, turnRaf: 0, turnT: 0, unlocked: false, resultShown: false, from: 'title' };
 const SAVE = { load(k, d) { try { const v = localStorage.getItem('kr.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, save(k, v) { try { localStorage.setItem('kr.' + k, JSON.stringify(v)); } catch (e) { /* private mode */ } } };
 const SET = Object.assign({ music: 0.6, sfx: 0.9, sens: 18, quality: 'high', guide: true }, SAVE.load('settings', {}));
 if (SET.sens === 28) SET.sens = 18;   // the old default was too lazy
@@ -8849,7 +9214,7 @@ function uiInit() {
   root.innerHTML = `
   <section class="scr" id="s-title">
     <div class="title-wrap">
-      <div class="logo"><span class="logo-tc">衝向寶島</span><span class="logo-en">FORMOSA RUN</span><span class="logo-yr">高雄港出發・環島五關分歧　1993</span></div>
+      <div class="logo"><span class="logo-tc">衝向寶島</span><span class="logo-en">FORMOSA RUN</span><span class="logo-yr">高雄港出發・環島五關分歧　ARCADE TOUR</span></div>
       <div class="tap" id="tap">點一下開始　TAP TO START</div>
       <div class="menu" id="menu" hidden>
         <button class="btn big" data-go="select">開始遊戲</button>
@@ -8865,7 +9230,7 @@ function uiInit() {
       <div class="show"><canvas id="turn" width="460" height="200"></canvas>
         <div class="badge"><span id="b-gear">6 速</span><span id="b-eng">V12</span></div>
         <button class="arrow l" data-act="prev" aria-label="上一台">◀</button><button class="arrow r" data-act="next" aria-label="下一台">▶</button></div>
-      <div class="info panel"><div class="nm"><b id="c-name"></b><span id="c-en"></span></div><p class="desc" id="c-desc"></p><div class="crew" id="c-crew"></div><div class="stats" id="c-stats"></div></div>
+      <div class="info panel"><div class="nm"><b id="c-name"></b><span id="c-en"></span></div><p class="desc" id="c-desc"></p><div class="crew" id="c-crew"></div><div class="crew-cards" id="c-portraits" hidden></div><div class="stats" id="c-stats"></div></div>
       <div class="thumbs" id="thumbs"></div>
       <div class="actions"><button class="btn ghost" data-go="title">返回</button><button class="btn big" data-act="pick">選這台</button></div>
     </div>
@@ -8895,7 +9260,11 @@ function uiInit() {
   $('s-title').addEventListener('pointerdown', unlock);
   addEventListener('keydown', onUiKey);
   if (!IS_TOUCH) $('row-ctrl').hidden = true;
-  SONGS.forEach((s, i) => $('radio').appendChild(h(`<button data-song="${i}">${s.name}<small>${s.en}・${s.mood}</small></button>`)));
+  const musicTracks=GAME_AUDIO?.diagnostics.tracks.filter(t=>t.status==='ready'&&t.src&&t.commercialUseVerified)||[];
+  if(musicTracks.length){
+    $('radio').appendChild(h(`<label>旅途配樂<select id="music-station" aria-label="旅途配樂"><option value="auto">自動・隨沿途場景切換</option>${musicTracks.map(t=>`<option value="${t.id}">${t.title}</option>`).join('')}</select><small>選擇一首歌曲，就能在旅途中持續收聽。</small></label>`));
+    $('music-station').addEventListener('change',e=>{UI.musicTrack=e.target.value;musicStreamContext();});
+  }else SONGS.forEach((s, i) => $('radio').appendChild(h(`<button data-song="${i}">${s.name}<small>${s.en}・${s.mood}</small></button>`)));
   CARS.forEach((c, i) => $('thumbs').appendChild(h(`<button data-car="${i}" aria-label="${c.name}"><canvas width="160" height="80"></canvas></button>`)));
   applySettings();
   show('title');
@@ -8965,8 +9334,24 @@ function openSelect() {
   const st = $('c-stats'); st.innerHTML = '';
   for (const [l, f, v] of STAT_ROWS) { st.appendChild(h(`<span class="l">${l}</span>`)); const b = h('<div class="bar"><i></i></div>'); b.firstChild.style.width = Math.round(clamp(f(c), 0.05, 1) * 100) + '%'; st.appendChild(b); st.appendChild(h(`<span class="v">${v ? v(c) + (l === '極速' ? 'km' : '') : ''}</span>`)); }
   document.querySelectorAll('#thumbs button').forEach((b, i) => b.setAttribute('aria-current', i === UI.sel ? 'true' : 'false'));
-  UI.turnT = 0; drawThumbs();
+  const thumbStrip=$('thumbs'),chosenThumb=thumbStrip.querySelector('[aria-current="true"]');
+  if(chosenThumb){const strip=thumbStrip.getBoundingClientRect(),chosen=chosenThumb.getBoundingClientRect();if(chosen.left<strip.left)thumbStrip.scrollLeft+=chosen.left-strip.left-2;else if(chosen.right>strip.right)thumbStrip.scrollLeft+=chosen.right-strip.right+2;}
+  UI.turnT = 0; drawThumbs(); drawCrewCards(c, crew);
   if (!UI.turnRaf) UI.turnRaf = requestAnimationFrame(turnLoop);
+}
+function drawCrewCards(spec, crew) {
+  const panel=$('c-portraits'); panel.replaceChildren(); panel.hidden=true;
+  if(!PIXEL_PLAYER?.has(spec))return;
+  for(let i=0;i<crew.length;i++) {
+    const member=crew[i],card=document.createElement('figure'),portrait=document.createElement('canvas');
+    card.className='crew-card';card.dataset.crew=member.name;portrait.width=144;portrait.height=156;
+    if(!PIXEL_PLAYER.drawPortrait(portrait.getContext('2d'),{spec,index:i}))return;
+    portrait.setAttribute('role','img');portrait.setAttribute('aria-label',member.name+' 人物像');
+    const caption=document.createElement('figcaption'),role=document.createElement('small');
+    caption.textContent=member.name;role.textContent=i?(member.dog?'旅伴':'副駕駛'):'駕駛';caption.appendChild(role);
+    card.append(portrait,caption);panel.appendChild(card);
+  }
+  panel.hidden=false;
 }
 // the showroom: the car goes round on a lit turntable under sweeping spotlights, mirrored in the floor; each time its
 // tail comes past the pipes spit flame and the brake lamps flare, and the two of them wave when it faces the crowd
@@ -8993,6 +9378,11 @@ function turnLoop() {
     g2.fillStyle = gr; g2.beginPath(); g2.moveTo(x0, 0); g2.lineTo(ax - 50, fy); g2.lineTo(ax + 50, fy); g2.closePath(); g2.fill();
   }
   g2.fillStyle = 'rgba(255,178,62,.35)'; g2.fillRect(0, fy, W, 2);
+  if (PIXEL_PLAYER?.has(spec)) {
+    g2.fillStyle='rgba(0,0,0,.36)';g2.beginPath();g2.ellipse(tx,fy+2,spec.W*62,7,0,0,TAU);g2.fill();
+    PIXEL_PLAYER.drawShowcase(g2,{spec,x:tx,ground:fy,width:spec.W*140,maxHeight:H-55,reflection:true});
+    return;
+  }
   // the car: one turn every eight seconds, the frame nearest its angle, standing on the turntable's centre
   const yaw = (t * (TAU / 8) + 0.55) % TAU, fi = Math.round((yaw / TAU) * TURN_N) % TURN_N, img = carTurnFrame(spec, fi);
   const k = 1.45, w = img.width * k, hgt = img.height * k, x = tx - w / 2, y = fy - TURN_OPT.gy * k, cy = Math.cos(yaw);
@@ -9014,9 +9404,12 @@ function turnLoop() {
 function stopTurn() { if (UI.turnRaf) cancelAnimationFrame(UI.turnRaf); UI.turnRaf = 0; }
 function drawThumbs() {
   document.querySelectorAll('#thumbs canvas').forEach((cv, i) => {
-    if (cv.dataset.done) return;
-    const img = carSide(CARS[i], 52), g2 = cv.getContext('2d'), sc = Math.min(cv.width / img.width, cv.height / img.height);
-    g2.imageSmoothingEnabled = false; g2.drawImage(img, (cv.width - img.width * sc) / 2, (cv.height - img.height * sc) / 2, img.width * sc, img.height * sc); cv.dataset.done = '1';
+    const spec=CARS[i],pixel=PIXEL_PLAYER?.has(spec),version=pixel?'pixel:'+spec.id:'original';
+    if (cv.dataset.done===version) return;
+    const g2=cv.getContext('2d');g2.clearRect(0,0,cv.width,cv.height);g2.imageSmoothingEnabled=false;
+    if(pixel) PIXEL_PLAYER.drawShowcase(g2,{spec,x:cv.width/2,ground:cv.height-4,width:spec.W*68,maxHeight:cv.height-8});
+    else {const img=carSide(spec,52),sc=Math.min(cv.width/img.width,cv.height/img.height);g2.drawImage(img,(cv.width-img.width*sc)/2,(cv.height-img.height*sc)/2,img.width*sc,img.height*sc);}
+    cv.dataset.done=version;
   });
 }
 // ---------- setup: gearbox, steering, radio ----------
@@ -9029,6 +9422,7 @@ function markSetup() {
   for (const b of document.querySelectorAll('#seg-auto .btn')) b.setAttribute('aria-pressed', b.dataset.v === UI.gearbox ? 'true' : 'false');
   for (const b of document.querySelectorAll('#seg-ctrl .btn')) b.setAttribute('aria-pressed', b.dataset.v === UI.ctrl ? 'true' : 'false');
   for (const b of document.querySelectorAll('#radio button')) b.setAttribute('aria-pressed', +b.dataset.song === UI.song ? 'true' : 'false');
+  if($('music-station'))$('music-station').value=UI.musicTrack;
   const c = CARS[UI.sel];
   $('note-auto').textContent = UI.auto ? '自動換檔，專心轉彎就好。' : UI.gearbox === 'seq' ? (IS_TOUCH ? `簡易手排：左邊上面的鍵升檔、下面的鍵降檔，這台是 ${c.gears} 速。` : `簡易手排：E 升檔、Q 降檔。這台是 ${c.gears} 速。`) : (IS_TOUCH ? `手排：左手在畫面左側畫 H 檔換檔，這台是 ${c.gears} 速。` : `手排：Q / E 降升檔，或按 1–${c.gears} 直接進檔。這台是 ${c.gears} 速。`);
   $('note-ctrl').textContent = UI.ctrl === 'tilt' ? '像握方向盤一樣左右傾斜手機。' : '左手按住左下角左右拖曳轉向。';
@@ -9057,6 +9451,7 @@ function startPlay() {
 function toTitle() { audioInit(); show('title'); musicPlay(3); startAttract(); }
 function onPausePressed() { if (G.mode !== 'play' || UI.resultShown) return; G.paused = !G.paused; if (G.paused) { show('pause'); if (AU.ctx) AU.ctx.suspend(); } else resume(); }
 function resume() { G.paused = false; show(null); if (AU.ctx) AU.ctx.resume(); }
+document.addEventListener('visibilitychange',()=>{if(!AU.ctx)return;if(document.hidden){AU.visibilityPaused=true;AU.ctx.suspend();}else if(AU.visibilityPaused&&!G.paused){AU.visibilityPaused=false;AU.ctx.resume();}});
 // called every frame: the attract mode loops; a finished race brings up the results
 function uiFrame() {
   if (G.mode === 'attract' && (RACE.state === 'goal' || RACE.state === 'timeup' || PC.s > PC.piece.L - 50 && !PC.piece.children.length && !PC.piece.next)) startAttract();
@@ -9112,6 +9507,7 @@ function routeKey() { return RACE.route.join('>'); }
 function showResult() {
   UI.resultShown = true;
   const goal = RACE.state === 'goal', c = CARS[UI.sel], key = routeKey();
+  if (goal) window.FormosaEndingScenes.prepare(END_PLACES[RACE.goal]);
   const rec = SAVE.load('records', { routes: {}, scores: [] });
   let newBest = false;
   if (goal) {
@@ -9140,8 +9536,8 @@ function showResult() {
 // the online ranking on the results screen, filling in as the others come home
 function renderRank() {
   const el = $('net-rank'); if (!el || UI.scr !== 'result') return;
-  const list = netPlayers().slice().sort((a, b) => (a.fin && a.fin.time != null ? a.fin.time : 1e9) - (b.fin && b.fin.time != null ? b.fin.time : 1e9));
-  el.innerHTML = '<h3 class="ttl" style="margin:10px 0 4px">對戰名次</h3><ol class="rank">' + list.map((q) => `<li class="pl${q.me ? ' me' : ''}">${avatarTag(q.avatar, 28)}<b>${q.name}</b><span class="t">${q.fin ? (q.fin.time != null ? fmtTime(q.fin.time) : '未完賽') : '跑步中…'}</span></li>`).join('') + '</ol>';
+  const list = netStandings();
+  el.innerHTML = '<h3 class="ttl" style="margin:10px 0 4px">即時對戰名次</h3><ol class="rank">' + list.map((q) => `<li class="pl${q.me ? ' me' : ''}"><b>${netText(q.name)}</b><span class="t">${q.disconnected?'連線中斷':q.fin ? (q.fin.time != null ? fmtTime(q.fin.time) : '未完賽') : Math.round(q.progress*100)+'%　行駛中'}</span></li>`).join('') + '</ol>';
 }
 function openRecords() {
   const rec = SAVE.load('records', { routes: {}, scores: [] });
@@ -9207,8 +9603,8 @@ function renderOnline() {
       <div class="actions"><button class="btn" data-go="title">返回主選單</button></div>`;
     return;
   }
-  const players = netPlayers();
-  const rows = players.map((q) => `<li class="pl${q.me ? ' me' : ''}">${avatarTag(q.avatar, 36)}<b>${q.name || '…'}</b><span class="car">${CARS[q.car] ? CARS[q.car].name : ''}</span>${q.host ? '<span class="tag">房主</span>' : ''}${q.fin ? `<span class="tag fin">${q.fin.time != null ? fmtTime(q.fin.time) : '未完賽'}</span>` : ''}</li>`).join('');
+  const players = NET.phase==='race'?netStandings():netPlayers();
+  const rows = players.map((q) => `<li class="pl${q.me ? ' me' : ''}">${q.rank?'<span>'+q.rank+'</span>':''}${avatarTag(q.avatar, 28)}<b>${netText(q.name || '…')}</b><span class="car">${CARS[q.car] ? CARS[q.car].name : ''}</span>${q.host ? '<span class="tag">房主</span>' : ''}${q.disconnected?'<span class="tag">斷線</span>':q.fin ? `<span class="tag fin">${q.fin.time != null ? fmtTime(q.fin.time) : '未完賽'}</span>` : q.rank?'<span class="tag">'+Math.round(q.progress*100)+'%</span>':''}</li>`).join('');
   const racing = NET.phase === 'race';
   el.innerHTML = `<h2 class="ttl">連線對戰　<span class="code">房號 ${NET.code}</span></h2>
     <p class="desc" style="margin:0 0 8px">${NET.host ? '把房號告訴朋友，大家進來後按「開始」。' : (NET.status || '等房主按開始…')}</p>
@@ -9250,8 +9646,9 @@ const GHOST = {
     if (a[0] === b[0]) { GHOST.p = p; GHOST.s = lerp(a[1], b[1], t); GHOST.x = lerp(a[2], b[2], t); } else { GHOST.p = p; GHOST.s = a[1]; GHOST.x = a[2]; }
     // the moment we go past it, its portrait gasps (while it is still beside us, in the picture); when it goes past us it grins
     const ahead = GHOST.p === PC.piece ? GHOST.s > PC.s + 10 : (GHOST.p === PC.piece.next || PC.piece.children.includes(GHOST.p));
-    if (!ahead && GHOST.wasAhead && RACE.elapsed > 2 && GHOST.p === PC.piece) { badgeSurprise(GHOST, 'gasp'); sfxPass(clamp((PC.v - 20) / 25, 0.5, 1), clamp((GHOST.x - PC.x) / 4, -1, 1)); }
-    if (ahead && !GHOST.wasAhead && RACE.elapsed > 2 && GHOST.p === PC.piece) { badgeSurprise(GHOST, 'gasp'); sfxPass(0.7, clamp((GHOST.x - PC.x) / 4, -1, 1)); }
+    if (!ahead && GHOST.wasAhead && RACE.elapsed > 2 && GHOST.p === PC.piece) { badgeSurprise(GHOST, 'gasp'); }
+    if (ahead && !GHOST.wasAhead && RACE.elapsed > 2 && GHOST.p === PC.piece) { badgeSurprise(GHOST, 'gasp'); }
+    if(GHOST.p===PC.piece)sfxObservePass(GHOST,GHOST.s-PC.s,GHOST.x-PC.x,PC.v-(a[0]===b[0]?(b[1]-a[1])*10/WORLD_K:PC.v),'sedan');
     GHOST.wasAhead = ahead;
     if (GHOST.fx) { GHOST.fx.t += 1 / 60; if (GHOST.fx.t > GHOST.fx.dur) GHOST.fx = null; }
     // only while it is on a piece we can see from here
@@ -9263,138 +9660,19 @@ function drawGhost(x, y, k, clip) {
   const S = GHOST.spr; if (!S) return;
   const img = S.frames[(S.frames.length - 1) >> 1][0][0], sc = k / CPX;
   const w = img.width * sc, hh = img.height * sc;
-  if (y - S.ay * sc >= clip) return;
+  const bounds=PIXEL_PLAYER?.measure(GHOST.car,S.bw),top=y-(bounds?bounds.height:S.ay)*sc;
+  if (top >= clip) return;
   VG.globalAlpha = 0.45;
-  VG.drawImage(img, 0, 0, img.width, Math.max(1, Math.min(img.height, (clip - (y - S.ay * sc)) / sc)), x - S.ax * sc, y - S.ay * sc, w, Math.min(hh, clip - (y - S.ay * sc)));
+  if(!PIXEL_PLAYER?.drawProjectedRear(VG,{spec:GHOST.car,spr:S,x,ground:y,scale:sc,clip})) VG.drawImage(img, 0, 0, img.width, Math.max(1, Math.min(img.height, (clip - (y - S.ay * sc)) / sc)), x - S.ax * sc, y - S.ay * sc, w, Math.min(hh, clip - (y - S.ay * sc)));
   VG.globalAlpha = 1;
   // who it is: the portrait and name over the roof
-  if (y - S.ay * sc < clip + 10) drawBadge(x, y - S.ay * sc + 26 * sc, k, GHOST.name || 'GHOST', GHOST.avatar || AVATAR.me, GHOST.fx);
+  if (top < clip + 10) drawBadge(x, top + (bounds?-2:26)*sc, k, GHOST.name || 'GHOST', GHOST.avatar || AVATAR.me, GHOST.fx);
 }
 
-// ===================== endings: every car has its own story at each of the two goals =====================
-// A scene at the goal at sunset: the landmark, the sea, the car pulling in, the couple getting out, three lines of story.
-const ENDINGS = {
-  rosso: {
-    s5a: ['一〇一的燈一層一層亮起來，阿凱把車停在信義路邊。', '「小晴，從高雄港開到這裡，我們把半個台灣都開完了。」', '他從口袋拿出一個小盒子。小晴笑著說：「好啦，我願意。」'],
-    s5b: ['女王頭在風裡站了幾千年，今天多了兩個看她的人。', '小晴說：「聽說她的脖子越來越細，哪天會斷掉。」', '阿凱握住她的手：「那我們每年都來看她一次。」'],
-    s5c: ['日月潭的水面平得像一面鏡子，映著兩個人的影子。', '「如果當年你沒有在高雄港等我上車……」', '阿凱把鑰匙放進她手裡：「那我現在就會在這裡等。」'],
-    s5d: ['武嶺的石碑旁，氣溫只有八度，小晴把阿凱的外套搶走了。', '雲海在腳下翻湧，紅色的羅索停在三千兩百公尺的路肩。', '「這是台灣最高的路。」阿凱說，「也是我們開過最高的地方。」'],
-    s5e: ['長春祠的泉水從峽谷裡落下來，聲音蓋過了引擎。', '小晴仰頭看大理石的峭壁，好一會兒沒有說話。', '「阿凱，下次我們用走的進來好不好？」　「好。」'],
-    s5f: ['蘭陽博物館斜斜地插在水裡，像一塊剛從海裡撈起的石頭。', '龜山島浮在遠遠的海上，小晴數著它背上的燈。', '阿凱說：「宜蘭人說，看得到龜山島，就是到家了。」'],
-    s5g: ['龍磐的草原一路滑進太平洋，風大得連話都要用喊的。', '「阿凱！」小晴喊，「你看！星星已經出來了！」', '他們躺在引擎蓋上，等整片天空暗下來。'],
-    s5h: ['燈塔的光剛亮起來，阿凱把車停在草坡上。', '「小晴，我們從高雄一路開到台灣最南端了。」', '他從口袋拿出一個小盒子。小晴笑著說：「好啦，我願意。」'],
-    s5i: ['關山的風好大，小晴的頭髮整個飛起來。', '「明年夏天，我們再開一次這條路？」', '阿凱看著掉進海裡的太陽：「每年都來。」'],
-    s5j: ['船帆石在夕陽裡變成一塊黑色的剪影，像真的要開走。', '小晴脫了鞋踩進海裡：「阿凱，水是溫的！」', '阿凱沒有下車，他正偷偷把一枚戒指從口袋裡拿出來。'],
-  },
-  vespa: {
-    s5a: ['黃蜂一個甩尾停在一〇一腳下，警衛皺了一下眉頭。', '莉娜摘下墨鏡：「三百一十八公里，你真的是瘋子。」', '杰森：「下次換妳開。」　莉娜早就把鑰匙搶走了。'],
-    s5b: ['他們在野柳比誰能先找到女王頭。', '杰森找到的是一顆長得像馬桶的石頭，莉娜笑到蹲下去。', '拍立得吐出照片的時候，太陽剛好掉進海裡。'],
-    s5c: ['黃蜂繞完整圈環湖公路，輪胎上還沾著山裡的泥。', '莉娜：「這湖我們三十二分鐘就繞完了，遊艇要一個小時。」', '杰森：「所以我們贏了遊艇。」　莉娜：「我們贏了全世界。」'],
-    s5d: ['三千兩百公尺，黃蜂的引擎第一次喘不過氣。', '莉娜：「它在哭。」　杰森：「它在高興。」', '兩個人在武嶺的石碑前，把車的照片拍了四十張。'],
-    s5e: ['峽谷太窄，黃蜂的排氣聲在大理石之間跑了好幾個來回。', '莉娜摘下墨鏡：「這裡不能飆，杰森。」', '杰森熄了火：「我知道。這裡要用看的。」'],
-    s5f: ['黃蜂衝過清水斷崖，莉娜連眼睛都沒眨一下。', '到了蘭陽博物館，她才發現自己的手一直抓著門把。', '杰森：「怕嗎？」　莉娜：「怕你開太慢。」'],
-    s5g: ['龍磐的風把黃蜂的車門吹得砰一聲關上。', '莉娜在草原上張開手臂，像要被吹走。', '杰森拍下那張照片，後來成了他手機的桌布。'],
-    s5h: ['黃蜂一個甩尾停在燈塔前，輪胎還在冒煙。', '莉娜摘下墨鏡：「三百一十八公里，你真的是瘋子。」', '杰森：「下次換妳開。」　莉娜早就把鑰匙搶走了。'],
-    s5i: ['他們在關山比誰先拍到夕陽。', '杰森的相機沒電了，莉娜的拍立得剛好吐出照片。', '照片上是兩個人笑到看不見眼睛的臉。'],
-    s5j: ['黃蜂停在船帆石前，兩個人爭論那塊石頭像什麼。', '杰森說像帆船，莉娜說像尼克森的側臉。', '最後他們決定，它像一塊很大的石頭。'],
-  },
-  argento: {
-    s5a: ['一九六三年，王伯伯騎腳踏車載秀琴去看當時最高的樓。', '六十年後，銀狐停在一〇一前面，樓高了一百層。', '秀琴阿嬤說：「樓高了，你還是開得那麼穩。」'],
-    s5b: ['王伯伯年輕時在野柳當過漁夫，他指著一塊石頭說那時候還沒有名字。', '秀琴阿嬤看著女王頭：「她也老了。」', '王伯伯：「她跟妳一樣，越老越好看。」'],
-    s5c: ['銀狐繞到湖邊的時候，日月潭上只剩一艘船。', '「當年我們也坐過這種船，船票五塊錢。」', '秀琴阿嬤笑了：「你那時候緊張得把船票弄丟了。」'],
-    s5d: ['銀狐用二檔慢慢爬上武嶺，引擎很老了，但沒有熄火。', '王伯伯停好車，給秀琴披上毛毯。', '「三十年前你說要帶我來看雲海。」　「今天沒有遲到。」'],
-    s5e: ['長春祠的台階，秀琴阿嬤一步一步走上去，王伯伯在後面扶著。', '泉水在他們腳下流了幾十年，沒有停過。', '「下次還來嗎？」　「只要你還開得動。」'],
-    s5f: ['銀狐開過清水斷崖的時候，秀琴阿嬤把眼睛閉起來了。', '到了宜蘭，她才睜開眼睛，看見遠遠的龜山島。', '「當年你說要帶我去環島，」她說，「現在才走一半。」'],
-    s5g: ['龍磐的草原上，王伯伯把銀狐的引擎熄了。', '他們坐在車裡，聽著風，沒有開收音機。', '秀琴阿嬤：「這樣就很好了。」　王伯伯點點頭。'],
-    s5h: ['一九六三年，他們騎著腳踏車來這裡度蜜月。', '王伯伯在燈塔旁的石欄上，找到當年刻下的兩個名字。', '秀琴阿嬤輕輕握住他的手：「三十年了，還是你開最穩。」'],
-    s5i: ['銀狐慢慢停在關山，引擎還在溫溫地響。', '「當年你說，要帶我看全台灣最漂亮的夕陽。」', '王伯伯點點頭：「這次沒有遲到吧？」'],
-    s5j: ['船帆石前，王伯伯拿出一張泛黃的照片。', '照片裡一對年輕人靠在一台腳踏車上，背後是同一塊石頭。', '秀琴阿嬤說：「這次換汽車了。」　兩個人笑了很久。'],
-  },
-  ballena: {
-    s5a: ['大熊答應阿弟，期末考考好就帶他去看一〇一的煙火。', '沒有煙火，但一〇一的燈一層一層亮起來。', '阿弟說：「爸，這個比煙火還好看。」'],
-    s5b: ['藍鯨停在野柳，阿弟說女王頭長得像隔壁班的老師。', '大熊叫他小聲一點，自己卻偷笑了。', '回程的路上，阿弟在後座睡著了，手裡還握著一顆石頭。'],
-    s5c: ['阿弟第一次看到這麼大的湖，問爸爸裡面有沒有鯨魚。', '大熊說：「有啊，一台藍色的。」', '阿弟想了很久才聽懂，然後笑到打嗝。'],
-    s5d: ['武嶺的溫度讓阿弟第一次看到自己呼出來的氣。', '「爸！我在噴煙！」', '大熊把他抱上引擎蓋，兩個人一起看雲海。'],
-    s5e: ['峽谷裡沒有訊號，阿弟的遊戲機終於放下來了。', '他抬頭看長春祠的瀑布，看了很久。', '大熊沒有催他，這是這趟旅行他最想看到的畫面。'],
-    s5f: ['阿弟在蘭陽博物館前面數龜山島背上的燈，數到一半就亂了。', '大熊：「不用數，它每天都在那裡。」', '阿弟：「那我明天再來數一次。」'],
-    s5g: ['龍磐的風把阿弟的帽子吹到太平洋去了。', '他哭了一下，然後發現天上有一百萬顆星星。', '大熊說：「帽子換星星，划算嗎？」　阿弟點點頭。'],
-    s5h: ['大熊答應阿弟，期末考考好就帶他來看燈塔。', '天色暗下來，燈塔的光束一圈一圈掃過海面。', '阿弟大喊：「爸！牠在跟我們打招呼！」'],
-    s5i: ['藍鯨停在關山，阿弟已經衝去買冰了。', '「兩支芒果冰！」老闆多送了一支給大熊。', '父子倆坐在引擎蓋上，看太陽掉進海裡。'],
-    s5j: ['阿弟說船帆石是一隻擱淺的鯨魚，大熊說是帆船。', '兩個人吵了十分鐘，最後決定問媽媽。', '媽媽在電話裡說：「你們兩個，回來洗澡。」'],
-  },
-  bamboo: {
-    s5a: ['小安和佳佳約好畢業前一定要完成這趟旅行。', '青竹停在一〇一腳下，兩個人仰頭看到脖子酸。', '佳佳在筆記本上寫：高雄到台北，一天。小安補一行：下一站，環島。'],
-    s5b: ['佳佳在野柳把圍巾弄丟了，風太大。', '小安說：「就留在這裡吧，代表我們來過。」', '女王頭在後面看著兩個女生笑成一團。'],
-    s5c: ['青竹小小的引擎繞完整個日月潭，一次都沒有熄火。', '佳佳在碼頭買了兩顆茶葉蛋，熱熱的。', '「畢業以後呢？」　「畢業以後，再開一次。」'],
-    s5d: ['青竹爬到武嶺的時候，兩個女生都在喊加油。', '它真的爬上來了，排氣管還在喘。', '小安拍拍引擎蓋：「你最棒了。」'],
-    s5e: ['長春祠的泉水下面，佳佳說她想哭。', '小安問為什麼，佳佳說不知道，就是太漂亮了。', '小安也沒有說話，她也想哭。'],
-    s5f: ['蘇花公路太嚇人，佳佳一路閉著眼睛唱歌。', '到了蘭陽博物館，她才發現小安也在唱。', '兩個人在龜山島前面，把那首歌唱完。'],
-    s5g: ['龍磐的草原上，佳佳把筆記本打開，風翻了好幾頁。', '上面寫著這一路經過的每一個地方。', '小安在最後一頁畫了一台小小的綠色車子。'],
-    s5h: ['小安和佳佳約好畢業前一定要完成這趟旅行。', '佳佳的圍巾被風吹走，掛在燈塔前的欄杆上。', '「就留在這裡吧，」小安說，「代表我們來過。」'],
-    s5i: ['青竹小小的引擎一路都沒有讓她們失望。', '佳佳在筆記本上寫：高雄到關山，一天。', '小安在下面補一行：下一站，環島。'],
-    s5j: ['船帆石前的沙灘上，小安和佳佳把鞋子脫了。', '海水很溫，青竹停在後面，像在看她們玩。', '佳佳說：「畢業快樂。」　小安說：「畢業快樂。」'],
-  },
-  blanco: {
-    s5a: ['浪仔第一次來台北，說這裡的浪在哪裡。', '阿妹指著一〇一：「浪在上面，人潮的浪。」', '浪仔把衝浪板留在後座，決定今天用走的。'],
-    s5b: ['野柳的浪拍在女王頭下面，浪仔說這裡不能下水。', '阿妹說：「那你看她就好。」', '浪仔看了一眼，說還是阿妹比較好看。'],
-    s5c: ['日月潭沒有浪，浪仔有點失望。', '阿妹租了一艘手划船，兩個人在湖中間漂了一下午。', '浪仔說：「沒有浪也可以。」'],
-    s5d: ['白浪開到武嶺，浪仔說這是他看過最高的浪。', '阿妹：「那是雲。」　浪仔：「雲海也是海。」', '他把衝浪板舉起來，在三千兩百公尺拍了一張照。'],
-    s5e: ['長春祠的瀑布下，浪仔說水太冷不能衝。', '阿妹笑他：「你哪裡都想衝。」', '浪仔靠著白浪的車門說：「只想跟妳一起衝。」'],
-    s5f: ['南方澳的浪浪仔聽過，但沒衝過。', '蘭陽博物館前，他看著龜山島後面的海，眼睛發亮。', '阿妹嘆氣：「明天六點，是不是？」　「五點半。」'],
-    s5g: ['龍磐沒有沙灘，只有草原和風。', '浪仔把衝浪板放在草地上，躺上去看星星。', '阿妹躺在旁邊：「這是你今年最安靜的一天。」'],
-    s5h: ['浪仔說南灣的浪今天太小，乾脆來看燈塔。', '阿妹指著海面：「你看，有人在衝浪耶。」', '浪仔已經把衝浪板從後座拿出來了。'],
-    s5i: ['白浪的翻燈眨了一下，好像在說辛苦了。', '阿妹靠在車門上吃著烤玉米。', '「明天早上六點，去後灣等第一道浪。」'],
-    s5j: ['船帆石旁邊的浪剛剛好，浪仔三秒鐘就下水了。', '阿妹坐在白浪的引擎蓋上幫他計時。', '太陽掉進海裡的時候，他還在等最後一道浪。'],
-  },
-  adler: {
-    s5a: ['林警官今天休假，小陳還是一路都在報車號。', '到了一〇一，小陳說這裡的違停比高雄多三倍。', '林警官嘆氣：「我們也是違停。」'],
-    s5b: ['黑鷹停在野柳，小陳想爬上去摸女王頭。', '林警官一把拉住他：「這個要罰的。」', '小陳：「學長，你休假也在執法喔。」'],
-    s5c: ['日月潭的環湖公路，小陳說這裡適合追逐戰。', '林警官把車停在碼頭：「今天只追夕陽。」', '小陳難得沒有頂嘴，他在拍照。'],
-    s5d: ['武嶺的停車場，黑鷹是唯一一台黑色的車。', '小陳說這裡氧氣少，講話要省一點。', '林警官：「那你從上山就應該開始省。」'],
-    s5e: ['長春祠前，小陳終於安靜了十分鐘。', '林警官看著瀑布說：「這才是我休假想看的東西。」', '小陳：「學長，那台遊覽車停在黃線上。」'],
-    s5f: ['清水斷崖上，小陳一直報海拔，林警官一直叫他閉嘴。', '到了蘭陽博物館，兩個人都沒話說了。', '龜山島後面的天空，紅得像剛發的罰單。'],
-    s5g: ['龍磐的風把小陳的帽子吹走了，是警帽。', '林警官看著它飛向太平洋，什麼都沒說。', '小陳：「學長，這個要報遺失嗎？」　「報。」'],
-    s5h: ['林警官今天休假，小陳還是一路都在報車號。', '「學長，那台載芒果的小貨車超速了！」', '林警官嘆氣：「……我們剛剛開兩百多。」'],
-    s5i: ['黑鷹停在關山，兩個人難得沒穿制服。', '小陳：「學長，原來你會笑喔。」', '林警官把墨鏡戴上：「這句話不准寫進報告。」'],
-    s5j: ['船帆石前，小陳用手機查這塊石頭有多高。', '林警官：「十八公尺。」　小陳：「學長你怎麼知道？」', '「我以前在這裡當過救生員。」　小陳的下巴掉了。'],
-  },
-  raiden: {
-    s5a: ['二〇九三年的台北一〇一已經不在了，Z-93 只在資料庫裡看過它。', 'K-07 站在它腳下，把每一層的燈都記下來。', '「編號 1993-0002。」　「這一筆，永久保存。」'],
-    s5b: ['女王頭在二〇九三年的檔案裡只剩下一張照片。', 'Z-93 看著她：「她的脖子還在。」', 'K-07：「我們的時代，她已經斷了二十年。」　兩個人站了很久。'],
-    s5c: ['紫電的霓虹在湖面上映成一條線。', 'K-07：「這個湖在二〇九三年還在，但是沒有人划船了。」', 'Z-93 租了一艘船，第一次決定什麼都不記錄。'],
-    s5d: ['武嶺，三千兩百七十五公尺，紫電的電池在低溫裡亮起警示。', 'K-07：「我們的時代，這條路已經封了。」', 'Z-93 把這一刻存成永久記憶，編號 1993-0003。'],
-    s5e: ['長春祠的泉水，二〇九三年的資料庫說它已經乾了。', 'Z-93 把手伸進水裡，是冷的。', 'K-07：「記錄：水還在。」'],
-    s5f: ['龜山島在二〇九三年的海圖上還在，但形狀不太一樣。', 'K-07 把現在的樣子存下來，覆蓋掉舊的。', 'Z-93：「這樣算是改寫歷史嗎？」　「算是記住它。」'],
-    s5g: ['龍磐的星空，Z-93 數到一萬顆就停了。', 'K-07：「我們的時代，光害讓這裡只剩三百顆。」', '紫電的霓虹關掉了，兩個人在黑暗裡看完整片銀河。'],
-    s5h: ['Z-93 和 K-07 從二〇九三年回來，只為了看一次一九九三年的燈塔。', '「資料庫裡沒有這種顏色的天空。」', 'K-07 把這一刻存成永久記憶，編號 1993-0001。'],
-    s5i: ['紫電的霓虹在夕陽裡變成淡淡的粉紅色。', '「我們的時代，海已經沒有這麼藍了。」', 'Z-93 關掉引擎，第一次決定什麼都不記錄。'],
-    s5j: ['船帆石在二〇九三年還在，Z-93 確認過。', 'K-07：「那為什麼還要來看？」', 'Z-93：「因為一九九三年的風，資料庫裡沒有。」'],
-  },
-  arancia: {
-    s5a: ['Sofia 說台北的交通比羅馬還瘋狂，她很喜歡。', '豆豆在一〇一腳下對著每一個路人搖尾巴。', '「Bellissimo！」　豆豆也跟著汪了一聲。'],
-    s5b: ['豆豆在野柳對著女王頭叫了三分鐘。', 'Sofia 說牠以為那是一隻很大的貓。', '回到橘陽上，豆豆還在往後看。'],
-    s5c: ['橘陽停在水社碼頭，豆豆第一次看到這麼大的水，不敢下去。', 'Sofia 抱牠上了遊艇，牠全程把頭埋在她懷裡。', '下船的時候，牠又變回英雄了。'],
-    s5d: ['武嶺的風讓豆豆的耳朵一直翻過來。', 'Sofia 說義大利的阿爾卑斯山也是這樣冷。', '豆豆不知道阿爾卑斯山是什麼，牠只想回車上。'],
-    s5e: ['長春祠的台階豆豆跑了三趟，Sofia 走了一趟。', '牠在瀑布下面喝水，喝到打嗝。', 'Sofia 坐在石頭上笑：「這是我看過最美的加油站。」'],
-    s5f: ['橘陽開過清水斷崖，豆豆把頭伸出窗外，耳朵飛起來。', '蘭陽博物館前，Sofia 說這個建築像一塊義大利的起司。', '豆豆對著龜山島叫，牠以為那也是一隻動物。'],
-    s5g: ['龍磐的草原，豆豆跑到看不見。', 'Sofia 不擔心，牠每次都會回來，而且會帶一根樹枝。', '這次牠帶回來一隻螃蟹，Sofia 尖叫了。'],
-    s5h: ['Sofia 從義大利來台灣參加比賽，順便開來看燈塔。', '豆豆一下車就跑去追燈塔旁邊的蝴蝶。', '「Bellissimo！」　豆豆也跟著汪了一聲。'],
-    s5i: ['橘陽的車頭編號 7 在夕陽下閃閃發亮。', '豆豆衝進海裡，又全身濕答答地跑回來甩水。', 'Sofia 大笑：「明年的比賽，我們一起贏。」'],
-    s5j: ['船帆石旁邊的沙灘，豆豆挖了一個洞，想把橘陽埋起來。', 'Sofia 說這樣明天就不能回家了。', '豆豆想了想，又把洞填回去。'],
-  },
-  oro: {
-    s5a: ['新郎新娘的婚紗照，最後一站選在一〇一。', '攝影師喊：「看大樓！三、二、一！」', '新娘的頭紗被風吹起來，剛好蓋住兩個人的臉。'],
-    s5b: ['金沙停在野柳，後座的氣球被風吹得亂七八糟。', '新娘說女王頭是今天第一個祝福他們的人。', '新郎說：「她點頭了。」　其實是風。'],
-    s5c: ['日月潭的遊艇上，新郎新娘補拍了一張婚紗照。', '船長說他載過三百對新人，這對最會笑。', '新娘說：「因為他開車開得最慢。」'],
-    s5d: ['武嶺，三千兩百公尺，新娘的婚紗外面套了一件羽絨外套。', '新郎說這是全台灣最高的結婚紀念照。', '攝影師的手凍到快按不下快門。'],
-    s5e: ['長春祠的泉水前，新娘把捧花放在石頭上。', '「給下一對來的人。」', '新郎牽著她走上台階，瀑布在後面一直響。'],
-    s5f: ['金沙停在蘭陽博物館前，氣球少了一半，都飛到龜山島去了。', '新娘說沒關係，那是送給海的。', '新郎打開車門：「老婆，下一趟要去哪？」'],
-    s5g: ['龍磐的星空下，攝影師說今天的照片不用修圖。', '新郎新娘躺在草原上，氣球綁在腳踝上。', '「我們的第一趟旅行。」　「還有很多趟。」'],
-    s5h: ['新郎新娘的婚紗照，最後一站選在鵝鑾鼻。', '攝影師喊：「看燈塔！三、二、一！」', '新娘的頭紗被風吹起來，剛好蓋住兩個人的臉。'],
-    s5i: ['金沙停在關山，後座綁滿了「新婚」的氣球。', '「從高雄港到這裡，我們的第一趟旅行。」', '新郎打開車門：「老婆，下一趟要去哪？」'],
-    s5j: ['船帆石前，新娘把捧花丟向海，又被浪送回來。', '新郎撿起來還給她：「它想跟妳回家。」', '金沙的後座，氣球們擠在一起，聽著兩個人笑。'],
-  },
-};
+// ===================== endings: sixteen places, ten distinct crews =====================
+// Destination-specific arrival scenes and individually written stories for all ten crews.
+const END_PLACES = window.FormosaEndingStories.places;
+const ENDINGS = window.FormosaEndingStories.build(CREW);
 const END = { on: false, car: null, goal: 's4a', t: 0, line: 0, chars: 0, set: null, spr: null, people: null, done: false };
 // ---------- the couple, painted standing ----------
 function paintStander(o, seed) {
@@ -9500,37 +9778,13 @@ Object.assign(END_SCENE, {
   s5m: ['end_nanzhuang', .72, 112, 'town'], s5n: ['end_jiufen', .72, 150, 'hillside'],
   s5o: ['sanxiantai', .67, 120, 'rocksea', .5], s5p: ['end_shitiping', .72, 110, 'rocksea'],
 });
-// Preserve the original hundred stories and give every new destination its own local detail.
-const NEW_GOAL_STORIES = {
-  s5k: ['高美濕地的木棧道伸向水面，遠處的風機慢慢轉著。', '他們停好車，沿木棧道看潮水與招潮蟹，等天空染上金色。'],
-  s5l: ['南寮漁港的船回來了，魚鱗天梯旁的風箏正往高處飛。', '兩人走到港邊，讓新竹的海風吹散一路的疲倦。'],
-  s5m: ['南庄桂花巷傳來桂花香，老街裡的客語招呼聲格外親切。', '他們把車留在街外，慢慢走向洗衫坑與老郵局。'],
-  s5n: ['九份的紅燈籠沿階梯亮起來，茶館的窗映著遠方海面。', '他們循著茶香走進巷裡，讓山城的風替旅程翻到下一頁。'],
-  s5o: ['三仙台八拱橋像一道浪，連起岸邊與海上的小島。', '他們站在岸邊聽浪聲，看東海岸的陽光在礁岩上閃爍。'],
-  s5p: ['石梯坪的海蝕平台上，潮池把天空留成一面面小鏡子。', '他們沿步道看單面山與壺穴，遠方漁船緩緩回港。'],
-};
-const CREW_GOAL_REPLIES = {
-  rosso: (a, b) => `${a}握住${b}的手：「下一次，我們還一起來。」`,
-  vespa: (a, b) => `${b}拍下${a}與車子的合照：「回程換我開！」`,
-  argento: (a, b) => `${b}替${a}拉好外套：「今天又多了一張一起旅行的照片。」`,
-  ballena: (a, b) => `${b}拉著${a}的手：「爸，下次我們也帶媽媽一起來！」`,
-  bamboo: (a, b) => `${b}在筆記本記下這一站，${a}在旁邊畫了一台綠色的小車。`,
-  blanco: (a, b) => `${b}問${a}明早的安排，他笑著說：「先吃早餐，再慢慢看海。」`,
-  adler: (a, b) => `${b}終於放下記事本，${a}笑了：「這才叫休假。」`,
-  raiden: (a, b) => `${a}與${b}存下新的座標，檔名叫做「還想再來的地方」。`,
-  arancia: (a, b) => `${b}靠在${a}身旁搖著尾巴，一人一犬又收集了一段回憶。`,
-  oro: () => '新郎牽著新娘的手，說好往後的每段旅程，都要一起走。',
-};
-for (const c of CARS) for (const [goal, lines] of Object.entries(NEW_GOAL_STORIES)) {
-  const people = CREW[c.id], reply = CREW_GOAL_REPLIES[c.id];
-  ENDINGS[c.id][goal] = [lines[0], lines[1], reply(people[0].name, people[1].name)];
-}
 function startEnding() {
-  const c = CARS[RACE.carIdx], goal = END_SCENE[RACE.goal] ? RACE.goal : 's5h';
+  const c = CARS[RACE.carIdx], goal = END_PLACES[RACE.goal] ? RACE.goal : 's5h';
   Object.assign(END, { on: true, car: c, goal, t: 0, line: 0, chars: 0, done: false });
-  END.set = buildBackdrop(STAGES[goal].pano, STAGES[goal].clouds + 7);
-  END.spr = carSide(c, 52);
-  END.people = (CREW[c.id] || []).map((o, i) => paintStander(o, 70 + i).toCanvas());
+  END.spr = carSprites(c);
+  END.people = CREW[c.id];
+  END.layout = null;
+  window.FormosaEndingScenes.prepare(END_PLACES[goal]);
   G.mode = 'ending'; HUD.show = false; engineStop(); show(null); musicPlay(3);
   view.onclick = endingTap;
 }
@@ -9543,67 +9797,65 @@ function endingTap() {
   if (!END.done) { END.done = true; return; }
   END.on = false; view.onclick = null; toTitle();
 }
-// one frame of the ending scene, drawn straight onto the game screen
+// Draw atlas landmarks without the road renderer's viewport culling/transform;
+// this canvas has its own 480-wide scene coordinates on narrow phone screens.
+function endingLandmark(g, name, x, y, h) {
+  const S = SPR[name]; if (!S) return;
+  const pg = ATLAS.pages[S.pg], w = h * S.w / S.h;
+  g.drawImage(pg.lv[0], S.x, S.y, S.w, S.h, x - S.ax * w, y - h, w, h);
+}
+function endingWrap(g, text, width) {
+  const lines = []; let line = '';
+  for (const ch of [...text]) {
+    if (line && g.measureText(line + ch).width > width) { lines.push(line); line = ''; }
+    line += ch;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
 function drawEnding(dt) {
   END.t += dt;
-  const T = todMix(TOD.golden, TOD.sunset, clamp(END.t / 22, 0, 1), {}), g2 = vctx, gy = Y0 + 40;
-  drawSky(g2, 1.35, END.t, T);
-  drawBackdrop(g2, END.set, 1.35, END.t, 1);
-  // the middle ground of the place: the sea glittering to the horizon, a still lake, a city square, the cloud sea, the gorge
-  const kind = (END_SCENE[END.goal] || END_SCENE.s5h)[3];
-  const waterScene = ['sea', 'lake', 'rocksea', 'wetland', 'harbor', 'grasscape'].includes(kind);
-  if (waterScene) {
-    const sg = g2.createLinearGradient(0, Y0, 0, gy); sg.addColorStop(0, kind === 'wetland' ? '#849c97' : kind === 'lake' ? '#3a8aa0' : '#3a8ab8'); sg.addColorStop(1, kind === 'wetland' ? '#a4aba0' : kind === 'lake' ? '#4a9ab0' : '#2aa8c0'); g2.fillStyle = sg; g2.fillRect(0, Y0, RW, gy - Y0 + 1);
-    const n = kind === 'lake' || kind === 'wetland' ? 30 : 70;
-    for (let i = 0; i < n; i++) { const y = Y0 + 2 + (i * 37 % (gy - Y0)), x = (i * 131 + END.t * (8 + i % 5)) % RW; g2.fillStyle = 'rgba(255,240,200,' + (0.3 + 0.4 * ((i * 7 + Math.floor(END.t * 6)) % 3 === 0)) + ')'; g2.fillRect(x, y, 2 + (y - Y0) / 12, 1); }
-    const ground = kind === 'rocksea' ? ['#c1c4b7', '#a5ad9d'] : kind === 'wetland' ? ['#b3a986', '#999679'] : kind === 'harbor' ? ['#c1c5c0', '#a8afa9'] : ['#88a953', '#779741'];
-    g2.fillStyle = ground[0]; g2.fillRect(0, gy, RW, RH - gy); g2.fillStyle = ground[1]; for (let y = gy; y < RH; y += 6) g2.fillRect(0, y, RW, 2);
-  } else if (kind === 'city' || kind === 'town' || kind === 'hillside') {
-    g2.fillStyle = '#8a8e96'; g2.fillRect(0, Y0, RW, gy - Y0 + 1);
-    g2.fillStyle = '#b8b4ac'; g2.fillRect(0, gy, RW, RH - gy); g2.fillStyle = '#a8a49c'; for (let y = gy; y < RH; y += 8) g2.fillRect(0, y, RW, 2); for (let x = 0; x < RW; x += 26) g2.fillRect(x, gy, 2, RH - gy);
-  } else if (kind === 'high') {
-    g2.fillStyle = '#e8eef2'; g2.fillRect(0, Y0, RW, gy - Y0 + 1);
-    for (let i = 0; i < 40; i++) { const y = Y0 + 4 + (i * 23 % (gy - Y0)), x = (i * 97 + END.t * (3 + i % 3)) % RW; g2.fillStyle = 'rgba(255,255,255,0.8)'; g2.fillRect(x, y, 14 + (i % 4) * 8, 2); }
-    g2.fillStyle = '#9aa06a'; g2.fillRect(0, gy, RW, RH - gy); g2.fillStyle = '#8a9060'; for (let y = gy; y < RH; y += 6) g2.fillRect(0, y, RW, 2);
-  } else {
-    g2.fillStyle = '#3a8ab0'; g2.fillRect(0, Y0, RW, gy - Y0 + 1);
-    for (let i = 0; i < 40; i++) { const y = Y0 + 2 + (i * 29 % (gy - Y0)), x = (i * 113 + END.t * (10 + i % 5)) % RW; g2.fillStyle = 'rgba(232,248,255,0.7)'; g2.fillRect(x, y, 3 + (y - Y0) / 10, 1); }
-    g2.fillStyle = '#b8b4b0'; g2.fillRect(0, gy, RW, RH - gy); g2.fillStyle = '#a8a4a0'; for (let y = gy; y < RH; y += 5) g2.fillRect(0, y, RW, 2);
+  const g = vctx, place = END_PLACES[END.goal];
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1;
+  g.fillStyle = '#111e32'; g.fillRect(0, 0, RW, RH);
+  const scene = window.FormosaEndingScenes.draw(g, RW, RH, place, END.t, (name, x, y, h) => endingLandmark(g, name, x, y, h));
+  // The car drives forward into the paved bay and settles. Its rear artwork
+  // keeps a constant size; scenery/portraits never pretend it is a side view.
+  const x = RW * .35, ground = lerp(248, 200, sstep(clamp(END.t / 2.2, 0, 1)));
+  const carWidth = Math.min(136, RW * .28), carHeight = 72;
+  g.save(); g.beginPath(); g.rect(0, 0, RW, 206); g.clip();
+  g.fillStyle = 'rgba(11,22,38,.48)'; g.beginPath(); g.ellipse(x, ground - 1, carWidth * .48, 4, 0, 0, TAU); g.fill();
+  const newCar = PIXEL_PLAYER?.drawShowcase(g, { spec: END.car, x, ground, width: carWidth, maxHeight: carHeight, braking: END.t < 2.2 });
+  if (!newCar) {
+    const S = END.spr, img = S.frames[Math.floor(S.frames.length / 2)][0][0], sc = carWidth / S.bw;
+    g.drawImage(img, x - S.ax * sc, ground - S.ay * sc, img.width * sc, img.height * sc);
   }
-  // the landmark of this goal
-  const sc = END_SCENE[END.goal] || END_SCENE.s5h, lm = SPR[sc[0]];
-  if (END.goal === 's5k') for (let i = 0; i < 4; i++) {
-    const windmill = SPR['windmill#' + (i % 3)];
-    if (windmill) drawSpr(windmill, RW * (.07 + i * .16), Y0 + 12, 30 + i % 2 * 7, 1, false, RH, 0, 0);
+  g.restore();
+  // Two proper bust portraits frame the dialogue. Keep three short story beats
+  // on separate pages, wrap Chinese text and leave the destination unobscured.
+  const panelY = 207, portraitW = RW < 420 ? 45 : 55, textX = portraitW + 23, textW = RW - textX * 2;
+  g.fillStyle = '#101b2e'; g.fillRect(0, panelY, RW, RH - panelY);
+  g.fillStyle = '#d0a56b'; g.fillRect(0, panelY, RW, 2);
+  const portraitReady = END.people.map((person, i) => {
+    const px = i === 0 ? 10 : RW - portraitW - 10;
+    const ready = !!PIXEL_PLAYER?.drawPortrait(g, { spec: END.car, index: i, x: px, y: panelY + 4, width: portraitW, height: 45 });
+    g.font = '900 9px "Noto Sans TC",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'top'; g.fillStyle = '#d8e7df';
+    g.fillText(person.name, px + portraitW / 2, 258);
+    return ready;
+  });
+  const all = ENDINGS[END.car.id][END.goal];
+  if (END.t >= 2.2) END.chars += dt * 22;
+  const full = END.done ? END.car.name + '  ' + fmtTime(RACE.elapsed) : all[END.line];
+  const shown = END.done ? full : [...full].slice(0, Math.floor(END.chars)).join('');
+  g.font = '900 10px "Noto Sans TC",sans-serif'; g.textAlign = 'left'; g.textBaseline = 'top';
+  g.fillStyle = '#e3b96d'; g.fillText(END.done ? '旅程完成 · 點擊回到標題' : (END.line + 1) + ' / ' + all.length + '  ' + place.title, textX, 214);
+  g.font = '600 11px "Noto Sans TC",sans-serif'; g.fillStyle = '#edf0dc';
+  const rows = endingWrap(g, shown, textW);
+  rows.forEach((line, i) => g.fillText(line, textX, 229 + i * 13));
+  if (END.t >= 2.2 && !END.done && END.chars >= [...full].length && Math.floor(END.t * 2) % 2) {
+    g.fillStyle = '#f4c66d'; g.fillRect(RW - portraitW - 19, 260, 4, 3);
   }
-  if (lm) drawSpr(sc[4] == null ? lm : Object.assign({}, lm, { ax: sc[4] }), RW * sc[1], ['sea', 'rocksea', 'wetland'].includes(kind) ? Y0 + 18 : gy + 18, sc[2], 1, false, RH, 0, 0);
-  // Coconut-lined South Bay belongs to the southern beach ending, not every coast or inland lake.
-  if (END.goal === 's5j') for (let i = 0; i < 4; i++) { const S = SPR['palm#' + (i % 4)]; if (S) drawSpr(S, RW * (0.05 + i * 0.09), gy + 30 + (i % 3) * 14, 120 + (i % 3) * 30, 1, i % 2 === 1, RH, 0, 0); }
-  // the car rolls in from the left and stops
-  const img = END.spr;
-  if (img) {
-    const tx = RW * 0.36, x = END.t < 2.2 ? lerp(-img.width, tx, sstep(END.t / 2.2)) : tx, y = RH - 38;
-    g2.fillStyle = 'rgba(10,10,20,.35)'; g2.beginPath(); g2.ellipse(x + img.width / 2, y, img.width * 0.44, 6, 0, 0, TAU); g2.fill();
-    g2.drawImage(img, Math.round(x), Math.round(y - img.height + 4));
-    // then the two of them by the car
-    if (END.t > 2.6) END.people.forEach((pc, i) => { const a = clamp((END.t - 2.6 - i * 0.3) * 2, 0, 1); g2.globalAlpha = a; g2.drawImage(pc, Math.round(x + img.width + 6 + i * 26), Math.round(y - pc.height + 4 + Math.sin(END.t * 2 + i) * 0.6)); g2.globalAlpha = 1; });
-  }
-  // the story, typed out line by line
-  if (END.t > 2.2) {
-    const L = ENDINGS[END.car.id][END.goal];
-    END.chars += dt * 22;
-    const box = 66;
-    g2.fillStyle = 'rgba(14,8,32,.86)'; g2.fillRect(12, RH - box - 10, RW - 24, box); g2.strokeStyle = '#ffb23e'; g2.lineWidth = 2; g2.strokeRect(12, RH - box - 10, RW - 24, box);
-    g2.font = '900 15px "Noto Sans TC","PingFang TC",sans-serif'; g2.textBaseline = 'top'; g2.textAlign = 'left'; g2.fillStyle = '#fff3dc';
-    for (let i = 0; i <= END.line; i++) { const s = [...L[i]], shown = i < END.line ? s.length : Math.min(s.length, Math.floor(END.chars)); g2.fillText(s.slice(0, shown).join(''), 26, RH - box + (i - Math.max(0, END.line - 2)) * 20, RW - 52); }
-    if (Math.floor(END.t * 2) % 2) { g2.fillStyle = '#ffd23a'; g2.fillRect(RW - 30, RH - 22, 8, 6); }
-  }
-  if (END.done) {
-    g2.fillStyle = 'rgba(14,8,32,.55)'; g2.fillRect(0, 0, RW, RH);
-    g2.textAlign = 'center'; g2.fillStyle = '#ffd23a'; g2.font = '44px "Russo One",sans-serif'; g2.fillText('THE END', RW / 2, RH * 0.32);
-    g2.font = '900 16px "Noto Sans TC",sans-serif'; g2.fillStyle = '#fff3dc'; g2.fillText(END.car.name + '　' + fmtTime(RACE.elapsed), RW / 2, RH * 0.32 + 58);
-    g2.font = '10px "Press Start 2P",monospace'; g2.fillText('TAP TO CONTINUE', RW / 2, RH * 0.32 + 92);
-  }
+  END.layout = { newCar: !!newCar, portraits: portraitReady, scene, textX, textW, rows: rows.length, textBottom: 229 + rows.length * 13, carGround: ground, panelY, goal: END.goal };
 }
 
 // ===================== online: up to 8 cars on the same road, over WebRTC, met through the PeerJS cloud =====================
@@ -9618,6 +9870,7 @@ const NET = {
   me:{name:'',avatar:'',avatarKind:'face',car:0,img:null,clientId:netToken()},
   results:[],startAt:0,goAt:0,lastSend:0,seq:0,onLobby:null,joinT:0,
   grid:[],slotHistory:new Map(),gridLayout:null,roundId:'',roundNo:0,clockOffset:0,clockRtt:Infinity,
+  racers:new Map(),ranking:[],rankAt:0,lastRankSend:-Infinity,finishSent:false,forkLocks:[],forkNotice:null,
 };
 function netCode(){let c='';for(let i=0;i<6;i++)c+=NET_CODE_CHARS[Math.floor(Math.random()*NET_CODE_CHARS.length)];return c;}
 function netToken(){return Math.random().toString(36).slice(2,12);}
@@ -9639,6 +9892,7 @@ const RTC_CFG={iceServers:[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.g
 function netPeer(id){let P=NET.peers.get(id);if(P)return P;P={id,epoch:NET.epoch,pc:null,ctl:null,st:null,name:'',avatar:'',avatarKind:'face',img:null,car:0,host:false,ready:false,state:null,prev:null,rt:0,fx:null,wasAhead:false,fin:null,spr:null,conn:'new',lastSeq:-1,closing:false};NET.peers.set(id,P);return P;}
 function netDrop(id,expected,notify=true){
   const P=NET.peers.get(id);if(!P||(expected&&P!==expected))return;
+  if(NET.host&&NET.phase==='race'){const q=NET.racers.get(P.clientId||id);if(q)q.disconnected=true;}
   // Remove ownership before close(), which may synchronously raise a callback.
   NET.peers.delete(id);P.closing=true;clearTimeout(P.discTO);
   if(NET.host)NET.grid=NET.grid.filter(q=>q.id!==id);
@@ -9723,7 +9977,7 @@ function netLeave(){
   NET.epoch++;NET.on=false;NET.host=false;NET.phase='idle';clearTimeout(NET.joinTO);clearInterval(NET.hb);netWake(false);
   const ws=NET.ws;NET.ws=null;if(ws){clearInterval(ws.krHeartbeat);try{ws.close();}catch(e){}}
   for(const P of [...NET.peers.values()])netDrop(P.id,P,false);
-  NET.peers.clear();Object.assign(NET,{lost:false,err:'',status:'',results:[],code:'',id:'',myFin:null,grid:[],slotHistory:new Map(),gridLayout:null,roundId:'',roundNo:0,goAt:0,startAt:0,clockOffset:0,clockRtt:Infinity});
+  NET.peers.clear();Object.assign(NET,{lost:false,err:'',status:'',results:[],code:'',id:'',myFin:null,grid:[],slotHistory:new Map(),gridLayout:null,roundId:'',roundNo:0,goAt:0,startAt:0,clockOffset:0,clockRtt:Infinity,racers:new Map(),ranking:[],rankAt:0,lastRankSend:-Infinity,finishSent:false,forkLocks:[],forkNotice:null});
 }
 function netHostGrid(){if(!NET.host||!NET.id)return;if(!NET.grid.some(q=>q.id===NET.id)){NET.grid.push({id:NET.id,clientId:NET.me.clientId,slot:0,car:NET.me.car});NET.slotHistory.set(NET.me.clientId,0);}}
 function netAssignGrid(P,clientId){
@@ -9749,9 +10003,88 @@ function netPlayers(){
   for(const q of list){const g=NET.grid.find(g=>g.id===q.id);q.slot=g?g.slot:-1;}
   return list.sort((a,b)=>a.slot-b.slot);
 }
+function netText(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function netCourseProgress(state){
+  const p=state&&ROUTE.pieces[state.p];if(!p||!Number.isFinite(state.s))return 0;
+  let depth=0,a=p;while(a.parent&&depth<4){a=a.parent;depth++;}
+  return clamp((depth+clamp(state.s/(p.goalS||p.L),0,1))/5,0,1);
+}
+// Each round has one host-serialized choice per stage. Client clocks and replayed
+// choice packets cannot win a fork: only a fresh, valid position observed by the
+// host in the actual fork approach can lock it.
+function netForkStage(p){let n=0;while(p&&p.parent){n++;p=p.parent;}return n;}
+function netForkPathValid(p){
+  for(let q=p;q&&q.parent;q=q.parent){const parent=q.parent;if(!parent.children?.length)continue;
+    const lock=NET.forkLocks[netForkStage(parent)];if(!lock||lock.p!==ROUTE.pieces.indexOf(parent)||parent.children[lock.side]!==q)return false;}
+  return true;
+}
+function netObserveFork(player,state){
+  if(!NET.on||!NET.host||NET.phase!=='race'||Date.now()<NET.goAt||!state)return;
+  const p=ROUTE.pieces[state.p];if(!p?.children?.length||!Number.isFinite(state.x)||!Number.isFinite(state.s)||state.s<p.L-250||state.s>p.L+10||!netForkPathValid(p))return;
+  const stage=netForkStage(p);if(NET.forkLocks[stage])return;
+  const lock={stage,p:state.p,side:state.x<(p.forkDiv||0)?0:1,by:player.clientId||player.id,name:player.name||'車手',at:Date.now()};
+  NET.forkLocks[stage]=lock;netAll({t:'fork-lock',round:NET.roundId,lock});
+}
+function netAcceptFork(lock){
+  if(!lock||!Number.isInteger(lock.stage)||lock.stage<0||lock.stage>3||!Number.isInteger(lock.p)||![0,1].includes(lock.side))return false;
+  const p=ROUTE.pieces[lock.p];if(!p?.children?.[lock.side]||netForkStage(p)!==lock.stage||!netForkPathValid(p))return false;
+  const old=NET.forkLocks[lock.stage];if(old)return old.p===lock.p&&old.side===lock.side;
+  NET.forkLocks[lock.stage]={...lock};return true;
+}
+function netForkChoice(p){
+  if(!NET.on||NET.phase!=='race')return PC.x<(p.forkDiv||0)?0:1;
+  const lock=NET.forkLocks[netForkStage(p)];return lock&&lock.p===ROUTE.pieces.indexOf(p)?lock.side:-1;
+}
+function netForkGuide(dt){
+  if(!NET.on||NET.phase!=='race'||RACE.state!=='run'||!PC.piece.children.length)return;
+  const p=PC.piece;if(PC.s<p.L-250)return;
+  if(NET.host)netObserveFork({id:NET.id,clientId:NET.me.clientId,name:NET.me.name},{p:ROUTE.pieces.indexOf(p),s:PC.s,x:PC.x});
+  const side=netForkChoice(p);if(side<0)return;
+  const lock=NET.forkLocks[netForkStage(p)];
+  if(NET.forkNotice!==lock){NET.forkNotice=lock;hudMsg('車隊'+(side?'右':'左')+'轉',lock.name+' 領先選路・全員跟隨','#71edff',3.2,false);}
+  // Gentle guidance inside the widened fork only, with bounded lateral travel.
+  // Ordinary steering/acceleration coefficients are unchanged. The losing exit
+  // is not a second choice, and no car is teleported to another carriageway.
+  const div=p.forkDiv||0,clearance=playerWidth()/2+.35,edge=div+(side?clearance:-clearance);
+  const wrong=side?PC.x<edge:PC.x>edge;
+  if(wrong){const target=p.forkOff[side],dx=clamp(target-PC.x,-8*dt,8*dt);PC.x+=dx;CAM.lat+=dx*.25;
+    if((side&&PC.vx<0)||(!side&&PC.vx>0))PC.vx*=Math.exp(-dt*8);
+    if(PC.s>=p.L-2){PC.s=p.L-2;PC.v=Math.min(PC.v,8);}}
+}
+function netObserve(player,state){
+  if(!NET.host)return;
+  const key=player.clientId||player.id,existing=NET.racers.get(key),entry=NET.grid.find(q=>q.id===player.id);
+  const q=existing||{id:player.id,clientId:key,name:player.name,car:player.car,host:player.host,slot:entry?.slot??player.slot??99,progress:0,fin:null};
+  q.id=player.id;q.disconnected=false;q.seenAt=Date.now();
+  if(state){q.state={p:state.p,s:state.s};q.progress=netCourseProgress(state);netObserveFork(player,state);}
+  NET.racers.set(key,q);return q;
+}
+function netFinish(player,status){
+  if(!NET.host||Date.now()<NET.goAt)return false;
+  const q=NET.racers.get(player.clientId||player.id);if(!q||q.fin)return false;
+  const p=q.state&&ROUTE.pieces[q.state.p];
+  if(status==='goal'&&(!p||!p.goalS||q.state.s<p.goalS-2||q.progress<.99))return false;
+  if(status!=='goal'&&status!=='timeup')return false;
+  q.fin={time:status==='goal'?Math.max(0,(Date.now()-NET.goAt)/1000):null,car:CARS[q.car]?.id,hostAt:Date.now()};
+  if(status==='goal')q.progress=1;
+  if(player.id===NET.id)NET.myFin=q.fin;else{const peer=NET.peers.get(player.id);if(peer)peer.fin=q.fin;}
+  netLobbyChanged();NET.lastRankSend=-Infinity;return true;
+}
+function netStandings(){
+  let list=NET.host?[...NET.racers.values()].map(q=>({...q})):NET.ranking.map(q=>({...q}));
+  if(!list.length)list=netPlayers().map(q=>({...q,progress:0,seenAt:netNow()}));
+  const now=netNow();
+  for(const q of list){q.me=q.id===NET.id||q.clientId===NET.me.clientId;q.disconnected=!!q.disconnected||(!q.me&&!q.fin&&now-(q.seenAt||now)>4000)||(!NET.host&&NET.lost&&!q.me);}
+  list.sort((a,b)=>{const af=a.fin?.time!=null,bf=b.fin?.time!=null;if(af!==bf)return af?-1:1;if(af)return a.fin.time-b.fin.time||a.slot-b.slot;return b.progress-a.progress||a.slot-b.slot||String(a.id).localeCompare(String(b.id));});
+  return list.map((q,i)=>({...q,rank:i+1}));
+}
+function netSendRanking(){
+  if(!NET.host)return;NET.ranking=netStandings();NET.rankAt=Date.now();netAll({t:'rank',round:NET.roundId,players:NET.ranking,forks:NET.forkLocks});
+  if(NET.onLobby)NET.onLobby();
+}
 function netLobbyChanged(){if(NET.onLobby)NET.onLobby();if(NET.on&&NET.host)netAll({t:'lobby',players:netPlayers().map(q=>({id:q.id,clientId:q.clientId,slot:q.slot,name:q.name,avatar:q.avatar,avatarKind:q.avatarKind,car:q.car,host:q.host,fin:q.fin})),grid:NET.grid});}
 function netSetCar(i){NET.me.car=i;const own=NET.grid.find(q=>q.id===NET.id);if(own)own.car=i;if(NET.host)netLobbyChanged();else for(const P of NET.peers.values())if(P.host)netCtl(P,{t:'car',car:i});}
-function netStartPacket(late=false){return{t:'start',roundId:NET.roundId,roundNo:NET.roundNo,goAt:NET.goAt,sentAt:Date.now(),grid:NET.grid,layout:NET.gridLayout,late};}
+function netStartPacket(late=false){return{t:'start',roundId:NET.roundId,roundNo:NET.roundNo,goAt:NET.goAt,sentAt:Date.now(),grid:NET.grid,layout:NET.gridLayout,forks:NET.forkLocks,late};}
 function netOnMsg(P,m){
   if(!netLive(P)||!m||typeof m.t!=='string')return;
   if(m.t==='clock-ping'&&NET.host&&Number.isFinite(m.clientAt)){netCtl(P,{t:'clock-pong',clientAt:m.clientAt,hostAt:Date.now()});return;}
@@ -9763,7 +10096,7 @@ function netOnMsg(P,m){
     P.car=clamp(m.car|0,0,CARS.length-1);const entry=netAssignGrid(P,m.clientId);
     if(!entry){P.rejected=true;netCtl(P,{t:'room-full'});setTimeout(()=>{if(netLive(P))netDrop(P.id,P);},250);return;}
     P.name=String(m.name||'車手').slice(0,10);P.avatar=typeof m.avatar==='string'&&m.avatar.length<600000&&/^data:image\/(png|jpeg);base64,/.test(m.avatar)?m.avatar:'';P.avatarKind=m.avatarKind==='thing'?'thing':'face';
-    const avatar=P.avatar;avatarDecode(avatar,im=>{if(netLive(P)&&P.avatar===avatar)P.img=im;});P.spr=carSprites(CARS[P.car]);netLobbyChanged();if(NET.phase==='race')netCtl(P,netStartPacket(true));return;
+    const avatar=P.avatar;avatarDecode(avatar,im=>{if(netLive(P)&&P.avatar===avatar)P.img=im;});P.spr=carSprites(CARS[P.car]);netLobbyChanged();if(NET.phase==='race'){netObserve(P,null);netCtl(P,netStartPacket(true));netSendRanking();}return;
   }
   if(m.t==='car'&&NET.host){if(!NET.grid.some(q=>q.id===P.id))return;P.car=clamp(m.car|0,0,CARS.length-1);P.spr=carSprites(CARS[P.car]);NET.grid.find(q=>q.id===P.id).car=P.car;netLobbyChanged();return;}
   if(m.t==='lobby'&&!NET.host&&P.host){
@@ -9774,13 +10107,21 @@ function netOnMsg(P,m){
     }for(const id of [...NET.peers.keys()])if(!seen.has(id)&&id!==P.id)netDrop(id,null,false);NET.status='';clearTimeout(NET.joinTO);if(NET.onLobby)NET.onLobby();return;
   }
   if(m.t==='start'&&!NET.host&&P.host){netStartRace(0,!!m.late,m);return;}
+  if(m.t==='fork-lock'&&!NET.host&&P.host&&m.round===NET.roundId){netAcceptFork(m.lock);return;}
+  if(m.t==='rank'&&!NET.host&&P.host&&m.round===NET.roundId&&Array.isArray(m.players)){
+    if(Array.isArray(m.forks))for(const lock of m.forks)netAcceptFork(lock);
+    NET.ranking=m.players.filter(q=>q&&typeof q.id==='string'&&Number.isFinite(q.progress)).slice(0,32);NET.rankAt=netNow();
+    const me=NET.ranking.find(q=>q.id===NET.id||q.clientId===NET.me.clientId);if(me?.fin)NET.myFin=me.fin;
+    if(NET.onLobby)NET.onLobby();return;
+  }
   if(m.t==='st'){
     if(NET.phase!=='race'||m.round!==NET.roundId||!Number.isInteger(m.q))return;
     const from=NET.host?P:NET.peers.get(m.id||P.id);if(!from||from.id===NET.id||!NET.grid.some(q=>q.id===from.id)||m.q<=from.lastSeq)return;
+    const piece=ROUTE.pieces[m.p];if(!Number.isInteger(m.p)||!piece||![m.s,m.x,m.v].every(Number.isFinite)||m.s<0||m.s>piece.L+10||!netForkPathValid(piece))return;
     from.lastSeq=m.q;from.prev=from.state;from.state=m;from.rt=G.t;
-    if(NET.host){const out={...m,id:P.id};for(const Q of NET.peers.values())if(Q!==P)netSt(Q,out);}return;
+    if(NET.host){netObserve(P,m);if(P.pendingFinish&&netFinish(P,P.pendingFinish))P.pendingFinish=null;const out={...m,id:P.id};for(const Q of NET.peers.values())if(Q!==P)netSt(Q,out);}return;
   }
-  if(m.t==='fin'&&m.round===NET.roundId){const from=NET.host?P:NET.peers.get(m.id||P.id);if(!from)return;from.fin={time:m.time,route:m.route,car:m.car};if(NET.host)netLobbyChanged();else if(NET.onLobby)NET.onLobby();}
+  if(m.t==='fin'&&NET.host&&m.round===NET.roundId){P.pendingFinish=m.status;if(netFinish(P,m.status))P.pendingFinish=null;}
 }
 function netStartRace(delay=0,late=false,packet=null){
   if(!NET.on)return false;
@@ -9794,36 +10135,41 @@ function netStartRace(delay=0,late=false,packet=null){
   }
   if(netSlot()<0){NET.err='房主未分配起跑格位';netLobbyChanged();return false;}
   NET.phase='race';NET.startAt=NET.goAt;NET.myFin=null;NET.seq=0;NET.lastSend=-Infinity;
-  for(const P of NET.peers.values()){P.fin=null;P.state=null;P.prev=null;P.lastSeq=-1;P.vis=false;}
+  NET.racers=new Map();NET.ranking=[];NET.finishSent=false;NET.lastRankSend=-Infinity;NET.forkLocks=[];NET.forkNotice=null;
+  if(!NET.host&&Array.isArray(packet?.forks))for(const lock of packet.forks)netAcceptFork(lock);
+  for(const P of NET.peers.values()){P.fin=null;P.state=null;P.prev=null;P.lastSeq=-1;P.vis=false;P.pendingFinish=null;}
+  if(NET.host)for(const q of netPlayers())netObserve(q,{p:0,s:netGridPosition(q.slot)?.s||0});
   if(NET.host)netAll(netStartPacket(false));startPlay();return true;
 }
 function netHostStart(){if(NET.host&&NET.phase==='lobby')netStartRace(0,false);}
 function netUpdate(dt){
   if(!NET.on||NET.phase!=='race'||G.mode!=='play')return;
+  if(NET.host)netObserve({id:NET.id,clientId:NET.me.clientId,name:NET.me.name,car:NET.me.car,host:true},{p:ROUTE.pieces.indexOf(PC.piece),s:PC.s,x:PC.x});
   if(G.t-NET.lastSend>1/12){NET.lastSend=G.t;const m={t:'st',round:NET.roundId,q:NET.seq++,p:ROUTE.pieces.indexOf(PC.piece),s:Math.round(PC.s*10)/10,x:Math.round(PC.x*100)/100,v:Math.round(PC.v*10)/10,si:PC._si==null?2:PC._si,b:PC.brake>.1?1:0,c:PC.crash?1:0,d:PC.drift?1:0,r:+(FX.roll||0).toFixed(2)};
     if(NET.host){const out={...m,id:NET.id};for(const Q of NET.peers.values())netSt(Q,out);}else for(const Q of NET.peers.values())if(Q.host)netSt(Q,m);
   }
   for(const P of NET.peers.values()){const S=P.state;if(!S)continue;const age=G.t-P.rt,p=ROUTE.pieces[S.p];P.vis=!!p&&age<4;if(!P.vis)continue;
     P.dp=p;P.ds=S.s+S.v*WORLD_K*Math.min(age,1);P.dx=S.x;const ahead=P.dp===PC.piece?P.ds>PC.s+10:(P.dp===PC.piece.next||PC.piece.children.includes(P.dp)),near=P.dp===PC.piece&&Math.abs(P.ds-PC.s)<14&&Math.abs(P.dx-PC.x)<6;
-    if(!ahead&&P.wasAhead&&RACE.elapsed>3&&near){badgeSurprise(P,'gasp');sfxPass(.8,clamp((P.dx-PC.x)/4,-1,1));}if(ahead&&!P.wasAhead&&RACE.elapsed>3&&near){badgeSurprise(P,'gasp');sfxPass(.7,clamp((P.dx-PC.x)/4,-1,1));}P.wasAhead=ahead;if(P.fx){P.fx.t+=dt;if(P.fx.t>P.fx.dur)P.fx=null;}
+    if(!ahead&&P.wasAhead&&RACE.elapsed>3&&near){badgeSurprise(P,'gasp');}if(ahead&&!P.wasAhead&&RACE.elapsed>3&&near){badgeSurprise(P,'gasp');}if(P.dp===PC.piece)sfxObservePass(P,P.ds-PC.s,P.dx-PC.x,PC.v-S.v,'sedan');P.wasAhead=ahead;if(P.fx){P.fx.t+=dt;if(P.fx.t>P.fx.dur)P.fx=null;}
   }
-  if((RACE.state==='goal'||RACE.state==='timeup')&&!NET.myFin){NET.myFin={time:RACE.state==='goal'?Math.round(RACE.elapsed*100)/100:null,route:RACE.route.join('>'),car:CARS[RACE.carIdx].id};const m={t:'fin',round:NET.roundId,...NET.myFin};if(NET.host)netLobbyChanged();else for(const Q of NET.peers.values())if(Q.host)netCtl(Q,m);if(NET.onLobby)NET.onLobby();}
+  if((RACE.state==='goal'||RACE.state==='timeup')&&!NET.finishSent){NET.finishSent=true;const m={t:'fin',round:NET.roundId,status:RACE.state};if(NET.host)netFinish({id:NET.id,clientId:NET.me.clientId},RACE.state);else for(const Q of NET.peers.values())if(Q.host)netCtl(Q,m);if(NET.onLobby)NET.onLobby();}
+  if(NET.host&&G.t-NET.lastRankSend>.25){NET.lastRankSend=G.t;netSendRanking();}
 }
 // a rival on screen: its car, solid, with the portrait on its pole
 function drawRival(P, x, y, k, clip) {
   const spec = CARS[P.car || 0], S = P.spr || carSprites(spec), st = P.state; if (!S || !st) return;
   const n = S.frames.length, si = clamp(st.si | 0, 0, n - 1), img = S.frames[si][st.b ? 1 : 0][Math.floor(G.t * 8) & 1], sc = k / CPX;
-  const w = img.width * sc, hh = img.height * sc, top = y - S.ay * sc;
+  const pixel = PIXEL_PLAYER?.has(spec), bounds = pixel ? PIXEL_PLAYER.measure(spec,S.bw) : null;
+  const w = img.width * sc, hh = img.height * sc, top = y - (bounds ? bounds.height : S.ay) * sc;
   if (top >= clip) return;
-  const pixel = !st.c && spec.id === 'rosso' && window.FORMOSA_PIXEL_CAR?.state.ready && PIXEL_PLAYER?.drawProjectedRear;
   if (pixel) { VG.save(); VG.beginPath(); VG.rect(0, 0, VG.canvas.width, Math.max(0, clip)); VG.clip(); }
   VG.fillStyle = 'rgba(10,6,22,0.35)'; VG.fillRect(Math.round(x - S.bw * sc / 2), Math.round(y - 1), Math.round(S.bw * sc), Math.max(1, Math.round(2 * sc)));
-  if (pixel) { PIXEL_PLAYER.drawProjectedRear(VG, {spec,spr:S,x,ground:y,scale:sc,clip,braking:!!st.b,roll:st.r||0}); VG.restore(); }
+  if (pixel) { PIXEL_PLAYER.drawProjectedRear(VG, {spec,spr:S,x,ground:y,scale:sc,clip,braking:!!st.b,roll:st.r||0,crash:!!st.c,time:G.t}); VG.restore(); }
   else if (st.c) { VG.save(); VG.translate(x, y - hh * 0.4); VG.rotate(Math.sin(G.t * 6) * 0.5); VG.drawImage(img, -S.ax * sc, -(S.ay * sc) + hh * 0.4, w, hh); VG.restore(); }
   else if (st.r) { VG.save(); VG.translate(x, y); VG.rotate(st.r); VG.drawImage(img, 0, 0, img.width, Math.max(1, Math.min(img.height, (clip - top) / sc)), -S.ax * sc, -S.ay * sc, w, Math.min(hh, clip - top)); VG.restore(); }
   else VG.drawImage(img, 0, 0, img.width, Math.max(1, Math.min(img.height, (clip - top) / sc)), x - S.ax * sc, top, w, Math.min(hh, clip - top));
   if (!pixel && S.heads) { const ph = [0, 1, 0, 2][Math.floor(G.t * 6) & 3], sh = S.shift[si]; for (const h of S.heads) VG.drawImage(h.frames[ph], Math.round(x - S.ax * sc + (h.x + sh) * sc), Math.round(top + h.y * sc), h.frames[0].width * sc, h.frames[0].height * sc); }
-  if (top < clip + 10) drawBadge(x, top + 26 * sc, k, P.name || '?', P.img, P.fx);
+  if (top < clip + 10) drawBadge(x, top + (pixel ? -2 : 26) * sc, k, P.name || '?', P.img, P.fx);
 }
 
 })();

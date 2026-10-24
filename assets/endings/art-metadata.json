@@ -1,0 +1,55 @@
+{
+  "tool": "built-in image_gen.imagegen",
+  "version": 1,
+  "files": [
+    {
+      "file": "destinations-a-v1.png",
+      "quadrants": [
+        "s5a",
+        "s5b",
+        "s5c",
+        "s5d"
+      ]
+    },
+    {
+      "file": "destinations-b-v1.png",
+      "quadrants": [
+        "s5e",
+        "s5f",
+        "s5g",
+        "s5h"
+      ]
+    },
+    {
+      "file": "destinations-c-v1.png",
+      "quadrants": [
+        "s5i",
+        "s5j",
+        "s5k",
+        "s5l"
+      ]
+    },
+    {
+      "file": "destinations-d-v1.png",
+      "quadrants": [
+        "s5m",
+        "s5n",
+        "s5o",
+        "s5p"
+      ]
+    }
+  ],
+  "originalPromptFile": "generation-prompts.json",
+  "geographySourceFile": "../../render/ending-stories.js",
+  "refinements": [
+    "Use case: precise-object-edit. Edit ONLY the BOTTOM RIGHT Nanliao panel's right-side white seawall in this 2x2 Taiwan ending background atlas. Keep the other THREE panels and all other artwork unchanged. The famous real Nanliao fish-scale steps are smooth poured CONCRETE STEPS whose TREAD/LEADING EDGES form repeated broad SCALLOPS. They are NOT a wall decorated with a fish-scale mosaic. Remove all fish-scale stone patterns from vertical faces. Draw a broad sloping seawall made of many closely stacked thin white concrete horizontal step terraces descending toward the sea, their edges shaped into overlapping wide rounded lobes like giant shell scallops in perspective; numerous steps, low risers, physically walkable treads. The smooth concrete faces have restrained grey shade. Retain harbour boats, sky, kites, foreground paved empty bay, overall detailed crisp pixel-art style, and exact 2x2 layout with no borders. No added text, people or vehicles.",
+    "Use case: precise-object-edit. Edit ONLY the BOTTOM LEFT Sanxiantai bridge in this 2x2 Taiwan game background atlas. Keep other THREE panels completely unchanged. Replace the current bridge with exactly EIGHT distinct complete arches. Show the whole bridge, nothing clipped by panel edges, slightly more side-on and farther away so the eight arches are each clearly countable. Structure: island on left and shore on right; exactly NINE support positions and EIGHT rising-and-falling curved pedestrian stair spans connecting them, no extra partial tiny spans at island. Spans: 1,2,3,4,5,6,7,8 from left to right, receding a little in perspective. Thin reddish-brown railing atop white/grey bridge structure, clearly pedestrian only. Keep three large rock masses on green island, waves, pebble shore and empty foreground paved arrival bay. Preserve gorgeous detailed pixel-art lighting and color, no text, no labels, no people or cars. Do not add a ninth arch. Keep exact 2x2 grid.",
+    "Edit ONLY the bottom-left Sanxiantai panel in the supplied atlas. Current bridge still has NINE arches and must have exactly EIGHT. Keep top-left Nanzhuang, top-right Jiufen, bottom-right Shitiping completely unchanged. In bottom-left ERASE the complete existing bridge, then redraw a new bridge in a FULL BROADSIDE VIEW with EIGHT EQUALLY WIDE and EQUALLY HIGH arches. No perspective shrinking, no tiny extra spans at either end. Place nine vertical supports evenly in one horizontal line: eight curved pedestrian spans fill the eight gaps between them. All eight gaps clearly visible and countable, same approximate width. Draw bridge across middle horizontal band from 20% to95% of that panel width, far from camera, island behind its left end, mainland at right. Thin grey-white concrete arches, reddish-brown railings, steps curving up and down, credible actual Sanxiantai bridge. Preserve original island with three rock masses, blue waves, pebble shore, empty paved foreground bay. Exactly eight arch holes total, no ninth partial arch, no small arches between large arches. Beautiful detailed pixel art identical to original. No text or people."
+  ],
+  "reviewNotes": [
+    "Illustrated geography, not a survey-accurate depiction of a particular legal parking viewpoint.",
+    "Nanliao's initially incorrect fish-scale mosaic wall was revised to scalloped concrete step treads.",
+    "Sanxiantai's initial extra bridge arches were rejected; the final version has eight complete visible arched spans. Checked by visual inspection, not inferred from the prompt or an automated pixel-recognition test.",
+    "Source PNGs are unmodified. Integer source rectangles select quadrants at runtime. No photos, logos, people or vehicles are composited into these backgrounds."
+  ]
+}

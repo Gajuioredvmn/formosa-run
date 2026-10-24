@@ -93,6 +93,34 @@ test('a held gear key changes gear once and a held pause key pauses once', `
   emit('KeyP'); for(let i=0;i<8;i++) emit('KeyP',true);
   assert.equal(pauses,1);
 `);
+test('H-gate rejects thumb jitter and cancelling an incomplete stroke restores the original gear', `
+ resetRace();PC.auto=false;PC.gear=2;CTL.pads={gate:{x:0,y:0,w:400,h:220}};
+ touchDown(1,100,110);touchMove(1,104,107);touchUp(1);assert.equal(PC.gear,2);assert.equal(PC.neutral,false);
+ touchDown(2,100,110);touchMove(2,100,70);assert.equal(PC.neutral,true);touchUp(2,true);
+ assert.equal(PC.gear,2);assert.equal(PC.neutral,false);assert.equal(CTL.knob.active,false);
+`);
+test('A forgiving H cross-slot stroke engages once and preserves the 0.18 second gear interruption', `
+ resetRace();PC.auto=false;PC.gear=2;CTL.pads={gate:{x:0,y:0,w:400,h:220}};
+ touchDown(1,100,110);touchMove(1,100,70);touchMove(1,137,70);touchMove(1,137,30);
+ assert.equal(PC.gear,3);assert.equal(PC.neutral,false);assert.equal(PC.shiftT,.18);
+ PC.shiftT=.09;touchMove(1,140,28);touchMove(1,140,150);assert.equal(PC.gear,3);assert.equal(PC.shiftT,.09);
+ touchUp(1,true);assert.equal(PC.gear,3);assert.equal(PC.neutral,false);
+`);
+test('Only a deliberate neutral hold remains in neutral after releasing the gate', `
+ resetRace();PC.auto=false;PC.gear=2;CTL.pads={gate:{x:0,y:0,w:400,h:220}};
+ touchDown(1,100,110);touchMove(1,100,70);G.t+=.05;touchUp(1);assert.equal(PC.neutral,false);
+ touchDown(2,100,110);touchMove(2,100,70);G.t+=.2;touchUp(2);assert.equal(PC.neutral,true);
+`);
+test('Five-speed cars reject the absent sixth slot without stranding the engine in neutral', `
+ resetRace();PC.auto=false;PC.gears=5;PC.gear=5;CTL.pads={gate:{x:0,y:0,w:400,h:220}};
+ touchDown(1,100,80);touchMove(1,100,120);touchMove(1,100,160);touchUp(1);
+ assert.equal(PC.gear,5);assert.equal(PC.neutral,false);
+`);
+test('A second thumb cannot steal the active H-gate and leaving its zone cancels the stroke', `
+ resetRace();PC.auto=false;PC.gear=2;CTL.pads={gate:{x:0,y:0,w:400,h:220}};
+ touchDown(1,100,110);touchMove(1,100,70);touchDown(2,150,120);assert.equal(CTL.touches.size,1);
+ touchMove(1,600,70);assert.equal(PC.gear,2);assert.equal(PC.neutral,false);assert.equal(CTL.knob.active,false);touchUp(1);
+`);
 test('holding Enter cannot skip title, car selection and setup screens', `
   resetRace(); UI.scr='title';
   const emit=(repeat=false)=>listeners.get('keydown').forEach(fn=>fn({code:'Enter',repeat,preventDefault(){}}));

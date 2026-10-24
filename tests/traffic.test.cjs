@@ -13,7 +13,7 @@ const contacts=section('function findCollider(p, s, x, hl, hw, kind) {','// ====
 const sandbox={console,assert,Math:Object.create(Math),performance:require('node:perf_hooks').performance,Map,Set,window:{FORMOSA_HD:{status:{active:false}}}};vm.createContext(sandbox);
 vm.runInContext(`
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
-const LANE=3.7,DS=2,TAU=Math.PI*2;
+const LANE=3.7,DS=2,TAU=Math.PI*2,WORLD_K=1.5;
 const RACE={stageNo:4,state:'run',score:0},G={t:0};
 const PC={s:0,x:999,v:35,spec:{W:2,L:5.15},crash:null,steerIn:0};
 const HAZ={list:[],xings:[],nextS:100,spinT:0};
@@ -47,6 +47,16 @@ assert.equal(nearIntervals(p,100,5,null,0).length,3);assert.equal(trafficFree(p,
 test('An in-progress lane change yields before closing the last gap',`
 PC.piece=piece(3.7);const p=PC.piece;HAZ.list=[];TRAFFIC.list=[{p,s:100,x:-2,len:4,wid:2},{p,s:100,x:3.8,len:4,wid:2}];
 const moving=TRAFFIC.list[1],before=moving.x;assert(trafficCorridorOpen(p,80,120));assert.equal(trafficTryMove(moving,100,2.8),false);assert.equal(moving.x,before);assert(trafficCorridorOpen(p,80,120));
+`);
+test('A small collision rollback cannot reopen an unprotected approach behind the safety plan',`
+PC.piece=piece(3.7);const p=PC.piece;p.leftEdge=()=>-3.7;p.rightEdge=()=>3.7;
+PC.s=100;G.t=0;HAZ.list=[];HAZ.xings=[];TRAFFIC.safetyPlan=null;
+const left={p,s:81,x:-1.85,len:10,wid:2.5},right={p,s:108,x:1.85,len:10,wid:2.5};
+TRAFFIC.list=[left,right];assert(trafficCorridorOpen(p,60,200));trafficEnsurePlan(p,true);
+// The player's front gains a metre; collision separation then takes it back.
+PC.s=101;G.t=1;trafficEnsurePlan(p,true);
+assert.equal(trafficTryMove(right,95,right.x),false,'The lorry must not seal the recently traversed approach');
+PC.s=100;assert(trafficCorridorOpen(p,PC.s-12,200),'The escape path must survive a small backwards correction');
 `);
 test('Alternating disconnected openings are rejected despite each row having a gap',`
 PC.piece=piece(3.7);const p=PC.piece;p.leftEdge=()=>-3.7;p.rightEdge=()=>3.7;HAZ.list=[];
@@ -105,5 +115,18 @@ assert.equal(trafficFree(p,150).some(q=>q[0]<=8.8&&q[1]>=8.8),false);
 const plan=[];assert(trafficCorridorOpen(p,80,220,plan));assert(plan.some(q=>q.s===150));
 assert.equal(findCollider(p,150,8.8,2.5,1),p.hdColliders[0]);
 window.FORMOSA_HD.status.active=false;
+`);
+test('Freight types have distinct full-body dimensions and stay out of narrow sightseeing streets',`
+assert(VTYPES.semi.len>17&&VTYPES.semi.massKg>30000);assert(VTYPES.flatbed.len>11&&VTYPES.tanker.massKg>24000);assert(VTYPES.motorbike.len>VTYPES.scooter.len);
+const p=piece(7.4);p.secs[0].L='industrial';p.secs[0].R='harbor';p.secs[0].tags=['refinery'];const m=trafficMix(p,500);assert(m.semi>0&&m.tanker>m.flatbed);
+p.secs[0].L='town';p.secs[0].R='town';p.secs[0].tags=['lukang'];assert(!trafficMix(p,500).semi&&!trafficMix(p,500).tanker);p.hw=()=>3.7;assert(!trafficMix(p,500).gravel);
+`);
+test('Following uses bumper distance and a loaded tanker brakes earlier than a sedan',`
+const p=piece(7.4);PC.piece=p;HAZ.list=[];const lead={p,s:150,x:0,len:12,wid:2.5,v:14};const truck={p,s:100,x:0,len:12,wid:2.5,v:20,v0:20,type:'tanker'},car={...truck,type:'sedan',len:4.5,wid:1.8};TRAFFIC.list=[lead,truck];const heavyTarget=trafficFollowTarget(truck);TRAFFIC.list=[lead,car];assert(heavyTarget<trafficFollowTarget(car));
+lead.s=109;assert.equal(trafficFollowTarget(car),0);
+`);
+test('A long trailer waits for fast approaching traffic throughout its signalled lane change',`
+const p=piece(7.4);PC.piece=p;PC.s=0;PC.x=999;PC.v=0;const truck={p,s:100,x:-2,len:17.5,wid:2.5,v:16,type:'semi'},fast={p,s:55,x:2,len:4.5,wid:1.8,v:30};TRAFFIC.list=[truck,fast];assert.equal(trafficLaneSafe(truck,2,1.6),false);
+fast.s=-150;assert.equal(trafficLaneSafe(truck,2,1.6),true);fast.s=300;fast.lc={x:-2};assert.equal(trafficLaneSafe(truck,2,1.6),true);
 `);
 const result={passed:tests.every(t=>t.pass),tests,simulation:sandbox.simulation,largeScenery:sandbox.largeScenery};if(process.argv[3]){const reportPath=path.resolve(process.argv[3]);fs.mkdirSync(path.dirname(reportPath),{recursive:true});fs.writeFileSync(reportPath,JSON.stringify(result,null,2));}console.log(JSON.stringify(result,null,2));process.exitCode=result.passed?0:1;

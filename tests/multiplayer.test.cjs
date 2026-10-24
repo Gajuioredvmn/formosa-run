@@ -80,4 +80,47 @@ test('Reliable channel closure immediately frees a grid slot and cannot drop its
  const c=context();run(c,"NET.on=true;NET.id='client';NET.phase='race';const h=netPeer('host');h.host=true;h.opened=true;netWire(h,new RTCPeerConnection(),'host');const ch={label:'ctl',readyState:'open',send(){}};netChannel(h,ch);ch.onclose();assert.equal(NET.lost,true);assert(NET.err.includes('房主'));assert(!NET.peers.has('host'));");
 });
 
+test('Live standings normalize different branch lengths and resolve ties by grid slot',()=>{
+ const c=host();add(c,'one');add(c,'two');run(c,`netStartRace();const a={id:'a',L:2000,parent:ROUTE.root},b={id:'b',L:5000,parent:ROUTE.root};ROUTE.pieces.push(a,b);
+ assert.equal(netCourseProgress({p:1,s:1000}),netCourseProgress({p:2,s:2500}));
+ netObserve(NET.peers.get('one'),{p:1,s:1000});netObserve(NET.peers.get('two'),{p:2,s:2500});
+ const list=netStandings();assert.equal(list[0].id,'one');assert.equal(list[1].id,'two');assert.equal(list[0].progress,.3);`);
+});
+test('Host timing ignores claimed finish time and requires actual goal progress',()=>{
+ const c=host();const p=add(c,'guest');c.p=p;run(c,`netStartRace();netOnMsg(p,{t:'fin',round:NET.roundId,status:'goal',time:.001});assert.equal(p.fin,null);
+ let previous=ROUTE.root;for(let i=0;i<4;i++){const next={id:'stage'+i,L:2000,parent:previous};ROUTE.pieces.push(next);previous=next;}previous.goalS=1800;`);
+ c.__now=run(c,'NET.goAt')+420000;
+ run(c,`netOnMsg(p,{t:'st',round:NET.roundId,q:1,p:4,s:1801,x:0,v:0});assert.equal(p.fin.time,420);assert.equal(p.fin.hostAt,Date.now());
+ netOnMsg(p,{t:'fin',round:NET.roundId,status:'goal',time:0});assert.equal(p.fin.time,420);assert.equal(netStandings()[0].id,'guest');`);
+});
+test('Disconnected racers remain visible at their last progress until the next round',()=>{
+ const c=host();add(c,'guest');run(c,`netStartRace();netObserve(NET.peers.get('guest'),{p:0,s:1000});netDrop('guest');const lost=netStandings().find(q=>q.id==='guest');assert(lost);assert.equal(lost.disconnected,true);assert.equal(lost.progress,.05);NET.phase='lobby';netHostStart();assert(!netStandings().some(q=>q.id==='guest'));`);
+});
+test('Clients accept ranking only from the host and only for the active round',()=>{
+ const c=context();run(c,`NET.on=true;NET.id='client';NET.roundId='current';const h=netPeer('host');h.host=true;const other=netPeer('other');
+ const players=[{id:'client',clientId:NET.me.clientId,slot:1,name:'me',progress:.4,fin:{time:410}}];
+ netOnMsg(other,{t:'rank',round:'current',players});assert.equal(NET.ranking.length,0);netOnMsg(h,{t:'rank',round:'old',players});assert.equal(NET.ranking.length,0);
+ netOnMsg(h,{t:'rank',round:'current',players});assert.equal(NET.ranking.length,1);assert.equal(NET.myFin.time,410);assert.equal(netStandings()[0].me,true);`);
+});
+test('First host-observed racer locks each fork; later racers and replayed choices cannot change it',()=>{
+ const c=host();add(c,'early');add(c,'late');run(c,`netStartRace();ROUTE.root.children=[{id:'left',L:3000,parent:ROUTE.root},{id:'right',L:3500,parent:ROUTE.root}];ROUTE.root.forkDiv=0;ROUTE.pieces.push(...ROUTE.root.children);`);c.__now=run(c,'NET.goAt')+100;
+ run(c,`const early=NET.peers.get('early'),late=NET.peers.get('late');
+ netOnMsg(late,{t:'st',round:NET.roundId,q:0,p:0,s:3600,x:-4,v:20});assert.equal(NET.forkLocks.length,0);
+ netOnMsg(early,{t:'st',round:NET.roundId,q:0,p:0,s:3760,x:4,v:20});assert.equal(NET.forkLocks[0].side,1);assert.equal(NET.forkLocks[0].by,early.clientId);
+ netOnMsg(late,{t:'st',round:NET.roundId,q:1,p:0,s:3780,x:-4,v:20});assert.equal(NET.forkLocks[0].side,1);assert.equal(netForkChoice(ROUTE.root),1);
+ netOnMsg(early,{t:'st',round:NET.roundId,q:0,p:0,s:3800,x:-4,v:20});assert.equal(NET.forkLocks[0].side,1);
+ netOnMsg(late,{t:'fork-lock',round:NET.roundId,lock:{stage:0,p:0,side:0}});assert.equal(NET.forkLocks[0].side,1);
+ netOnMsg(late,{t:'st',round:NET.roundId,q:2,p:1,s:100,x:0,v:20});assert.equal(late.state.p,0);
+ const right=ROUTE.pieces[2];right.children=[{id:'RL',L:2400,parent:right},{id:'RR',L:2200,parent:right}];ROUTE.pieces.push(...right.children);
+ netOnMsg(late,{t:'st',round:NET.roundId,q:3,p:2,s:3260,x:-3,v:20});assert.equal(NET.forkLocks[1].by,late.clientId);assert.equal(NET.forkLocks[1].side,0);
+ netOnMsg(early,{t:'st',round:NET.roundId,q:4,p:2,s:3290,x:3,v:20});assert.equal(NET.forkLocks[1].side,0);
+ assert.equal(netStartPacket(true).forks.length,2);const oldRound=NET.roundId;NET.phase='lobby';netHostStart();assert.equal(NET.forkLocks.length,0);
+ netOnMsg(early,{t:'st',round:oldRound,q:99,p:0,s:3900,x:4,v:20});assert.equal(NET.forkLocks.length,0);`);
+});
+test('Fork snapshots are ordered by ancestry and accepted only from the current host and round',()=>{
+ const c=context();run(c,`NET.on=true;NET.phase='race';NET.id='guest';NET.roundId='round';ROUTE.root.children=[{id:'L',L:1000,parent:ROUTE.root},{id:'R',L:1000,parent:ROUTE.root}];ROUTE.pieces.push(...ROUTE.root.children);const h=netPeer('host');h.host=true;const other=netPeer('other');
+ const lock={stage:0,p:0,side:1,by:'first',at:Date.now()};netOnMsg(other,{t:'fork-lock',round:'round',lock});assert.equal(NET.forkLocks.length,0);netOnMsg(h,{t:'fork-lock',round:'stale',lock});assert.equal(NET.forkLocks.length,0);
+ netOnMsg(h,{t:'fork-lock',round:'round',lock});assert.equal(netForkChoice(ROUTE.root),1);netOnMsg(h,{t:'fork-lock',round:'round',lock:{...lock,side:0}});assert.equal(netForkChoice(ROUTE.root),1);
+ assert(!netAcceptFork({stage:3,p:0,side:0}));assert(!netAcceptFork({stage:0,p:0,side:99}));`);
+});
 let failed=0;for(const t of tests){try{t.fn();console.log('PASS '+t.name);}catch(e){failed++;console.error('FAIL '+t.name+'\n'+e.stack);}}console.log(`${tests.length-failed}/${tests.length} multiplayer checks passed`);process.exitCode=failed?1:0;

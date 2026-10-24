@@ -1,0 +1,9 @@
+{
+  "tool": "built-in image_gen",
+  "date": "2026-10-24",
+  "file": "taroko-cliff-v1.png",
+  "source": "exec-7d2e810a-989b-4742-9de4-0c3068bcf38d.png",
+  "prompt": "Use case: stylized-concept. Asset type: horizontally seamless cliff-face texture for the Taroko Gorge section of a fine pixel-art Taiwan arcade racing game, mapped in perspective on an actual roadside vertical wall. Landscape 1536x1024, wide panorama of a 28-metre-wide by 14-metre-tall naturally weathered marble cliff. Face view, not perspective. Pale cool gray marble with charcoal diagonal folded strata and cracks, believable rough irregular rock ledges and small lush green plants rooted in crevices. Fine intentional hand-placed pixel clusters, rich detailed 32-bit arcade illustration, warm sunlight catching upper-left rock planes, cool blue-gray shadow with readable dark detail. Bottom 90 percent fully opaque rock extending to bottom edge, NO ground horizontal platform, NO scenery, NO sky. The top silhouette slightly irregular natural rocky crest with low shrubs, only shallow transparent notches in the top 10 percent. Continuous rock at left/right borders, left/right edges align in color and broad strata so multiple repetitions make a continuous cliff face. Broad diagonal stone formations and irregular pockets, NOT vertical columns, NOT repeated narrow stripes, NOT a brick or concrete wall, no uniform polished marble slab. No buildings, tunnel, people, road, labels, text, watermark. Pure alpha transparent outside the upper silhouette only.",
+  "reference": "https://www.taroko.gov.tw/ch/trailsAttractions/trail-list/68",
+  "use": "Stylized marble-strata texture, not a surveyed reconstruction."
+}

@@ -1,0 +1,25 @@
+const fs=require('node:fs'),path=require('node:path'),{createServer}=require('./serve.cjs');
+const {chromium}=require(path.join(process.env.USERPROFILE,'.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'));
+const out=path.resolve(process.argv[2]||path.join(require('node:os').tmpdir(),'formosa-cargo-warning'));fs.mkdirSync(out,{recursive:true});
+(async()=>{const server=createServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch({headless:true,channel:'msedge'}),report={checks:[],errors:[]};try{
+ const page=await browser.newPage({viewport:{width:1280,height:720}});page.on('pageerror',e=>report.errors.push(e.message));await page.goto(`http://127.0.0.1:${server.address().port}/`);await page.waitForFunction(()=>window.__kr?.G.state==='race'&&window.FormosaWorldLife?.state.ready,null,{timeout:90000});
+ report.checks=await page.evaluate(()=>{const k=__kr,E=FormosaRoadEvents,checks=[],check=(name,pass,detail)=>checks.push({name,pass:!!pass,detail});k.halt(true);k.G.mode='play';k.G.noIgnite=true;k.race(0,true);k.run();k.show(null);k.bot(false);k.go(0,1600,0);k.PC.v=0;k.HAZ.nextS=1e9;k.HAZ.list=[];k.TRAFFIC.list=[];k.TRAFFIC.safetyPlan=null;k.TRAFFIC.cargoNext=0;k.G.t=100;k.HUD.msgs.length=0;
+  const p=k.PC.piece,v={p,s:1900,x:2,len:11.8,wid:2.5,massKg:18000,v:17,v0:17,type:'flatbed'};k.TRAFFIC.list.push(v);const api=k.roadEventsApi();E.update(api,1/60);
+  check('Warning starts on the carrier with no central text and no early drop',v.cargoWarnAt===100&&k.HAZ.list.length===0&&k.HUD.msgs.length===0&&E.warnings(api).length===1);
+  let cargo=null,covered=true,open=true,impact=null,release=null;
+  for(let i=0;i<24*60;i++){k.G.t+=1/60;api.move(v,v.s+v.v/60,v.x);E.update(api,1/60);for(const h of k.HAZ.list){h.t+=1/60;E.step(api,h,1/60);if(h.eventKind==='cargo'){cargo=h;if(!release)release={elapsed:k.G.t-100,trace:h.warningTrace};if(!impact&&h.bounces)impact={s:h.s,x:h.x};const span=E.warningSlice(h.warningTrace,h.s);covered&&=!!span&&h.x-h.wid/2>=span.left-.01&&h.x+h.wid/2<=span.right+.01;}}if(i%30===0)open&&=k.trafficCorridorOpen(p,k.PC.s-12,k.PC.s+800);}
+  check('The original 2.4 second advance warning is preserved',release&&release.elapsed>=2.4&&release.elapsed<2.44,{release:release?.elapsed});
+  check('Predicted first landing matches real physics and the full rolling footprint stays inside the trace',covered&&impact&&Math.abs(impact.s-release.trace.impact.s)<.02&&Math.abs(impact.x-release.trace.impact.x)<.02,{impact,prediction:release?.trace.impact,covered});
+  check('The warned strip is narrow and the actual moving cargo always leaves a connected overtaking corridor',open&&release.trace.halfWidth*2<3.6&&cargo.v===0&&cargo.y===0,{width:release?.trace.halfWidth*2,open,stopped:!!cargo&&cargo.v===0});
+  v.cargoDropped=false;v.cargoWarnAt=k.G.t;v.lc={x:-2,wait:.2};v.sigT=.5;const before=E.forecastCargo(api,v);v.s+=20;v.x=-1;const after=E.forecastCargo(api,v);check('Forecast follows the actual carrier and anticipates a signalled lane change',after.s0-before.s0===20&&before.points[1].x<before.points[0].x&&after.points[0].x===-1);
+  return checks;
+ });
+ await page.evaluate(()=>{const k=__kr,E=FormosaRoadEvents;k.go(0,1855,-1.5);k.PC.v=0;k.RACE.time=78;k.G.t=102;k.HUD.msgs.length=0;k.HAZ.list=[];k.HAZ.nextS=1e9;k.TRAFFIC.list=[];k.TRAFFIC.safetyPlan=null;k.TRAFFIC.cargoNext=999;
+  const v={p:k.PC.piece,s:1925,x:1.8,len:11.8,wid:2.5,massKg:18000,v:17,v0:17,type:'flatbed',cargoWarnAt:100,spr:k.SPR.world_flatbed_rear,lcT:999,brake:0,wob:0,push:0,hitT:0,manners:{every:10,signal:2,weave:0}};k.TRAFFIC.list.push(v);E.update(k.roadEventsApi(),0);k.step(0);window.__warningPixels=Array.from(k.RV.fb);});
+ await page.screenshot({path:path.join(out,'cargo-warning-70m.png')});
+ const overlay=await page.evaluate(()=>{const k=__kr,v=k.TRAFFIC.list.find(v=>v.cargoWarnAt!=null),a=window.__warningPixels;v.cargoDropped=true;k.step(0);const b=k.RV.fb;let changed=0,ground=0;for(let i=0;i<a.length;i++){if(a[i]>>>24)ground++;if(a[i]!==b[i])changed++;}v.cargoDropped=false;k.step(0);return{changed,ground,ratio:changed/ground};});
+ report.checks.push({name:'Actual road raster displays a local warning while retaining the rest of the road',pass:overlay.changed>10&&overlay.ratio<.15,detail:overlay});
+ await page.evaluate(()=>{const k=__kr;k.go(0,1890,-1.5);k.step(0);});await page.screenshot({path:path.join(out,'cargo-warning-35m.png')});
+ await page.evaluate(()=>{const k=__kr,E=FormosaRoadEvents;k.go(0,1855,-1.5);k.G.t=102.41;E.update(k.roadEventsApi(),0);for(let i=0;i<24;i++)for(const h of k.HAZ.list){h.t+=1/60;E.step(k.roadEventsApi(),h,1/60);}k.go(0,1890,-1.5);k.step(0);});await page.screenshot({path:path.join(out,'cargo-warning-release.png')});
+ report.pass=report.checks.every(c=>c.pass)&&report.errors.length===0;
+ }catch(e){report.failure=String(e.stack||e);report.pass=false;}finally{await browser.close();await new Promise(r=>server.close(r));fs.writeFileSync(path.join(out,'cargo-warning-report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));if(!report.pass)process.exitCode=1;}})();

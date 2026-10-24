@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 1,
+  "project": "衝向寶島 FORMOSA RUN",
+  "downloadDate": "2026-10-24",
+  "service": "Suno",
+  "modelRequested": "v6",
+  "subscriptionObserved": "Premier",
+  "subscriptionEvidence": "Producing agent observed the signed-in Premier account while generating and using the official Unlock & Download flow.",
+  "commercialRightsSource": {
+    "title": "What rights do I have with a paid subscription?",
+    "url": "https://help.suno.com/en/articles/9601665",
+    "checked": "2026-10-24",
+    "scope": "Suno grants commercial-use rights to songs downloaded while subscribed, including use in video games. This is not a claim of copyright registration or exclusivity."
+  },
+  "downloadMethod": "Official Unlock & Download UI; no public song publishing",
+  "inputRecords": [
+    "downloads.json",
+    "generation-briefs.json"
+  ],
+  "tempoAndKey": "Requested in generation prompts, not measured or beat-grid verified. The player does not promise beat-synchronous transitions.",
+  "generationBriefs": {
+    "tail": " Original instrumental game soundtrack, no vocals or speech. Three minutes, full groove immediately. Develop distinct A/B melodies and tasteful variations; bass and drums continue through every transition. No empty bars, breakdown silence, sound effects, fade-out or closing cadence. Keep an active 8-bar turnaround at end for smooth crossfade. Balanced warm mix leaves room for engine sound.",
+    "groups2to5": [
+      [
+        "FORMOSA 02 - Palm Coast",
+        "Coastal road-trip city pop and comfortable R&B, 104 BPM, A major. Clean chorus guitar, Rhodes electric piano, gently syncopated bass, tight brushed snare and shakers, memorable relaxed melody, sunshine and palm trees along southern Taiwan."
+      ],
+      [
+        "FORMOSA 03 - Old Town Neon",
+        "Instrumental soul and rhythmic R&B, 100 BPM, E minor with warm major-seven chords. Muted funk guitar, round electric bass, smooth Rhodes piano, crisp organic drums, playful saxophone answering phrases, Taiwan old towns and night-market neon, warm and relaxed but forward moving."
+      ],
+      [
+        "FORMOSA 04 - Mountain Switchbacks",
+        "Melodic uplifting light rock, 112 BPM, G major. Nimble clean electric guitar hooks, warm acoustic rhythm guitar, driving bass and steady live drums, forest railway and winding mountain roads of Taiwan, adventurous controlled momentum, friendly sunny ensemble."
+      ],
+      [
+        "FORMOSA 05 - Lake and Clouds",
+        "Comfortable instrumental R&B / soft soul, 96 BPM, C major. Warm Rhodes chords, lyrical clean guitar, rounded bass, brushed snare and crisp hi-hats, spacious lake morning and cloudlit mountain touring, calm optimism with a persistent rolling groove."
+      ]
+    ],
+    "groups6to10": [
+      [
+        "FORMOSA 06 - Marble and Ocean",
+        "Original instrumental road-trip melodic light rock and coastal R&B,108 BPM,E major. Echoing clean guitar lead, elastic electric bass, crisp live drums, gentle electricpiano, broad optimistic melodies inspired by Taiwan marble gorges and Pacific coastal roads. Rich evolving A/B arrangement without hard distortion."
+      ],
+      [
+        "FORMOSA 07 - Fields and Waterfalls",
+        "Warm acoustic soul and laidback citypop,98 BPM,D major. Fingerstyle acousticguitar melody, mellow Rhodes chords, warm bass, brush snare, shakers and subtle handpercussion. Sunny ricefields, mountain foothills and waterfall scenery, joyful relaxed travel, memorable lyrical hooks."
+      ],
+      [
+        "FORMOSA 08 - North Coast Nights",
+        "Smooth instrumental R&B/funk,106 BPM,A minor with jazzy Dorian colors. Clean syncopated guitar, rounded melodic bass, tight snare, airy Rhodes, small saxophone hook, warm neon and northern coastal evening drive. Engaging groove comfortable for a longjourney."
+      ],
+      [
+        "FORMOSA 09 - Tea Hills Sunset",
+        "Mellow touring soul and acoustic R&B,92 BPM,F major. Warm acoustic guitar, expressive Rhodes electricpiano, gentle bass countermelody, brushed drums and shaker. Tea hills afternoon and glowing cape sunset, unhurried yet moving, clear sweet melody with varied answeringphrases."
+      ],
+      [
+        "FORMOSA 10 - Island Homecoming",
+        "Uplifting comfortable instrumental touring rock,112 BPM,D major. Bright clean electricguitar chorus hook, warm acousticrhythm, energetic melodic bass, live drums, light piano and sunny percussion. Triumphant Taiwanese island roadtrip homecoming, joyful friendship and openroad motion, never aggressive or abrasive."
+      ]
+    ],
+    "model": "v6",
+    "duration": "3:00",
+    "lyrics": "instrumental",
+    "planObserved": "Premier",
+    "downloadMethod": "Official Unlock & Download UI; no public song publishing"
+  },
+  "tracks": [
+    {
+      "id": "harbor-day",
+      "sourceSong": "https://suno.com/song/0fd30a84-44a5-41e0-96e3-8dae18c06efd",
+      "sourceFilename": "FORMOSA 01 - Harbor Daylight.mp3",
+      "filename": "harbor-day.mp3",
+      "bytes": 4033920,
+      "sha256": "e05ef33985c6adc3cf02f86426e47e968ff50dd04b2b698041eb6962519b6b4b",
+      "requestedBpm": 108,
+      "requestedKey": "D major",
+      "generationGroup": 1
+    },
+    {
+      "id": "mango-highway",
+      "sourceSong": "https://suno.com/song/9ca01fa2-8602-4d32-bd74-d40cdfb70d31",
+      "sourceFilename": "FORMOSA 01 - Harbor Daylight (1).mp3",
+      "filename": "mango-highway.mp3",
+      "bytes": 3932548,
+      "sha256": "0c96303f6bf9f7e74c3c8fedf33213509b458a7f6976ddbfe1b06c9ce65b845d",
+      "requestedBpm": 108,
+      "requestedKey": "D major",
+      "generationGroup": 1
+    },
+    {
+      "id": "palm-coast",
+      "sourceSong": "https://suno.com/song/1ec73aba-a2ad-4da7-b207-b4be998f5f94",
+      "sourceFilename": "FORMOSA 02 - Palm Coast.mp3",
+      "filename": "palm-coast.mp3",
+      "bytes": 4659973,
+      "sha256": "83878fc1d6b7b91d992aebe3546fdd79a06ff62d28357a53e6bde185577aa6d0",
+      "requestedBpm": 104,
+      "requestedKey": "A major",
+      "generationGroup": 2
+    },
+    {
+      "id": "south-bay",
+      "sourceSong": "https://suno.com/song/2366a702-e5ad-4c3e-a30c-7049210a0d7f",
+      "sourceFilename": "FORMOSA 02 - Palm Coast (1).mp3",
+      "filename": "south-bay.mp3",
+      "bytes": 4609199,
+      "sha256": "842011fc7b0f0a9a75f94a378e153537d07f9775d17f1f6124134a23b67b4b23",
+      "requestedBpm": 104,
+      "requestedKey": "A major",
+      "generationGroup": 2
+    },
+    {
+      "id": "old-town",
+      "sourceSong": "https://suno.com/song/18df09c4-1be8-410c-af50-98322fe3aaf5",
+      "sourceFilename": "FORMOSA 03 - Old Town Neon.mp3",
+      "filename": "old-town.mp3",
+      "bytes": 4293328,
+      "sha256": "0fb628489cde6638d6a38a571dc033827159bbdf25ef52ce13833b678db9d627",
+      "requestedBpm": 100,
+      "requestedKey": "E minor",
+      "generationGroup": 3
+    },
+    {
+      "id": "night-market",
+      "sourceSong": "https://suno.com/song/5875c4bc-ea52-4f57-b040-f577855fe76b",
+      "sourceFilename": "FORMOSA 03 - Old Town Neon (1).mp3",
+      "filename": "night-market.mp3",
+      "bytes": 4362757,
+      "sha256": "b20d23b4a2cc744c41b1d2c6d276ef5eede8fb47d4c8566a8517af711c00ed78",
+      "requestedBpm": 100,
+      "requestedKey": "E minor",
+      "generationGroup": 3
+    },
+    {
+      "id": "mountain-breeze",
+      "sourceSong": "https://suno.com/song/5bc505aa-2b2d-4170-9844-cb2ab67f9a64",
+      "sourceFilename": "FORMOSA 04 - Mountain Switchbacks.mp3",
+      "filename": "mountain-breeze.mp3",
+      "bytes": 4170219,
+      "sha256": "2d19cb0c0d5604a7e3f2c493668cd7b188beffaeb4d117c4086c7d9c0c9aa969",
+      "requestedBpm": 112,
+      "requestedKey": "G major",
+      "generationGroup": 4
+    },
+    {
+      "id": "forest-rail",
+      "sourceSong": "https://suno.com/song/bf6c19e0-9f6e-4d58-b6ec-4800a67f395f",
+      "sourceFilename": "FORMOSA 04 - Mountain Switchbacks (1).mp3",
+      "filename": "forest-rail.mp3",
+      "bytes": 4189895,
+      "sha256": "50fe5f87f9cb0e7876ed74aea663275c5bc23ee8c73b1d61c841067afb70a42f",
+      "requestedBpm": 112,
+      "requestedKey": "G major",
+      "generationGroup": 4
+    },
+    {
+      "id": "sun-moon",
+      "sourceSong": "https://suno.com/song/f1e22ab3-271f-42b5-b281-4e84b6fa3535",
+      "sourceFilename": "FORMOSA 05 - Lake and Clouds.mp3",
+      "filename": "sun-moon.mp3",
+      "bytes": 4050784,
+      "sha256": "0743c0b655eb7dabc859d2fff0ab2ac8a5a97353b769dd416102e58b5d430b5a",
+      "requestedBpm": 96,
+      "requestedKey": "C major",
+      "generationGroup": 5
+    },
+    {
+      "id": "cloud-pass",
+      "sourceSong": "https://suno.com/song/851b8709-adaa-49db-bdbb-b9deb6109158",
+      "sourceFilename": "FORMOSA 05 - Lake and Clouds (1).mp3",
+      "filename": "cloud-pass.mp3",
+      "bytes": 4295909,
+      "sha256": "018da059c3f4379b150f4fe40b2333c7bc91dd7a9bab7ffe1795a3c61c662bc1",
+      "requestedBpm": 96,
+      "requestedKey": "C major",
+      "generationGroup": 5
+    },
+    {
+      "id": "marble-gorge",
+      "sourceSong": "https://suno.com/song/52923631-1dfd-4859-a35f-7e6465488111",
+      "sourceFilename": "FORMOSA 06 - Marble and Ocean.mp3",
+      "filename": "marble-gorge.mp3",
+      "bytes": 4107861,
+      "sha256": "b797b0129fb8dbaa67a1841381d8793d40d3c4e018102a7364f173d687b9caa5",
+      "requestedBpm": 108,
+      "requestedKey": "E major",
+      "generationGroup": 6
+    },
+    {
+      "id": "east-coast",
+      "sourceSong": "https://suno.com/song/4f4b34aa-6042-4099-9668-f01ff486eded",
+      "sourceFilename": "FORMOSA 06 - Marble and Ocean (1).mp3",
+      "filename": "east-coast.mp3",
+      "bytes": 4174672,
+      "sha256": "f2fec7690031146df716d54915c1ae71f0212ccdd36f066065b311feb2231211",
+      "requestedBpm": 108,
+      "requestedKey": "E major",
+      "generationGroup": 6
+    },
+    {
+      "id": "rice-fields",
+      "sourceSong": "https://suno.com/song/6d0af3e9-8469-477f-8d83-39710addf2a5",
+      "sourceFilename": "FORMOSA 07 - Fields and Waterfalls.mp3",
+      "filename": "rice-fields.mp3",
+      "bytes": 4424379,
+      "sha256": "1bcb2fb93c2086fa1514c19a1cbbad476c63544a6423e95aeb566de9c18e5295",
+      "requestedBpm": 98,
+      "requestedKey": "D major",
+      "generationGroup": 7
+    },
+    {
+      "id": "waterfall",
+      "sourceSong": "https://suno.com/song/56ebbf0d-1512-4df2-93bc-ba5f61d93d3e",
+      "sourceFilename": "FORMOSA 07 - Fields and Waterfalls (1).mp3",
+      "filename": "waterfall.mp3",
+      "bytes": 4468054,
+      "sha256": "8b6d1881522728a58711381b2713cf93279a00bfe4b14ed37bf9fd2a4352c980",
+      "requestedBpm": 98,
+      "requestedKey": "D major",
+      "generationGroup": 7
+    },
+    {
+      "id": "north-shore",
+      "sourceSong": "https://suno.com/song/13e37bbe-35af-4b9c-86a3-d091fa19bf83",
+      "sourceFilename": "FORMOSA 08 - North Coast Nights.mp3",
+      "filename": "north-shore.mp3",
+      "bytes": 4489172,
+      "sha256": "1d32a44bd1645c1c4d027190851415f2a44b5a053d17282b939453c73344faea",
+      "requestedBpm": 106,
+      "requestedKey": "A minor",
+      "generationGroup": 8
+    },
+    {
+      "id": "capital-lights",
+      "sourceSong": "https://suno.com/song/2083a2ed-dcf2-4364-a8ad-add0f529a4a9",
+      "sourceFilename": "FORMOSA 08 - North Coast Nights (1).mp3",
+      "filename": "capital-lights.mp3",
+      "bytes": 4489855,
+      "sha256": "261ac1311cfae2619b7beb1dd893a7578d117c46c3bef41f1563416cef815b2c",
+      "requestedBpm": 106,
+      "requestedKey": "A minor",
+      "generationGroup": 8
+    },
+    {
+      "id": "tea-hills",
+      "sourceSong": "https://suno.com/song/096f958a-9d3e-407d-8d85-439e39463419",
+      "sourceFilename": "FORMOSA 09 - Tea Hills Sunset.mp3",
+      "filename": "tea-hills.mp3",
+      "bytes": 4572287,
+      "sha256": "a81121c18cc14f31c2a1109d0ecdb117cb6c6de94841531c1c17edcbb9133878",
+      "requestedBpm": 92,
+      "requestedKey": "F major",
+      "generationGroup": 9
+    },
+    {
+      "id": "cape-sunset",
+      "sourceSong": "https://suno.com/song/6915364e-5f61-4417-a2c0-1741c8a3c621",
+      "sourceFilename": "FORMOSA 09 - Tea Hills Sunset (1).mp3",
+      "filename": "cape-sunset.mp3",
+      "bytes": 4601524,
+      "sha256": "72659194a1863a2a6ae90a36df890ad9bd52b03b18d516653f2aafba43fe78c6",
+      "requestedBpm": 92,
+      "requestedKey": "F major",
+      "generationGroup": 9
+    },
+    {
+      "id": "island-finale",
+      "sourceSong": "https://suno.com/song/0febc454-58dc-43cb-bb81-14e4af520f22",
+      "sourceFilename": "FORMOSA 10 - Island Homecoming.mp3",
+      "filename": "island-finale.mp3",
+      "bytes": 4255152,
+      "sha256": "339fc99ad5d0cae08dfb5e529f8eacc415f37e65bde396c2bcfc64751d66d324",
+      "requestedBpm": 112,
+      "requestedKey": "D major",
+      "generationGroup": 10
+    },
+    {
+      "id": "island-menu",
+      "sourceSong": "https://suno.com/song/66c81983-3271-465e-93e8-93213591bd3e",
+      "sourceFilename": "FORMOSA 10 - Island Homecoming (1).mp3",
+      "filename": "island-menu.mp3",
+      "bytes": 4063631,
+      "sha256": "dd48ba68b77008377fec9f4bb6e028203b7fc358e5c80f8a41e00c8b2c929f67",
+      "requestedBpm": 112,
+      "requestedKey": "D major",
+      "generationGroup": 10
+    }
+  ]
+}

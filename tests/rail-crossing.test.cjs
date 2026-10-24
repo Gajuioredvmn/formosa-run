@@ -1,0 +1,23 @@
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),test=require('node:test'),assert=require('node:assert/strict');
+function setup(){const c={window:{},Math};vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../render/rail-crossing.js'),'utf8'),c);const api=c.window.FormosaRailCrossing,p={id:'s4b',leftEdge:()=>-7,rightEdge:()=>7};p.railCrossing=api.create(p);return {api,p,q:p.railCrossing};}
+test('The train enters only after a full warning and both gates are down',()=>{const{api,q}=setup();for(let t=0;t<22;t+=.025){api.update(q,t);if(q.on){assert(q.closed);assert.equal(q.gate,1);assert(t>=5);}if(t<3){assert(q.warnOn);assert.equal(q.gate,0);}if(t>13.4){assert(!q.closed);assert(!q.on);assert.equal(q.gate,0);}}});
+test('Repeated cycles clear the crossing and reset reproducibly',()=>{const{api,q}=setup();for(const t of [0,3.5,6,9,13,18]){api.update(q,t);const before=[q.gate,q.on,q.closed,q.x];api.update(q,t+44);assert.deepEqual([q.gate,q.on,q.closed,q.x],before);}api.update(q,18);assert(!q.closed);api.update(q,0);assert(!q.closed&&q.warnOn);});
+test('The lower bypass keeps the original road centre under a supported 4.72m deck',()=>{const{api,p,q}=setup();for(let s=q.start;s<=q.end;s+=1){assert.equal(api.height(p,s,0),0);assert(api.height(p,s,q.axis-2)>=0);assert(api.height(p,s,q.axis-2)<=5.2);assert(q.axis-.44-p.leftEdge(s)>=3.9,'The left street fits a full car');assert(p.rightEdge(s)-(q.axis+.44)>=7,'The main through road retains two lanes');}assert.equal(api.height(p,q.start,q.axis-2),0);assert.equal(api.height(p,q.end,q.axis-2),0);assert.equal(api.height(p,q.s,q.axis-2),5.2);assert(q.height-.48>=4.6);});
+test('All physical car dimensions can use bypass while the gate and train block the street',()=>{const{api,q}=setup();const data=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/game.json'),'utf8'));api.update(q,8);
+ for(const car of data.cars){const hL=Math.max(3.6,car.L)/2,hW=Math.max(1.5,car.W)/2;const previous={s:q.s-20,x:0},body={s:q.s+10,x:0,v:60,vx:0};assert.equal(api.constrain(q,body,previous,hL,hW),null,car.id+' bypass');assert.equal(body.v,60);
+ const left={s:q.s+10,x:q.axis-2,v:60,vx:0};assert.equal(api.constrain(q,left,{s:q.s-20,x:q.axis-2},hL,hW),'gate',car.id+' gate');assert.equal(left.v,0);assert(left.s<q.s-7-hL);
+ }});
+test('Two-sided retaining wall never snaps the car to the opposite elevation',()=>{const{api,q}=setup();for(const side of [-1,1]){const body={s:q.s-40,x:q.axis+side*.1,v:40,vx:-side*5};assert.equal(api.constrain(q,body,{s:q.s-42,x:q.axis+side*2},2.2,1),'divider');assert.equal(Math.sign(body.x-q.axis),side);assert(Math.abs(body.x-q.axis)>1.44);}});
+test('The safety reservation always leaves one full bypass for the widest car',()=>{const{api,q}=setup();for(let t=0;t<22;t+=.5){api.update(q,t);for(let s=q.start-10;s<q.end+10;s+=2){for(const [a,b]of api.blocks(q,s,5.2,true))assert(b<=.44,'A reservation cannot occupy the right bypass');}}});
+test('Normal pieces receive no rendering elevation or crossing geometry',()=>{const{api}=setup();assert.equal(api.height({id:'s1'},1200,-3),0);assert.equal(api.configure({p:{id:'s1'}}),null);assert.deepEqual(Array.from(api.blocks(null,100,5,true)),[]);});
+test('The real traffic planner cannot invent a route through the continuous retaining wall',()=>{
+ const file=path.join(__dirname,'traffic.test.cjs'),fixture=fs.readFileSync(file,'utf8'),outer={require,console,__dirname,process:{argv:['node',file]}};
+ vm.createContext(outer);vm.runInContext(fixture.slice(0,fixture.indexOf('const tests=[];'))+'globalThis.trafficWorld=sandbox;',outer);
+ const c=outer.trafficWorld;vm.runInContext(fs.readFileSync(path.join(__dirname,'../render/rail-crossing.js'),'utf8'),c);
+ vm.runInContext(`PC.piece=piece(5.25);const p=PC.piece;p.leftEdge=()=>-6.85;p.rightEdge=()=>7.65;p.railCrossing=window.FormosaRailCrossing.create(p);PC.s=1320;HAZ.list=[];HAZ.xings=[];TRAFFIC.list=[];
+ assert(trafficCorridorOpen(p,1320,1850));
+ TRAFFIC.list=[0,2.7,5.4].map(x=>({p,s:1745,x,len:16,wid:2.5}));
+ assert.equal(trafficCorridorOpen(p,1320,1850),false,'Right lane blocked after the crossing; the only left opening is behind an impassable median');
+ TRAFFIC.list.forEach(o=>o.x=p.railCrossing.axis-2);assert(trafficCorridorOpen(p,1320,1850),'Left-side traffic does not block the physically separate underpass');`,c);
+});
+test('Local ramp grade adds uphill resistance and returns the same potential energy downhill',()=>{const{api,p,q}=setup();const x=q.axis-2;assert(api.grade(p,q.start+60,x)>0);assert(api.grade(p,q.end-60,x)<0);assert.equal(api.grade(p,q.start+60,0),0);let integrated=0;for(let s=q.start-4;s<=q.end+4;s+=.1)integrated+=api.grade(p,s,x)*.1;assert(Math.abs(integrated)<1e-7);});
