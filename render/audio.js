@@ -2,6 +2,17 @@ import {MUSIC_TRACKS,ROUTE_MUSIC} from './music-manifest.js';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const cache=new WeakMap();
 
+// Calibrate the soundtrack against the continuous engine bed without changing
+// saved user faders. Short driving cues keep their existing effects-bus level.
+export const MIX_CALIBRATION=Object.freeze({musicDb:3,engineBedDb:-3.7});
+export function createMixBuses(context,master,{music=.6,sfx=.9}={}){
+  const musicBus=context.createGain(),sfxBus=context.createGain(),musicTrim=context.createGain(),engineBed=context.createGain();
+  musicBus.gain.value=clamp(music,0,1);sfxBus.gain.value=clamp(sfx,0,1);
+  musicTrim.gain.value=10**(MIX_CALIBRATION.musicDb/20);engineBed.gain.value=10**(MIX_CALIBRATION.engineBedDb/20);
+  musicBus.connect(musicTrim);musicTrim.connect(master);sfxBus.connect(master);engineBed.connect(sfxBus);
+  return{music:musicBus,sfx:sfxBus,musicTrim,engineBed};
+}
+
 // Finite, click-free passing air; the pitched component is a quiet engine body,
 // not the former bright sawtooth alert. A fixed seed makes QA reproducible.
 export function createPassBuffer(context,type='sedan') {

@@ -1500,34 +1500,22 @@ function packAtlas() {
   _sprQueue.length = 0;_sprQueueIndex.clear();
   for (const k in _varCache) delete _varCache[k];
 }
-// mip levels: a 2x2 block is opaque if two of its pixels are (one, on a checkerboard) and takes the colour of
-// one of its own pixels (the one nearest their average), so every level keeps the sprite's own palette;
-// then each level gets its dark outline back, so a tree far away still reads as a drawn tree
+// Coverage-preserving, premultiplied box mipmaps. A thin leaf must fade with
+// distance, not alternate between solid black and invisible at a LOD boundary.
 function mipLevels(c) {
   const levels = [c];
   let src = c.getContext('2d').getImageData(0, 0, c.width, c.height), w = c.width, h = c.height;
   while (w > 16 && h > 16) {
     const nw = w >> 1, nh = h >> 1, out = new ImageData(nw, nh), s = src.data, d = out.data;
     for (let y = 0; y < nh; y++) for (let x = 0; x < nw; x++) {
-      let r = 0, g = 0, b = 0, n = 0;
+      let r = 0, g = 0, b = 0, alpha = 0;
       const idx = [((y * 2) * w + x * 2) * 4, ((y * 2) * w + x * 2 + 1) * 4, ((y * 2 + 1) * w + x * 2) * 4, ((y * 2 + 1) * w + x * 2 + 1) * 4];
-      for (const i of idx) if (s[i + 3] > 127) { r += s[i]; g += s[i + 1]; b += s[i + 2]; n++; }
-      if (!(n >= 2 || (n === 1 && ((x + y) & 1)))) continue;
-      r /= n; g /= n; b /= n;
-      let best = -1, bd = 1e9;
-      for (const i of idx) if (s[i + 3] > 127) { const dd = (s[i] - r) ** 2 + (s[i + 1] - g) ** 2 + (s[i + 2] - b) ** 2; if (dd < bd) { bd = dd; best = i; } }
-      const o = (y * nw + x) * 4; d[o] = s[best]; d[o + 1] = s[best + 1]; d[o + 2] = s[best + 2]; d[o + 3] = 255;
-    }
-    // re-darken the rim: pixels that touch the outside become a deep shade of themselves
-    const cp = new Uint8ClampedArray(d);
-    for (let y = 0; y < nh; y++) for (let x = 0; x < nw; x++) {
-      const o = (y * nw + x) * 4; if (!cp[o + 3]) continue;
-      const out = (x === 0 || !cp[o - 1]) || (x === nw - 1 || !cp[o + 7]) || (y === 0 || !cp[o - nw * 4 + 3]) || (y === nh - 1 || !cp[o + nw * 4 + 3]);
-      if (out) { d[o] = cp[o] * 0.32; d[o + 1] = cp[o + 1] * 0.3; d[o + 2] = cp[o + 2] * 0.36; }
+      for (const i of idx) { const a = s[i + 3]; r += s[i] * a; g += s[i + 1] * a; b += s[i + 2] * a; alpha += a; }
+      if (!alpha) continue;
+      const o = (y * nw + x) * 4; d[o] = r / alpha; d[o + 1] = g / alpha; d[o + 2] = b / alpha; d[o + 3] = alpha / 4;
     }
     const lc = canvas(nw, nh); lc.getContext('2d').putImageData(out, 0, 0); levels.push(lc);
-    // the next level is built from the clean one, not the outlined one
-    out.data.set(cp); src = out; w = nw; h = nh;
+    src = out; w = nw; h = nh;
   }
   return levels;
 }
@@ -4680,7 +4668,7 @@ const TAGS = {
     every(s0, s1, 16, 5, D.rnd, (s) => D.spr(D.rnd() < 0.6 ? 'walkers' : 'planter', s, D.lat(s, 1, D.rnd.range(1.2, 2.6)), { collide: false, flip: D.rnd() < 0.5 }));
   },
   dome(D, s0, s1) { sightSign(D, s0 + 40, -1, 'dome'); const s = s0 + 240; if(window.FormosaWorldLife)window.FormosaWorldLife.metroEntrance(D,s); every(s - 40, s + 40, 12, 3, D.rnd, (q) => D.spr('walkers', q, D.lat(q, -1, D.rnd.range(2, 5)), { collide: false })); },
-  lrtstop(D, s0, s1) { sightSign(D, s0 + 20, -1, 'lrt'); for (let s = s0 + 130; s < s1 - 60; s += 260) D.spr(pickVar('lrtstop', D.rnd), s, D.lat(s, -1, 6.4), { flip: false, collide: false }); },
+  lrtstop(D, s0, s1) { sightSign(D, s0 + 20, -1, 'lrt'); for (let s = s0 + 130; s < s1 - 60; s += 260) { pickVar('lrtstop', D.rnd); window.FormosaWorldLife?.lightRailStop(D, s); } },
   pagodas(D, s0, s1) { sightSign(D, s0 + 30, -1, 'pagodas'); const s = s0 + 230; D.spr('pagodas', s, D.lat(s, -1, 14), { flip: false, collide: false }); },
   underpasssign(D, s0) { sightSign(D, s0 - 120, 1, 'underpass'); },
   underpass(D, s0, s1) { D.rail(s0, s1, -1, 0.5, 'cutwall'); D.rail(s0, s1, 1, 0.5, 'cutwall'); every(s0, s1, 24, 0, D.rnd, (s) => D.spr('lamp1', s, D.lat(s, 1, 0.3), { flip: true, sway: 0, collide: false })); },
@@ -6102,12 +6090,20 @@ function pcStep(dt, track) {
   visual.dt=dt; visual.time+=dt; if(dt>0)visual.step++;
   visual.curvature=p.curv(PC.s); visual.tyreLimit=tyreLimit(sp,PC.drift>0,PC.offroad>0);
   visual.lateralAccel=0; visual.rawLateralAccel=0;
-  // ---- crash: the car tumbles, lands, and is set back on the road ----
+  // ---- crash: contact-driven slide / tip, landing, then road recovery ----
   if (PC.crash) {
     const c = PC.crash; c.t += dt;
-    PC.v = Math.sign(PC.v) * Math.max(0, Math.abs(PC.v) - 22 * dt); PC.s += PC.v * dt * WORLD_K;
-    PC.airY = Math.max(0, c.vy * c.t - 9 * c.t * c.t);
-    PC.yaw += c.spin * dt; PC.roll = Math.sin(Math.min(1, c.t / 1.1) * Math.PI) * c.rollK;
+    PC.v = Math.sign(PC.v) * Math.max(0, Math.abs(PC.v) - 22 * dt); PC.s = Math.max(0,PC.s+PC.v*dt*WORLD_K);
+    // Preserve the solver's lateral momentum, then let tyre friction remove
+    // it. The old crash held X fixed even after a large sideways impulse.
+    const drag=PC.airY>0?.6:4.5,decay=Math.exp(-drag*dt);
+    PC.x+=PC.vx*(1-decay)/drag;PC.vx*=decay;
+    PC.airY = Math.max(0, c.vy * c.t - 4.905 * c.t * c.t);
+    PC.yaw = (c.yaw0+c.spin*(1-Math.exp(-c.t*6))/3.5)*Math.exp(-Math.max(0,c.t-.3)*4);
+    PC.roll = c.rollK*(c.t<.78?Math.sin(c.t/.78*Math.PI):c.t<1.18?-.13*Math.sin((c.t-.78)/.4*Math.PI)*Math.exp(-(c.t-.78)*4):0);
+    const wall=findCollider(p,PC.s,PC.x,playerLength()/2,playerWidth()/2,'wall');
+    if(wall){const right=(wall.x0+wall.x1)>0;PC.x=right?wall.x0-playerWidth()/2-.03:wall.x1+playerWidth()/2+.03;PC.vx=right?Math.min(0,PC.vx):Math.max(0,PC.vx);}
+    if(!c.landed&&c.t>=c.landTime){c.landed=true;if(typeof fxCrashLand==='function')fxCrashLand(c);}
     if (c.t > c.dur) {
       // back on the road, rolling slowly, in the gear you were in before it all went wrong
       PC.crash = null; PC.airY = 0; PC.yaw = 0; PC.roll = 0; PC.v = Math.max(0, Math.min(PC.v, c.v0 * 0.25, 12)); PC.vx = 0; PC.drift = 0;
@@ -6115,6 +6111,7 @@ function pcStep(dt, track) {
       PC.gear = c.gear; PC.neutral = false; PC.rpm = 1200;
     }
     PC.rpm = lerp(PC.rpm, 1200, dt * 3);
+    visual.lateralAccel=dt>0?clamp((PC.vx-visualStartVx)/dt,-30,30):0;
     return;
   }
   // ---- gearbox ----
@@ -6215,7 +6212,14 @@ function pcStep(dt, track) {
         // clipped it with a corner: shoved aside, speed scrubbed, keep going
         PC.x += side * 0.6; PC.vx = side * 5; PC.v *= glancing ? 0.82 : 0.3; sfxThud(0.5); shake(0.25);
         if (typeof fxScrape === 'function') fxScrape(-side);
-      } else if (v > 22) pcCrash(clamp((v - 22) / 35, 0.3, 1));
+      } else if (v > 22) {
+        const closing=v*WORLD_K,offset=clamp((PC.x-mid)/Math.max(.4,playerWidth()/2),-1,1);
+        // A solid post/building is effectively immovable. Resolve the frontal
+        // velocity before playing the recovery; otherwise the old animation
+        // carried the car straight through the obstacle for another 80 metres.
+        PC.v=-Math.min(1.5,v*.025);PC.vx*=.35;
+        pcCrash(clamp((v-22)/35,.3,1),{kind:'solid',normalSpeed:closing,yawImpulse:offset*Math.min(1.2,v*.02),side:Math.sign(offset),normalX:0,speedMps:v});
+      }
       else { PC.v = 0; PC.vx = 0; PC.x += side * 0.5; sfxThud(0.4); }
       pcVisualContact('solid',hit,visualBeforeVx,PC.vx,side,{height:.4,speedMps:v});
     }
@@ -6267,9 +6271,26 @@ function pcCrash(k, contact) {
   const inferred = clamp(PC.vx / Math.max(6, Math.abs(v)) * 2 + PC.yaw * .5, -2.4, 2.4);
   const spin = Number.isFinite(c.spin) ? c.spin : Number.isFinite(c.yawImpulse) ? c.yawImpulse : inferred;
   const side = Number.isFinite(c.side) ? c.side : Math.sign(spin);
+  const normalSpeed=Math.max(0,c.normalSpeed==null?Math.abs(v)*WORLD_K:c.normalSpeed),severity=clamp(k*.45+normalSpeed/70*.55,.1,1);
+  // Only an actual lateral impact below the centre of mass can lift the
+  // inside tyres. Spend a fraction of dissipated contact energy, never speed
+  // alone, and never launch a centred frontal hit into the air.
+  const cg=({rosso:.47,vespa:.45,argento:.44,ballena:.52,bamboo:.40,blanco:.41,adler:.46,raiden:.40,arancia:.39,oro:.54})[PC.spec.id]||.47;
+  const arm=Math.max(0,cg-(c.contactHeight??.38)),half=playerWidth()*.41,inertia=cg*cg+half*half+.36*.36;
+  const lateral=Math.abs(c.normalX||0)>.5&&normalSpeed>6&&(c.speedMps??Math.abs(v))>18&&arm>0;
+  const kick=lateral?Math.abs(c.deltaVx||0)*arm/inertia:0;
+  const rollEnergy=lateral?Math.min(Math.max(0,c.dissipatedPerKg||0)*.08,.5*inertia*kick*kick):0;
+  // The .78 s bank pulse cannot demand more angular kinetic or lifting energy
+  // than the contact supplied. A roof-height shove therefore cannot invent lift.
+  let peak=Math.min(.94,Math.sqrt(2*rollEnergy/inertia)*.78/Math.PI);
+  while(peak>0&&9.81*(half*Math.sin(peak)+cg*(Math.cos(peak)-1))>rollEnergy)peak=Math.max(0,peak-.005);
+  const rollK=lateral?Math.sign(c.normalX)*peak:0;
+  const style=Math.abs(rollK)>.24?'side-tip':Math.abs(spin)>.2?'slide':'frontal';
+  const vertical=(c.kind==='curb'||c.kind==='ramp')?Math.min(Math.max(0,c.verticalImpulse||0),Math.sqrt(2*rollEnergy)):0;
   PC.crash = { t: 0, dur: hard ? 2.3 : 1.6, gear: PC.neutral ? 1 : PC.gear, v0: Math.abs(v),
-    vy: Math.max(0, c.verticalImpulse || 0), spin, rollK: side * Math.min(.16, Math.abs(spin) * .04), normalSpeed: c.normalSpeed || 0 };
-  PC.drift = 0; sfxSkid(false); sfxCrash(clamp(Math.abs(v) / 60, .3, 1));
+    vy:vertical,spin,rollK,rollEnergy,normalSpeed,severity,style,yaw0:PC.yaw||0,side,
+    landTime:vertical>0?2*vertical/9.81:Math.abs(rollK)>.01?.78:.12,landed:false };
+  PC.drift = 0; sfxSkid(false); sfxCrash(Math.max(severity,clamp(Math.abs(v)/60,.3,1)));
   onCrash();
 }
 // colliders are sorted by s0; scan the few near s
@@ -6512,8 +6533,12 @@ function audioInit() {
   AU.master = ctx.createGain(); AU.master.gain.value = 0.9;
   const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4; comp.attack.value = 0.004; comp.release.value = 0.2;
   AU.master.connect(comp); comp.connect(ctx.destination);
-  AU.sfx = ctx.createGain(); AU.sfx.gain.value = AU.vol.sfx; AU.sfx.connect(AU.master);
-  AU.music = ctx.createGain(); AU.music.gain.value = AU.vol.music; AU.music.connect(AU.master);
+  if (GAME_AUDIO?.createMixBuses) Object.assign(AU,GAME_AUDIO.createMixBuses(ctx,AU.master,{music:SET.music,sfx:SET.sfx}));
+  else {
+    AU.sfx = ctx.createGain(); AU.sfx.gain.value = SET.sfx; AU.sfx.connect(AU.master);
+    AU.music = ctx.createGain(); AU.music.gain.value = SET.music; AU.music.connect(AU.master);
+    AU.engineBed = AU.sfx;
+  }
   // two seconds of white noise for everything hissy
   const nb = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), d = nb.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -6536,7 +6561,7 @@ function engineStart(kind) {
   if (!AU.ctx) return;
   engineStop();
   const ctx = AU.ctx, V = ENGINE_VOICE[kind] || ENGINE_VOICE.v8, E = { V, kind };
-  E.out = ctx.createGain(); E.out.gain.value = 0; E.out.connect(AU.sfx);
+  E.out = ctx.createGain(); E.out.gain.value = 0; E.out.connect(AU.engineBed || AU.sfx);
   E.filt = ctx.createBiquadFilter(); E.filt.type = 'lowpass'; E.filt.frequency.value = V.cut; E.filt.Q.value = V.q;
   E.shaper = ctx.createWaveShaper(); E.shaper.curve = distCurve(V.drive); E.shaper.oversample = '2x';
   E.pre = ctx.createGain(); E.pre.gain.value = 0.5;
@@ -6546,10 +6571,10 @@ function engineStart(kind) {
   // intake roar: band-passed noise riding the revs
   E.nz = noiseSrc(true); E.nzf = ctx.createBiquadFilter(); E.nzf.type = 'bandpass'; E.nzf.Q.value = 1.2; E.nzg = ctx.createGain(); E.nzg.gain.value = 0;
   E.nz.connect(E.nzf); E.nzf.connect(E.nzg); E.nzg.connect(E.out); E.nz.start();
-  if (V.whistle) { E.wh = ctx.createOscillator(); E.wh.type = 'sine'; E.whg = ctx.createGain(); E.whg.gain.value = 0; E.wh.connect(E.whg); E.whg.connect(AU.sfx); E.wh.start(); }
+  if (V.whistle) { E.wh = ctx.createOscillator(); E.wh.type = 'sine'; E.whg = ctx.createGain(); E.whg.gain.value = 0; E.wh.connect(E.whg); E.whg.connect(AU.engineBed || AU.sfx); E.wh.start(); }
   // wind and tyre noise share the engine's lifetime
   E.wind = noiseSrc(true); E.wf = ctx.createBiquadFilter(); E.wf.type = 'lowpass'; E.wf.frequency.value = 600; E.wg = ctx.createGain(); E.wg.gain.value = 0;
-  E.wind.connect(E.wf); E.wf.connect(E.wg); E.wg.connect(AU.sfx); E.wind.start();
+  E.wind.connect(E.wf); E.wf.connect(E.wg); E.wg.connect(AU.engineBed || AU.sfx); E.wind.start();
   E.sq = noiseSrc(true); E.sqf = ctx.createBiquadFilter(); E.sqf.type = 'bandpass'; E.sqf.frequency.value = 1300; E.sqf.Q.value = 6; E.sqg = ctx.createGain(); E.sqg.gain.value = 0;
   E.sq.connect(E.sqf); E.sqf.connect(E.sqg); E.sqg.connect(AU.sfx); E.sq.start();
   E.rough = noiseSrc(true); E.rf = ctx.createBiquadFilter(); E.rf.type = 'lowpass'; E.rf.frequency.value = 260; E.rg = ctx.createGain(); E.rg.gain.value = 0;
@@ -7075,7 +7100,9 @@ function trafficPlayerContact(vehicle) {
       const yawImpulse = clamp(torque / inertia, -Math.min(2.4, budgetRate), Math.min(2.4, budgetRate));
       vehicle.wob = Math.min(.8, response.normalSpeed / 40); vehicle.brake = 1;
       if (response.normalSpeed > 24) pcCrash(clamp((response.normalSpeed - 24) / 30, .3, 1),
-        { yawImpulse, side: Math.sign(yawImpulse), normalSpeed: response.normalSpeed, verticalImpulse: 0 });
+        { yawImpulse, side: Math.sign(yawImpulse), normalSpeed: response.normalSpeed, normalX:-normal.x,
+          kind:vehicle.train?'train':'traffic',speedMps:visualBeforeSpeed,dissipatedPerKg:response.dissipatedEnergy/ma,
+          deltaVx:PC.vx-visualBeforeVx,contactHeight:.38,verticalImpulse:0 });
       else PC.yaw += yawImpulse * .08;
       const intensity = clamp(response.normalSpeed / 30, .08, 1);
       if (frontal) { sfxClang(intensity); if (!vehicle.train) sfxHorn(); } else { sfxScrape(); if (typeof fxScrape === 'function') fxScrape(-normal.x); }
@@ -7530,7 +7557,22 @@ function hudResize() {
 }
 addEventListener('resize', hudResize);
 const F_NUM = '"Russo One","Noto Sans TC",sans-serif', F_TC = '"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif', F_PIX = '"Press Start 2P",monospace';
-function hudMsg(text, sub, col, dur, big) { HUD.msgs.push({ text, sub, col: col || '#ffd23a', t: 0, dur: dur || 2.2, big: big !== false }); if (HUD.msgs.length > 3) HUD.msgs.shift(); }
+function hudNotice(text, sub) {
+  // Instructions remain in setup. While driving, only short race/safety status
+  // belongs on the HUD; scenery commentary and collision quips need no banner.
+  if (text === 'CHECKPOINT') { const bonus = (sub || '').match(/\+(\d+)/)?.[1]; return { label: bonus ? '時間 +' + bonus + ' 秒' : 'CHECKPOINT', priority: 1 }; }
+  if (['GO!', 'GOAL', 'TIME UP'].includes(text)) return { label: text, priority: 2 };
+  if (text === '火車！') return { label: '! 注意火車', priority: 3 };
+  if (text === '前方有臺灣黑熊') return { label: '! 黑熊穿越', priority: 3 };
+  if (text === '前方平交道') return { label: '! 平交道 · 右側地下道', priority: 3 };
+  if (text === '車隊左轉' || text === '車隊右轉') return { label: text, priority: 2 };
+  return null;
+}
+function hudMsg(text, sub, col, dur, big) {
+  if (!hudNotice(text, sub)) return;
+  HUD.msgs.push({ text, sub, col: col || '#ffd23a', t: 0, dur: dur || 2.2, big: big !== false });
+  if (HUD.msgs.length > 3) HUD.msgs.shift();
+}
 // outlined arcade text
 function otext(str, x, y, size, fill, font, align, stroke, lw) {
   hud.font = size + 'px ' + (font || F_NUM); hud.textAlign = align || 'left'; hud.textBaseline = 'alphabetic';
@@ -7614,13 +7656,18 @@ function drawSteerPad() {
   hud.fillStyle = '#e8eef8'; hud.fillRect(-rad + 2, -2, rad * 2 - 4, 4); hud.fillRect(-2, 2, 4, rad - 4);
   hud.fillStyle = '#ffd23a'; hud.fillRect(-5, -rad - 6, 10, 12);
   hud.restore();
-  if (!CTL.steerTouch && R_firstLap()) otext('按住左右拖曳轉向', cx, r.y + r.h - 8, 12, '#fff3dc', F_TC, 'center', '#140c2a', 3);
 }
 function R_firstLap() { return RACE.elapsed < 12; }
 function drawNetworkStandings(){
   const list=netStandings();if(!list.length)return;
-  const W=innerWidth,H=innerHeight,columns=IS_TOUCH?2:1,w=IS_TOUCH?276:W<800?144:180,row=H<430?15:19,rows=Math.ceil(list.length/columns),y=H<430?72:100;
+  const W=innerWidth,H=innerHeight,columns=IS_TOUCH?2:1,w=IS_TOUCH?276:W<800?144:180,row=H<430?15:19,rows=Math.ceil(list.length/columns);
+  let y=H<430?72:100;
   const x=IS_TOUCH?Math.max(!PC.auto&&!PC.seq?(CTL.pads.box?.x||0)+(CTL.pads.box?.w||0)+8:8,Math.min(W-w-12,W*.5-w*.5)):W-w-10;
+  if(HUD.fork&&RACE.state==='run'){
+    const scale=Math.min(W/RW,H/RH),ox=(W-RW*scale)/2,oy=(H-RH*scale)/2;
+    const board=pixLabel(HUD.fork.R+' ▶',11,0xffffff,0x0f5a3a),right=Math.min(RW-8,(CTL.pads.pause?.x??W)*RW/W-8),left=ox+(right-3-board.width)*scale,top=oy+31*scale,bottom=oy+47*scale;
+    if(x+w>left&&x<ox+(right+3)*scale&&y<bottom&&y+24+rows*row>top)y=bottom+4;
+  }
   const mine=list.find(q=>q.me),size=H<430?10:12;arcBox(x,y,w,24+rows*row,.86);
   otext('POS '+(mine?.rank||'–')+' / '+list.length,x+8,y+18,13,'#ffd23a',F_NUM);
   list.forEach((q,i)=>{const xx=x+Math.floor(i/rows)*w/columns,yy=y+24+(i%rows)*row;if(q.me){hud.fillStyle='rgba(255,210,58,.16)';hud.fillRect(xx+5,yy,w/columns-10,row);}
@@ -7814,22 +7861,26 @@ function drawPixHud(dt) {
   // ---- the fork ahead ----
   if (HUD.fork && R.state === 'run') {
     const f = HUD.fork; VG.globalAlpha = clamp(f.k, 0, 1);
-    const a = pixLabel('◀ ' + f.L, 14, 0xffffff, 0x0f5a3a), b = pixLabel(f.R + ' ▶', 14, 0xffffff, 0x0f5a3a);
-    VG.fillStyle = '#0f7a4a'; VG.fillRect(X0 - a.width - 10, 52, a.width + 6, 20); VG.fillRect(X0 + 4, 52, b.width + 6, 20);
-    blitC(a, X0 - 7, 54, 'right'); blitC(b, X0 + 7, 54);
+    const a = pixLabel('◀ ' + f.L, 11, 0xffffff, 0x0f5a3a), b = pixLabel(f.R + ' ▶', 11, 0xffffff, 0x0f5a3a);
+    const right = Math.min(RW - 8, (CTL.pads.pause?.x ?? innerWidth) * RW / innerWidth - 8);
+    VG.fillStyle = '#0f5a3a'; VG.fillRect(5, 31, a.width + 6, 16); VG.fillRect(right - 3 - b.width, 31, b.width + 6, 16);
+    blitC(a, 8, 32); blitC(b, right, 32, 'right');
     VG.globalAlpha = 1;
   }
-  // ---- messages: CHECKPOINT, GO!, TIME UP ----
-  let my = RH * 0.33;
+  // One compact status at the upper edge. Never stack subtitles over the road.
+  let active = null;
   for (const m of HUD.msgs) {
+    const notice = hudNotice(m.text, m.sub);
+    if (notice && m.t < m.dur && (!active || notice.priority >= active.notice.priority)) active = { m, notice };
+  }
+  if (active) {
+    const { m, notice } = active;
     const k = m.t < 0.15 ? m.t / 0.15 : m.t > m.dur - 0.3 ? Math.max(0, (m.dur - m.t) / 0.3) : 1;
     VG.globalAlpha = k;
-    const latin = !/[一-鿿]/.test(m.text), col = parseInt(m.col.slice(1), 16);
-    const big = latin ? pixText(m.text, { s: m.big ? 4 : 3, fill: 0xffffff, fill2: col, out: 0x0a1a6a, out2: 0x05081c, it: 1 }) : pixLabel(m.text, 22, col, 0x05081c);
-    blitC(big, X0, my, 'center');
-    if (m.sub) blitC(pixLabel(m.sub, 12, 0xffffff, 0x05081c), X0, my + big.height + 2, 'center');
+    const card = pixLabel(notice.label, 10, parseInt(m.col.slice(1), 16), 0x05081c), y = HUD.fork && R.state === 'run' ? 49 : 31;
+    VG.fillStyle = '#08192d'; VG.fillRect(5, y, card.width + 8, 15);
+    blitC(card, 9, y + 1);
     VG.globalAlpha = 1;
-    my += big.height + 22;
   }
   // ---- the start lights ----
   if (R.state === 'countdown') {
@@ -8116,7 +8167,15 @@ function fxHit(side, k) {
   for (let i = 0; i < n; i++) puff(bx + (Math.random() - 0.5) * (side ? 6 : bw * 0.5), by - Math.random() * 12, (side || (Math.random() - 0.5) * 2) * (60 + Math.random() * 160), -20 - Math.random() * 160, 2, 3, 0.2 + Math.random() * 0.3, 'sparks', 1);
   for (let i = 0; i < Math.round(4 + 8 * k); i++) puff(bx + (Math.random() - 0.5) * 20, by - Math.random() * 10, (Math.random() - 0.5) * 140, -40 - Math.random() * 120, 2, 2, 0.4 + Math.random() * 0.3, 'glass', 1);
   for (let i = 0; i < 3; i++) puff(bx + (Math.random() - 0.5) * 16, by, (Math.random() - 0.5) * 30, -10 - Math.random() * 20, 6, 16, 0.5 + Math.random() * 0.3, 'smoke', 0.5);
-  FX.hopV = Math.min(FX.hopV, -40 - 60 * k); FX.jolt = Math.max(FX.jolt || 0, 0.25 + 0.35 * k); FX.joltDir = side || (Math.random() < 0.5 ? -1 : 1);
+  FX.jolt = Math.max(FX.jolt || 0, 0.25 + 0.35 * k); FX.joltDir = side || Math.sign(PC.vx) || 0;
+}
+// Landing is a consequence of the contact-driven tip, not a timer that throws
+// a healthy car up. Dust expands from the tyres and a brief chassis thud ends it.
+function fxCrashLand(crash) {
+  if(PC.scrX==null)return;const strength=clamp(Math.abs(crash.rollK)*.7+crash.vy*.12,0,1);if(strength<.03)return;
+  const hw=(PC.scrBW||120)*.4;
+  for(const side of [-1,1])for(let i=0;i<5;i++)puff(PC.scrX+side*hw,PC.scrY-2,side*(18+i*7),12+i*3,7,18+i*2,.3+i*.035,PC.offroad?'dirt':'smoke',.5+strength*.3);
+  sfxThud(.25+strength*.4);shake(.07+strength*.12);
 }
 // sparks thrown from the side of the car in a scrape, on the side it touched
 function fxScrape(side) {
@@ -8144,7 +8203,8 @@ function fxUpdate(dt) {
   if (FX.burst > 0) FX.burst -= dt;
   const burst = FX.burst > 0;
   FX.spin = lerp(FX.spin, launch ? 1 : 0, clamp(dt * 8, 0, 1));
-  const slide = Math.max(PC.slip, PC.drift ? 1 : 0), scrub = v > 28 && Math.abs(PC.steerIn) > 0.75 ? 0.35 : 0;
+  const crashSlide=PC.crash&&PC.airY<.02?clamp(Math.abs(PC.vx)/4+Math.abs(PC.crash.spin)*Math.exp(-PC.crash.t*2)*.5,0,1):0;
+  const slide = Math.max(PC.slip, PC.drift ? 1 : 0,crashSlide), scrub = v > 28 && Math.abs(PC.steerIn) > 0.75 ? 0.35 : 0;
   // ---- the drift pose: the car rears up onto its outside wheels with a pop, bounces on them, settles back ----
   const dTarget = PC.crash ? 0 : PC.drift ? 1 : slide > 0.55 ? 0.6 : 0;
   FX.driftK = lerp(FX.driftK, dTarget, clamp(dt * (dTarget > FX.driftK ? 14 : 4), 0, 1));
@@ -8194,7 +8254,7 @@ function fxUpdate(dt) {
   }
   // ---- skid marks: laid on the road under the rear tyres while the tyres are spinning, sliding or locked ----
   const marking = (launch && v > 0.5) || burst || slide > 0.45 || braking;
-  if (marking && !PC.crash) {
+  if (marking && (!PC.crash||crashSlide>.2&&PC.airY<.02)) {
     const p = PC.piece, s = PC.s - CAR_REAR, x = PC.x, m = FX.cur;
     if (m && m.p === p && s - m.s1 < 3 && Math.abs(x - m.x1) < 0.6 && m.s1 - m.s0 < 14) { m.s1 = s; m.x1 = x; }
     else { FX.cur = { p, s0: s, s1: s + 0.2, x0: x, x1: x }; FX.marks.push(FX.cur); if (FX.marks.length > 48) FX.marks.shift(); }
@@ -8346,6 +8406,7 @@ const horizonY = () => Y0 + CV.slope * FOC;
 function renderResize() {
   RV.gcv = canvas(RW * DETAIL, RH * DETAIL); RV.gctx = RV.gcv.getContext('2d');
   RV.img = RV.gctx.createImageData(RW * DETAIL, RH * DETAIL); RV.fb = new Uint32Array(RV.img.data.buffer);
+  RV.support = new Uint8Array(RV.fb.length); // 0 sky, 1 dry support, 2 water
   RV.fx = canvas(RW, RH); RV.fx2 = canvas(RW, RH);
   // the motion-blur mask: clear in the middle, strongest at the corners
   RV.mask = canvas(RW, RH); const mg = RV.mask.getContext('2d'), rg = mg.createRadialGradient(X0, Y0 + 20, RH * 0.18, X0, Y0 + 20, RW * 0.62);
@@ -8456,32 +8517,39 @@ const GROUND_REACH = 340, HILL_REACH = 90;
 // A tree can only stand where this frame actually rastered terrain. Road hills
 // have a finite lateral extent; otherwise distant crowns acquire roots in sky.
 function sceneryGrounded(S, o, ip, xs, ys, piece, s, waterClip) {
+  o._rootCoverage=1;
   if(window.FormosaLandscape?.state.layers.forest&&/^(hill|hillface)(#|$)/.test(S.name))return false;
   if(piece?.def.pano==='cingjing'&&s>piece.L*.36&&ip.cz>110&&/^(hemlock|cypress|camphor|casuarina)(#|$)/.test(S.name))return false;
   if(o.lm||o.y||!/^(pixel_palm|palm|royal|betel|banana|banyan|mango|casuarina|terminalia|pandanus|cypress|hemlock|camphor|sakura|tung|world_alpine_shrub|bush|bougain|hibiscus|hedge|flowers|tuft|mangrove|reeds|hakkahouse|hakkahouse_generic|tank|stack|chimney)(#|$)/.test(S.name))return true;
-  // A far-bank object whose foot is hidden by a bridge's water horizon cannot
-  // stand on that horizon. Reveal it only when its dry root is visible.
-  if(waterClip!=null&&ys>=waterClip-1)return false;
+  // The material mask below distinguishes the actual root's side. A camera
+  // beside water must not hide dry-bank trees on the opposite side as well.
   const reach=ys<_hy-1?HILL_REACH:GROUND_REACH;
   const offset=o.x<ip.oL?ip.oL-o.x:o.x>ip.oR?o.x-ip.oR:0;
   if(offset>reach||ys<0)return false;
   // Off-screen roots can still support a foreground canopy entering the frame.
-  if(xs<0||xs>=RW||ys>=RH-2)return true;
-  const w=RW*DETAIL,h=RH*DETAIL,x=Math.floor(xs*DETAIL),y=Math.floor(ys*DETAIL);
+  const offscreen=xs<0||xs>=RW,projectedHeight=S.wh*o.sc*ip.k;
+  // Keep the edge mask through the same 20–28 px blend used by drawStripItems.
+  // Unknown-height legacy callers retain their near-canopy fallback.
+  if(ys>=RH-2||(offscreen&&(!Number.isFinite(projectedHeight)||projectedHeight>=28)))return true;
+  const w=RW*DETAIL,h=RH*DETAIL,x=Math.floor(Math.max(0,Math.min(RW-1/DETAIL,xs))*DETAIL),y=Math.floor(ys*DETAIL);
+  let dry=0,samples=0;
   for(let dy=0;dy<=2*DETAIL;dy++)for(let dx=-DETAIL;dx<=DETAIL;dx++){
     const px=x+dx,py=y+dy;
     if(px>=0&&px<w&&py>=0&&py<h){
-      const pixel=RV.fb[py*w+px],r=pixel&255,g=(pixel>>>8)&255,b=(pixel>>>16)&255;
-      // A bridge can occlude the far bank with its water plane. Trees and
-      // refinery tanks must wait for visible dry support, never root in blue
-      // water merely because that water has an opaque raster pixel.
-      const water=b>r*1.28&&b>g*.82&&g>r*1.18&&g>85;
-      if((pixel>>>24)&&!water)return true;
+      samples++;
+      // Material coverage is independent of animated waves, fog and blue
+      // shadows. Testing the final RGB made valid trees blink between frames.
+      if(RV.support[py*w+px]===1)dry++;
     }
   }
-  return false;
+  o._rootCoverage=samples?dry/samples:0;
+  return dry>0||(offscreen&&projectedHeight>20);
 }
 function fillSpan(x0, x1, c) { x0 = x0 < 0 ? 0 : x0 | 0; x1 = x1 > (RW * DETAIL) ? (RW * DETAIL) : x1 | 0; if (x1 > x0) RV.fb.fill(c, _row + x0, _row + x1); }
+function supportSpan(x0,x1,material) {
+  x0=Math.max(0,Math.round(x0));x1=Math.min(RW*DETAIL,Math.round(x1));
+  if(x1>x0)RV.support.fill(material,_row+x0,_row+x1);
+}
 const DKC = new Map();
 function dkHex(h) { let v = DKC.get(h); if (v === undefined) { v = shadeHex(h, 0.975); DKC.set(h, v); } return v; }
 let _y = 0, _gcx = 0, _girk = 0, _gcell = 0;
@@ -8529,7 +8597,7 @@ function sideRow(bands, xe, rk, dir, gs, gsN, lim, terrainType, pano) {
     const reach=_y/DETAIL<_hy-1?HILL_REACH:GROUND_REACH,end=xe+dir*reach*rk;
     let a0=dir<0?end:xe,a1=dir<0?xe:end;
     if(lim!=null){if(dir<0)a0=Math.max(a0,lim);else a1=Math.min(a1,lim);}
-    window.FormosaSaltFields.paint(RV.fb,_row,Math.max(0,Math.round(a0)),Math.min(RW*DETAIL,Math.round(a1)),xe,rk,gs,_f,RV.haze);return;
+    window.FormosaSaltFields.paint(RV.fb,_row,Math.max(0,Math.round(a0)),Math.min(RW*DETAIL,Math.round(a1)),xe,rk,gs,_f,RV.haze,RV.support);return;
   }
   const n = bands.length, t = RV.t;
   const edge = (w) => xe + dir * w * rk;
@@ -8540,6 +8608,7 @@ function sideRow(bands, xe, rk, dir, gs, gsN, lim, terrainType, pano) {
     let a0 = dir < 0 ? outer : inner, a1 = dir < 0 ? inner : outer;
     if (lim != null) { if (dir < 0) a0 = Math.max(a0, lim); else a1 = Math.min(a1, lim); }
     if (a1 <= 0 || a0 >= (RW * DETAIL) || a1 <= a0) continue;
+    supportSpan(a0,a1,b.k===1||b.k===2?2:1);
     const textured=window.FormosaLandscape?.groundBand(terrainType,i,n)&&window.FormosaLandscape.paintGround(RV.fb,_row,Math.max(0,Math.round(a0)),Math.min(RW*DETAIL,Math.round(a1)),xe,rk,gs,terrainType,pano,_f,RV.haze);
     if(!textured){if (b.k === 0 && b.w > 3) fillSpanD(Math.round(a0), Math.round(a1), bandCol(b, gs, t)); else fillSpan(Math.round(a0), Math.round(a1), fogPx(bandCol(b, gs, t), _f));}
     if (b.k === 4 && rk > 3) { const pc = b.dots ? b.dots[0] : shadeHex(b.a, 0.86); for (let o = Math.ceil(((i > 0 ? bands[i - 1].w : 0)) / 1.2) * 1.2, oe = Math.min(b.w, (i > 0 ? bands[i - 1].w : 0) + 60); o < oe; o += 1.2) { const x = Math.round(edge(o)); if (x >= 0 && x < (RW * DETAIL) && x > a0 && x < a1) RV.fb[_row + x] = fogPx(pc, _f); } }
@@ -8552,6 +8621,7 @@ function sideRow(bands, xe, rk, dir, gs, gsN, lim, terrainType, pano) {
 const BALLAST = [0x6a625a, 0x645c54], SLEEPER = 0x3e3028, RAILC = 0xc8ccd0;
 function trackRow(cx, rk, R, gs) {
   const W = R.W, oL = R.oL, oR = R.oR, X = (o) => cx + o * rk, stripe = Math.floor(gs / 5) & 1;
+  supportSpan(X(oL),X(oR),1);
   fillSpanD(Math.round(X(oL)), Math.round(X(oR)), BALLAST[stripe]);
   const tracks = Math.max(1, Math.round((2 * W) / LANE)), lw = Math.max(0.5, 0.09 * rk);
   const sleeper = ((gs % 0.7) + 0.7) % 0.7 < 0.26;
@@ -8565,6 +8635,7 @@ function roadRow(cx, rk, R, gs, gsN) {
   if (R.sec && R.sec.track) return trackRow(cx, rk, R, gs);
   const W = R.W, M = R.M, SH = R.SH, oL = R.oL, oR = R.oR;
   const X = (o) => cx + o * rk;
+  supportSpan(X(oL),X(oR),1);
   const stripe = Math.floor(gs / 5) & 1, asph = ASPH[stripe];
   fillSpanD(Math.round(X(oL)), Math.round(X(oR)), asph);
   // the shoulders wear a paler, coarser asphalt
@@ -8658,29 +8729,48 @@ function groundOverlays(p, s, cx, rk, R, gs) {
   for (const o of G) {
     if (s < o.s0 || s > o.s1) continue;
     const e = o.sg < 0 ? R.oL : R.oR, xa = cx + (e + o.sg * o.o0) * rk, xb = cx + (e + o.sg * o.o1) * rk;
+    supportSpan(Math.min(xa,xb),Math.max(xa,xb),1);
     fillSpan(Math.round(Math.min(xa, xb)), Math.round(Math.max(xa, xb)), fogPx((Math.floor(gs / o.per) & 1) ? o.b : o.a, _f));
     if (o.rails) for (const r of o.rails) lineAt(cx + (e + o.sg * r) * rk, Math.max(0.12 * rk, 0.6), 0xc4c8cc, o.a);
   }
 }
 // ---------- drawing pictures: mip level by size, cropped at the crest line, hazed by distance ----------
 const VG = vctx;
-function drawSpr(S, x, yb, hpx, sx, flip, clip, fog, skew) {
+function drawSpr(S, x, yb, hpx, sx, flip, clip, fog, skew, opacity = 1) {
   const wpx = hpx * (S.w / S.h) * sx, x0 = x - (flip ? 1 - S.ax : S.ax) * wpx, yt = yb - hpx;
   if (x0 > RW || x0 + wpx < 0 || yt >= clip || hpx < 0.6) return;
   const pg = ATLAS.pages[S.pg];
   let L = 0; while (L + 1 < pg.lv.length && S.h / (1 << (L + 1)) >= hpx * DETAIL) L++;
-  const sc = 1 << L, srcX = Math.floor(S.x / sc), srcY = Math.floor(S.y / sc), srcW = Math.max(1, Math.floor(S.w / sc)), srcH = Math.max(1, Math.floor(S.h / sc));
+  // Fractional atlas coordinates preserve the same world pivot at every mip.
+  // Rounding each crop independently used to move entire trunks sideways.
+  const sc = 1 << L, srcX = S.x / sc, srcY = S.y / sc, srcW = S.w / sc, srcH = S.h / sc;
   let dh = hpx, sh = srcH;
-  if (yb > clip) { dh = clip - yt; sh = Math.max(1, Math.round(srcH * dh / hpx)); }
+  if (yb > clip) { dh = clip - yt; sh = srcH * dh / hpx; }
+  const smoothing=VG.imageSmoothingEnabled,alpha=VG.globalAlpha;
+  // Filter only when reducing the art. Enlarged pixels remain sharp; distant
+  // fine leaves retain average coverage instead of sparkling between texels.
+  VG.imageSmoothingEnabled=hpx*DETAIL<S.h;
+  VG.globalAlpha=alpha*opacity;
   if (flip || skew) {
-    VG.setTransform(flip ? -1 : 1, 0, skew || 0, 1, (flip ? x0 + wpx : x0) - (skew || 0) * dh, yt);
+    VG.setTransform(flip ? -1 : 1, 0, skew || 0, 1, (flip ? x0 + wpx : x0) - (skew || 0) * hpx, yt);
     VG.drawImage(pg.lv[L], srcX, srcY, srcW, sh, 0, 0, wpx, dh);
-    if (fog > 0.02 && L > 0 && pg.hz[L]) { VG.globalAlpha = fog; VG.drawImage(pg.hz[L], srcX, srcY, srcW, sh, 0, 0, wpx, dh); VG.globalAlpha = 1; }
+    if (fog > 0.02 && L > 0 && pg.hz[L]) { VG.globalAlpha = alpha*opacity*fog; VG.drawImage(pg.hz[L], srcX, srcY, srcW, sh, 0, 0, wpx, dh); }
     VG.setTransform(1, 0, 0, 1, 0, 0);
   } else {
     VG.drawImage(pg.lv[L], srcX, srcY, srcW, sh, x0, yt, wpx, dh);
-    if (fog > 0.02 && L > 0 && pg.hz[L]) { VG.globalAlpha = fog; VG.drawImage(pg.hz[L], srcX, srcY, srcW, sh, x0, yt, wpx, dh); VG.globalAlpha = 1; }
+    if (fog > 0.02 && L > 0 && pg.hz[L]) { VG.globalAlpha = alpha*opacity*fog; VG.drawImage(pg.hz[L], srcX, srcY, srcW, sh, x0, yt, wpx, dh); }
   }
+  VG.globalAlpha=alpha;VG.imageSmoothingEnabled=smoothing;
+}
+function sceneryOpacity(S,o,h) {
+  const seed=Math.floor(o.ph/TAU*8),minimum=S.wh<9?(seed&1?14:seed&2?7:seed&4?3.5:1.6):1.6;
+  const t=clamp((h-minimum)/Math.max(2,minimum*.3),0,1);
+  // Below eight logical pixels an individual tree's root is thinner than
+  // the horizon raster. Let the continuous forest backdrop carry that scale;
+  // blend individual trees in smoothly as their silhouette becomes legible.
+  const tree=/^(pixel_palm|palm|royal|betel|banana|banyan|mango|casuarina|terminalia|pandanus|cypress|hemlock|camphor|sakura|tung|world_alpine_shrub)(#|$)/.test(S.name);
+  const far=tree?clamp((h-8)/10,0,1):1;
+  return t*t*(3-2*t)*far*far*(3-2*far);
 }
 // a picture laid along the road between two projected ends, drawn one screen column at a time
 // a picture laid along the road between two projected ends, drawn as a few slices, each an affine stretch;
@@ -8835,8 +8925,8 @@ function drawStripItems(a, b, clip) {
         // too small to see, or thinned out with distance (big landmarks always stay)
         const S = SPRL[o.id], h = S.wh * o.sc * kS;
         if (h < 1.6) continue;
-        // specks in the distance: keep a share of them, fewer the smaller they are
-        if (S.wh < 9 && ((h < 14 && (i & 1)) || (h < 7 && (i & 3)) || (h < 3.5 && (i & 7)))) continue;
+        // Density is faded at each object's actual projected size below;
+        // a hard per-strip cutoff made entire bushes pop on and off.
         items.push(item(0, o, p.gS + o.s, 0, p));
       }
       const WB = p.wallB[bk];
@@ -8882,11 +8972,15 @@ function drawStripItems(a, b, clip) {
     if (it.k === 9) { drawTramX(it.o, X0 + ip.cx * ip.k, ys, ip.k, clip, fog); continue; }
     if (it.k === 10) { drawRival(it.o, xs, ys, ip.k, clip); continue; }
     const o = it.o, S = SPRL[o.id], h = S.wh * o.sc * ip.k;
-    const cameraSection=CV.p.sec(CV.s),waterClip=[cameraSection.L,cameraSection.R].some(type=>sideBands(type).some(b=>b.k===1||b.k===2))?clip:null;
-    if(!sceneryGrounded(S,o,ip,xs,ys,it.p,it.gs-it.p.gS,waterClip)){RV.groundCulled++;continue;}
-    const near = h > 26, sway = near && o.sway ? (window.FormosaWorldLife?window.FormosaWorldLife.wind(o,RV.t):Math.sin(RV.t * 1.4 + o.ph)*0.035*o.sway) : 0;
+    if(!sceneryGrounded(S,o,ip,xs,ys,it.p,it.gs-it.p.gS)){RV.groundCulled++;continue;}
+    // At the horizon a narrow dyke can cover less than one raster pixel.
+    // Use the amount of supporting land, not an opaque on/off single texel.
+    // Medium/near sprites keep full opacity and their original contact point.
+    const support=Math.min(1,o._rootCoverage*2),nearSupport=clamp((h-20)/8,0,1);
+    const opacity=sceneryOpacity(S,o,h)*(support*support+(1-support*support)*nearSupport*nearSupport*(3-2*nearSupport));if(opacity<=0)continue;
+    const windBlend=clamp((h-14)/26,0,1),sway=o.sway?(window.FormosaWorldLife?window.FormosaWorldLife.wind(o,RV.t):Math.sin(RV.t*1.4+o.ph)*.035*o.sway)*windBlend*windBlend*(3-2*windBlend):0;
     // small far things get their haze from the band laid over the horizon, not one by one
-    drawSpr(S, xs, ys - o.y * ip.k, h, o.sx, (near || S.ax !== 0.5) && o.flip, clip, h >= 10 && ip.cz < HAZE_Z ? fog : 0, sway);
+    drawSpr(S, xs, ys - o.y * ip.k, h, o.sx, o.flip, clip, h >= 10 && ip.cz < HAZE_Z ? fog : 0, sway, opacity);
   }
   // the power lines through this strip, one stroke for all of them
   if (far < 340) {
@@ -8955,7 +9049,7 @@ function renderFrame(T) {
   const t1 = performance.now();
   // the road raster, near to far
   buildSlots();
-  RV.fb.fill(0); RV.clipY = RH; _hy = horizonY();
+  RV.fb.fill(0); RV.support.fill(0); RV.clipY = RH; _hy = horizonY();
   RV.cargoWarnings=window.FormosaRoadEvents?window.FormosaRoadEvents.warnings(roadEventsApi()):[];
   const S = RV.slots, ns = RV.ns;
   for (let k = 0; k + 1 < ns; k++) {
@@ -10145,7 +10239,7 @@ function netHostStart(){if(NET.host&&NET.phase==='lobby')netStartRace(0,false);}
 function netUpdate(dt){
   if(!NET.on||NET.phase!=='race'||G.mode!=='play')return;
   if(NET.host)netObserve({id:NET.id,clientId:NET.me.clientId,name:NET.me.name,car:NET.me.car,host:true},{p:ROUTE.pieces.indexOf(PC.piece),s:PC.s,x:PC.x});
-  if(G.t-NET.lastSend>1/12){NET.lastSend=G.t;const m={t:'st',round:NET.roundId,q:NET.seq++,p:ROUTE.pieces.indexOf(PC.piece),s:Math.round(PC.s*10)/10,x:Math.round(PC.x*100)/100,v:Math.round(PC.v*10)/10,si:PC._si==null?2:PC._si,b:PC.brake>.1?1:0,c:PC.crash?1:0,d:PC.drift?1:0,r:+(FX.roll||0).toFixed(2)};
+  if(G.t-NET.lastSend>1/12){NET.lastSend=G.t;const m={t:'st',round:NET.roundId,q:NET.seq++,p:ROUTE.pieces.indexOf(PC.piece),s:Math.round(PC.s*10)/10,x:Math.round(PC.x*100)/100,v:Math.round(PC.v*10)/10,si:PC._si==null?2:PC._si,b:PC.brake>.1?1:0,c:PC.crash?1:0,d:PC.drift?1:0,r:+(PC.crash?(PC.roll||0):(FX.roll||0)).toFixed(2)};
     if(NET.host){const out={...m,id:NET.id};for(const Q of NET.peers.values())netSt(Q,out);}else for(const Q of NET.peers.values())if(Q.host)netSt(Q,m);
   }
   for(const P of NET.peers.values()){const S=P.state;if(!S)continue;const age=G.t-P.rt,p=ROUTE.pieces[S.p];P.vis=!!p&&age<4;if(!P.vis)continue;

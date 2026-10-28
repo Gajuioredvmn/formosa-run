@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="tw.formosarun.game" android:versionCode="2026102801" android:versionName="0.2.1">
+    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <application android:label="衝向寶島" android:icon="@drawable/ic_launcher" android:appCategory="game"
+        android:theme="@android:style/Theme.Material.NoActionBar"
+        android:hardwareAccelerated="true" android:allowBackup="false"
+        android:usesCleartextTraffic="false" android:supportsRtl="true" android:enableOnBackInvokedCallback="true">
+        <activity android:name=".MainActivity" android:exported="true"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout|uiMode"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

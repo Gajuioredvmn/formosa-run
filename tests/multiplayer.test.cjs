@@ -123,4 +123,12 @@ test('Fork snapshots are ordered by ancestry and accepted only from the current 
  netOnMsg(h,{t:'fork-lock',round:'round',lock});assert.equal(netForkChoice(ROUTE.root),1);netOnMsg(h,{t:'fork-lock',round:'round',lock:{...lock,side:0}});assert.equal(netForkChoice(ROUTE.root),1);
  assert(!netAcceptFork({stage:3,p:0,side:0}));assert(!netAcceptFork({stage:0,p:0,side:99}));`);
 });
+test('Crash packets preserve measured left/right roll and centred impacts stay upright remotely',()=>{
+ const c=host();add(c,'guest');run(c,`netStartRace();const guest=NET.peers.get('guest'),packets=[];guest.st={readyState:'open',send:s=>packets.push(JSON.parse(s))};
+ PC.crash={t:.3};PC.roll=.63;FX.roll=-.08;G.t=1;netUpdate(0);assert.equal(packets.at(-1).c,1);assert.equal(packets.at(-1).r,.63);
+ PC.roll=-.63;G.t=1.2;netUpdate(0);assert.equal(packets.at(-1).r,-.63);const tipped=packets.at(-1);
+ PC.roll=0;G.t=1.4;netUpdate(0);assert.equal(packets.at(-1).r,0);assert.equal(packets.at(-1).c,1);
+ PC.crash=null;G.t=1.6;netUpdate(0);assert.equal(packets.at(-1).r,-.08);assert.equal(packets.at(-1).c,0);
+ netOnMsg(guest,tipped);assert.equal(guest.state.r,-.63);assert.equal(guest.state.c,1);`);
+});
 let failed=0;for(const t of tests){try{t.fn();console.log('PASS '+t.name);}catch(e){failed++;console.error('FAIL '+t.name+'\n'+e.stack);}}console.log(`${tests.length-failed}/${tests.length} multiplayer checks passed`);process.exitCode=failed?1:0;

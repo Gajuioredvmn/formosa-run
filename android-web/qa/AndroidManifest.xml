@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="tw.formosarun.game.qa" android:versionCode="1" android:versionName="1">
+    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
+    <instrumentation android:name="tw.formosarun.qa.GameProbe" android:targetPackage="tw.formosarun.game" android:label="Formosa Run device checks" />
+    <application android:label="Formosa Run device checks" />
+</manifest>

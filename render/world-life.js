@@ -37,6 +37,8 @@
   function registerSprites(api){
     const px=new api.Pix(192,36);px.rect(0,0,192,36,0x122c52);px.rect(2,2,188,2,0x91d9ef);
     px.text('美麗島站',96,5,21,0xfff8e8,{align:'center',maxW:182});api.addSprite('metro-entry-sign',px,.75,{collide:0,shadow:0});
+    const lrtSign=new api.Pix(192,36);lrtSign.rect(0,0,192,36,0x155143);lrtSign.rect(2,2,188,2,0xb5e9ca);
+    lrtSign.text('高雄輕軌',96,5,21,0xfff8e8,{align:'center',maxW:182});api.addSprite('light-rail-sign',lrtSign,.6,{collide:0,shadow:0});
     const people=[],paradeArtwork={};
     for(const [role,{image,spec}] of Object.entries(state.images)){
       const pedestrian=role.startsWith('pedestrians');
@@ -139,6 +141,27 @@
     D.spr('planter',s+12,D.lat(s+12,-1,4.1),{collide:false,landmark:true});
     return m;
   }
+  function lightRailStop(D,s){
+    // A 19-m-wide front-facing billboard reached 3.1 m into the road.
+    // Orient the 20-m platform along the route, between pavement and tracks.
+    const m={kind:'lightRailStop',s,sg:-1,minOff:3.9,maxOff:7.3,faces:[],lines:[]};
+    addBox(m,-10,10,4.0,7.3,0,.32,0xb8b4ac);
+    addBox(m,-10,10,7.08,7.3,.32,.34,0xf2c21a);
+    addBox(m,-9.5,9.5,3.9,7.2,3.3,3.48,0xf2f4ed);
+    // Both sides of every post share their visible footprint with collision.
+    for(const ds of [-7,0,7])for(const off of [4.3,6.9]){
+      addBox(m,ds-.15,ds+.15,off-.15,off+.15,.32,3.3,0xd8dce0);
+      D.collide(s+ds,D.lat(s+ds,-1,off),.15,.15,'solid');
+    }
+    for(const ds of [-4.2,4.2]){
+      addBox(m,ds-1.2,ds+1.2,4.4,4.9,.32,.8,0x536e70);
+      D.collide(s+ds,D.lat(s+ds,-1,4.65),.25,1.2,'solid');
+    }
+    for(const off of [4.0,7.25])m.lines.push({col:0xe8e6d9,width:.06,points:[[-10,off,.35],[10,off,.35]]});
+    (D.p.landmarkMeshes||(D.p.landmarkMeshes=[])).push(m);
+    D.spr('light-rail-sign',s-8,D.lat(s-8,-1,5.55),{y:2.25,flip:false,collide:false,landmark:true});
+    return m;
+  }
   function drawMesh(g,m,project,clip,width,height,haze,fog){
     const mapped=[];
     for(const f of m.faces){const points=f.points.map(project);if(points.some(p=>!p)||points.every(p=>p.y>=clip))continue;mapped.push({...f,points,z:points.reduce((n,p)=>n+p.cz,0)/points.length});}
@@ -187,5 +210,5 @@
   function walkerFrame(an,t){const length=an.s1-an.s0,dist=(t*an.speed+an.phase)% (length*2),forward=dist<length;
     return{s:an.s0+(forward?dist:length*2-dist),dir:forward?1:-1,frame:Math.floor(t*5+an.phase)%(state.pedestriansFrames>=12?4:2)};}
   function wind(o,t){return((Math.sin(t*.9+o.ph)*.024)+(Math.sin(t*1.8+o.ph*.7)*.012))*o.sway;}
-  global.FormosaWorldLife={state,loadAssets,registerSprites,releaseSources,metroEntrance,drawMesh,configurePiece,walkerFrame,wind};
+  global.FormosaWorldLife={state,loadAssets,registerSprites,releaseSources,metroEntrance,lightRailStop,drawMesh,configurePiece,walkerFrame,wind};
 })(window);

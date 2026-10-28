@@ -58,14 +58,17 @@ fs.mkdirSync(output,{recursive:true});const check=(name,value)=>{assert(value,na
   check('Material motion damps to rest when acceleration and wind stop',Math.abs(cloth.b.history.at(-1).x)<.001&&Math.abs(cloth.w.history.at(-1).y)<.001);
   check('Stationary cloth has no artificial idle sine-wave animation',cloth.b.history.slice(0,30).every(p=>p.x===0&&p.y===0));
   check('Air speed blows the free end back before it settles after stopping',cloth.w.history[150].y>1&&Math.abs(cloth.w.history.at(-1).y)<.001);
-  check('30 and 60 FPS material responses stay within 0.15 logical pixels',cloth.a.history.every((p,i)=>Math.abs(p.x-cloth.b.history[i*2].x)<.15&&Math.abs(p.y-cloth.b.history[i*2].y)<.15));
+  // An abrupt sampled force switches up to one frame earlier at 30 Hz.
+  // Bound the stronger response by one actual source pixel (DETAIL=2),
+  // rather than the old sub-pixel threshold for almost invisible motion.
+  check('30 and 60 FPS material responses stay within one source pixel',cloth.a.history.every((p,i)=>Math.abs(p.x-cloth.b.history[i*2].x)<.5&&Math.abs(p.y-cloth.b.history[i*2].y)<.5));
   check('The material root is pinned while the free tip can bend',cloth.rootError<1e-8&&cloth.tipMotion>1);
   const render=await page.evaluate(()=>{
    const k=__kr,m=FORMOSA_PIXEL_CAR;k.G.mode='play';k.G.noIgnite=true;k.race(0,true);k.run();k.show(null);k.bot(false);k.PC.v=40;k.PC.gear=3;k.step(0);
    k.PC.steerIn=0;k.PC.drift=0;k.PC.offroad=false;k.FX.cheer={t:.3,dur:1,kind:'wave',who:1};k.step(0);
    const actual={...m.state.last},cv=document.createElement('canvas');cv.width=360;cv.height=240;const g=cv.getContext('2d'),o={pc:k.PC,spr:k.PC.spr,x:180,ground:200,crew:k.CREW[k.PC.spec.id],cheer:k.FX.cheer};
-   const samples=[];for(let frame=0;frame<60;frame++){
-    const pc={...k.PC,visual:{...k.PC.visual,time:frame/60},crash:null};m.draw(g,{...o,pc});samples.push({width:m.state.last.width,zoom:m.state.last.zoom});
+   const samples=[],pc={...k.PC,visual:{...k.PC.visual,time:0},crash:null};for(let frame=0;frame<60;frame++){
+    pc.visual.time=frame/60;m.draw(g,{...o,pc});samples.push({width:m.state.last.width,zoom:m.state.last.zoom});
    }
    m.draw(g,{...o,pc:{...k.PC,crash:{t:.1}},spinning:false});const crash={...m.state.last};m.draw(g,{...o,spinning:true,spinAngle:1});const spin={...m.state.last};
    return{actual,samples,crash,spin};
@@ -79,6 +82,32 @@ fs.mkdirSync(output,{recursive:true});const check=(name,value)=>{assert(value,na
    const rendered=await page.evaluate(i=>{const k=__kr;k.G.mode='play';k.G.noIgnite=true;k.race(i,true);k.run();k.show(null);k.bot(false);k.PC.v=40;k.PC.gear=3;k.PC.steerIn=0;k.PC.drift=0;k.PC.offroad=false;k.FX.cheer={t:.3,dur:1,kind:'wave',who:1};k.step(0);return{...FORMOSA_PIXEL_CAR.state.last};},i);
    report.actualCars.push(rendered);check(rendered.id+': actual car and its cast celebrate from the calibrated atlas',rendered.celebrating&&rendered.source.includes('vehicle-'+rendered.id)&&rendered.zoom===1);
    await page.screenshot({path:path.join(output,'cheer-'+rendered.id+'.png')});
+  }
+  report.visibleCloth=await page.evaluate(async()=>{
+   const k=__kr,api=FORMOSA_PIXEL_CAR,{VEHICLE_ART}=await import('./render/vehicle-art-manifest.js'),results=[];
+   for(let i=0;i<k.CARS.length;i++){
+    k.car(i);const spec=k.CARS[i],art=VEHICLE_ART[spec.id],spr=k.PC.spr,w=spr.bw,h=api.measure(spec,w).height;
+    const pc={...k.PC,spec,v:60,vx:0,wind:0,steerIn:0,yaw:0,roll:0,slip:0,drift:0,offroad:false,crash:null,airY:0,visual:{time:0,dt:1/60,lateralAccel:0,contacts:[],tyreLimit:12}};
+    const cv=document.createElement('canvas');cv.width=640;cv.height=448;const g=cv.getContext('2d',{willReadFrequently:true});g.scale(2,2);
+    let reference=null,lowerChanged=0;const changed=new Set(),driver=new Set(),passenger=new Set(),captures=[];
+    for(let frame=0;frame<=240;frame++){
+     pc.visual.time=frame/60;g.clearRect(0,0,320,224);api.draw(g,{pc,spr,x:160,ground:200,crew:[],crewInertia:{x:0,y:0}});
+     if(frame>=120&&frame%15===0){const data=g.getImageData(0,0,640,448).data;if(!reference)reference=new Uint8ClampedArray(data);
+      for(let p=0;p<data.length;p+=4)if(data[p]!==reference[p]||data[p+1]!==reference[p+1]||data[p+2]!==reference[p+2]||data[p+3]!==reference[p+3]){
+       const x=(p/4)%640,y=Math.floor(p/4/640),u=(x/2-(160-w/2))/w,v=(y/2-(200-h))/h;
+       changed.add(p/4);if(v>.45)lowerChanged++;if(u<.5)driver.add(p/4);else passenger.add(p/4);
+      }
+      if(frame===120||frame===180||frame===240)captures.push({frame,data:cv.toDataURL()});
+     }
+    }
+    results.push({id:spec.id,driverPixels:driver.size,passengerPixels:passenger.size,changedPixels:changed.size,lowerChanged,captures});
+   }return results;
+  });
+  for(const car of report.visibleCloth){
+   check(car.id+': driver hair visibly changes rendered pixels at constant road speed',car.driverPixels>=8);
+   check(car.id+': passenger material visibly changes at constant road speed',car.passengerPixels>=8);
+   check(car.id+': cloth never changes the lower body or car scale',car.lowerChanged===0);
+   for(const shot of car.captures)fs.writeFileSync(path.join(output,`cloth-${car.id}-${shot.frame}.png`),Buffer.from(shot.data.split(',')[1],'base64'));delete car.captures;
   }
   check('No browser exceptions during motion and gesture checks',report.errors.length===0);report.pass=true;
  }catch(e){report.pass=false;report.failure=String(e.stack||e);process.exitCode=1;}

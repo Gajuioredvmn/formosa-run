@@ -1,0 +1,23 @@
+const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),os=require('node:os');
+const opt={};for(let i=2;i<process.argv.length;i+=2)opt[process.argv[i].slice(2)]=process.argv[i+1];
+if(!opt.sdk||!opt.jdk||!opt.output||!opt.python)throw Error('Required --sdk --jdk --output --python');
+const output=path.resolve(opt.output);if(fs.existsSync(output))throw Error('Choose a new output path');
+const work=fs.mkdtempSync(path.join(os.tmpdir(),'formosa-device-qa-'));
+const ext=process.platform==='win32'?'.exe':'',bt=path.join(opt.sdk,'build-tools','35.0.1'),bin=n=>path.join(opt.jdk,'bin',n+ext);
+const signing=opt.signing||path.join(process.env.LOCALAPPDATA,'FormosaRun','signing');
+const env={...process.env,FORMOSA_APK_STORE_PASS:fs.readFileSync(path.join(signing,'store-password.txt'),'utf8').trim()};
+function run(exe,args){let r=cp.spawnSync(exe,args,{windowsHide:true,encoding:'utf8',env,maxBuffer:8e6});if(r.stdout)process.stdout.write(r.stdout);if(r.stderr)process.stderr.write(r.stderr);if(r.status!==0)throw Error('Build step failed: '+path.basename(exe));}
+for(const d of ['classes','dex','assets'])fs.mkdirSync(path.join(work,d));
+fs.copyFileSync(path.join(opt.sdk,'platforms','android-35','android.jar'),path.join(work,'android.jar'));
+fs.copyFileSync(path.join(__dirname,'AndroidManifest.xml'),path.join(work,'AndroidManifest.xml'));
+run(path.join(bt,'aapt2'+ext),['link','-I',path.join(work,'android.jar'),'--manifest',path.join(work,'AndroidManifest.xml'),'-o',path.join(work,'resources.apk')]);
+run(bin('javac'),['-encoding','UTF-8','-source','8','-target','8','-classpath',path.join(work,'android.jar'),'-d',path.join(work,'classes'),path.join(__dirname,'src','tw','formosarun','qa','GameProbe.java')]);
+const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(d,e.name)):[path.join(d,e.name)]);
+run(bin('java'),['-cp',path.join(bt,'lib','d8.jar'),'com.android.tools.r8.D8','--lib',path.join(work,'android.jar'),'--min-api','26','--output',path.join(work,'dex'),...walk(path.join(work,'classes')).filter(f=>f.endsWith('.class'))]);
+run(opt.python,[path.join(__dirname,'..','assemble.py'),work]);
+run(path.join(bt,'zipalign'+ext),['-p','-f','4',path.join(work,'unsigned.apk'),path.join(work,'aligned.apk')]);
+run(bin('java'),['-jar',path.join(bt,'lib','apksigner.jar'),'sign','--ks',path.join(signing,'formosa-run.jks'),'--ks-key-alias','formosa-run','--ks-pass','env:FORMOSA_APK_STORE_PASS','--key-pass','env:FORMOSA_APK_STORE_PASS','--out',path.join(work,'FormosaRun-device-qa.apk'),path.join(work,'aligned.apk')]);
+run(bin('java'),['-jar',path.join(bt,'lib','apksigner.jar'),'verify',path.join(work,'FormosaRun-device-qa.apk')]);
+fs.mkdirSync(output,{recursive:true});fs.copyFileSync(path.join(work,'FormosaRun-device-qa.apk'),path.join(output,'FormosaRun-device-qa.apk'));
+if(path.dirname(work)!==os.tmpdir()||!path.basename(work).startsWith('formosa-device-qa-'))throw Error('Unsafe cleanup path');
+fs.rmSync(work,{recursive:true});console.log(path.join(output,'FormosaRun-device-qa.apk'));

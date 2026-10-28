@@ -17,7 +17,7 @@
     return 3+hash%3;
   }
   let cacheKey='',packed=[];
-  function paint(fb,row,x0,x1,edge,rk,gs,fog,haze){
+  function paint(fb,row,x0,x1,edge,rk,gs,fog,haze,support){
     if(rk<=0)return false;
     const q=Math.round(Math.max(0,Math.min(1,fog))*48),key=q+':'+haze;
     if(key!==cacheKey){const a=q/48;packed=colors.map(c=>0xff000000|Math.round(((c>>16)&255)*(1-a)+((haze>>16)&255)*a)|(Math.round(((c>>8)&255)*(1-a)+((haze>>8)&255)*a)<<8)|(Math.round((c&255)*(1-a)+(haze&255)*a)<<16));cacheKey=key;}
@@ -27,6 +27,7 @@
       // solid bright horizon; the nearer lattice retains physical dimensions.
       const id=rk<.09&&off>serviceWidth?4:sample(off,gs);
       fb[row+x]=packed[id];
+      if(support)support[row+x]=id>=3&&id<=5?2:1;
     }return true;
   }
   global.FormosaSaltFields={paint,sample,colors,serviceWidth,cellWidth,cellLength,dykeWidth};

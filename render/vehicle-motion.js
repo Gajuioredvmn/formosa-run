@@ -12,29 +12,55 @@ function gustNoise(time,seed){
 // or continuously running sinusoid is used to pretend the hair has inertia.
 export function clothMotion(spec,pc,art,previous={}){
  const time=pc.visual?.time||0,parts=art.cloth||[];
- let q=previous;if(q.id!==spec.id||q.source!==pc.visual||time<q.time)q={id:spec.id,source:pc.visual,time,lastV:pc.v||0,gust:0,parts:parts.map(()=>({x:0,y:0,vx:0,vy:0}))};
+ let q=previous;if(q.id!==spec.id||q.source!==pc.visual||time<q.time)q={id:spec.id,source:pc.visual,time,lastV:pc.v||0,gust:0,wakePhase:0,parts:parts.map(()=>({x:0,y:0,loadX:0,loadY:0,vx:0,vy:0,airX:0,airY:0,airVx:0,airVy:0,midX:0,midY:0,midVx:0,midVy:0}))};
  const dt=clamp(time-q.time,0,.1);q.time=time;if(!dt)return q;
- const speed=Math.max(0,pc.v||0),flow=clamp(speed/55,0,1.6),accel=clamp((speed-q.lastV)/dt,-25,25),lat=clamp(pc.visual?.lateralAccel||0,-30,30);q.lastV=speed;
+ const speed=Math.max(0,pc.v||0),flow=clamp(speed/55,0,1.6),pressure=clamp((speed/50)**2,0,2.5),accel=clamp((speed-q.lastV)/dt,-25,25),lat=clamp(pc.visual?.lateralAccel||0,-30,30);q.lastV=speed;
  const input=gustNoise(time*1.7,37)*.7+gustNoise(time*3.1,83)*.3;q.gust+=(input-q.gust)*(1-Math.exp(-dt*7));
+ q.acceleration=accel;q.lateralAcceleration=lat;q.airflow=flow;q.wakePhase+=dt*(3.5+flow*2);
  for(let i=0;i<parts.length;i++){
-  const p=parts[i],s=q.parts[i],flex=p.flex??1,omega=p.kind==='veil'?7:p.kind==='scarf'?9:p.kind==='ear'?18:12,damping=p.kind==='veil'?.88:.82;
-  const targetX=clamp((-lat*.11-(pc.vx||0)*.18+(pc.wind||0)*.15+q.gust*.55*flow)*flex,-4,4),targetY=clamp((flow*2.4+accel*.06+q.gust*.38*flow)*flex,-2,4.5);
+  const p=parts[i],s=q.parts[i],flex=p.flex??1,short=(p.drag??1)<.5||flex<.22,chain=p.kind==='veil'||p.kind==='scarf';
+  const omega=p.kind==='veil'?7:p.kind==='scarf'?9:p.kind==='ear'?18:short?14:10,damping=short?.72:.6;
+  // Acceleration moves the free material opposite the car's force, while
+  // air drag trails it behind the cockpit. The former 0.06 acceleration
+  // gain was lost at the game's pixel size and gusts hid turn direction.
+  // Aerodynamic load grows with speed squared. Different wake samples excite
+  // each free end; a scarf has a slower middle section and a livelier tip.
+  const flutter=q.gust*.25+gustNoise(q.wakePhase,109+i*43)*.75,drag=p.drag??1,limit=short?3.4:12;
+  const targetX=clamp((-lat*.36-(pc.vx||0)*.24+(pc.wind||0)*.2)*flex,-limit,limit),targetY=clamp((flow*(short?2.5:5)+accel*(accel<0?.85:.32))*flex*drag,short?-2.8:-8,short?3.5:10);
+  const airX=flutter*(short?4:11)*pressure*flex,airY=flutter*(short?2:6)*pressure*flex*drag;
   const steps=Math.max(1,Math.ceil(dt*120)),h=dt/steps;
-  for(let n=0;n<steps;n++){s.vx+=(omega*omega*(targetX-s.x)-2*damping*omega*s.vx)*h;s.vy+=(omega*omega*(targetY-s.y)-2*damping*omega*s.vy)*h;s.x+=s.vx*h;s.y+=s.vy*h;}
-  s.x=clamp(s.x,-4.4,4.4);s.y=clamp(s.y,-2.4,4.9);
+  for(let n=0;n<steps;n++){
+   // Longer cloth has a second flexible section: its tip follows the middle
+   // with a delay instead of translating the whole scarf as one rigid card.
+   s.midVx+=(omega*omega*(targetX*.45-s.midX)-2*damping*omega*s.midVx)*h;s.midVy+=(omega*omega*(targetY*.45-s.midY)-2*damping*omega*s.midVy)*h;
+   s.midX+=s.midVx*h;s.midY+=s.midVy*h;
+   const tx=chain?targetX*.55+s.midX:targetX,ty=chain?targetY*.55+s.midY:targetY;
+   s.vx+=(omega*omega*(tx-s.loadX)-2*damping*omega*s.vx)*h;s.vy+=(omega*omega*(ty-s.loadY)-2*damping*omega*s.vy)*h;s.loadX+=s.vx*h;s.loadY+=s.vy*h;
+   const wakeOmega=short?23:19;
+   s.airVx+=(wakeOmega*wakeOmega*(airX-s.airX)-wakeOmega*s.airVx)*h;s.airVy+=(wakeOmega*wakeOmega*(airY-s.airY)-wakeOmega*s.airVy)*h;s.airX+=s.airVx*h;s.airY+=s.airVy*h;
+  }
+  s.x=clamp(s.loadX+s.airX,-limit*1.15,limit*1.15);s.y=clamp(s.loadY+s.airY,short?-3.2:-9,short?4:11.5);
  }
  return q;
 }
 export function warpCloth(u,v,w,h,art,state){
- let x=u,y=v;
+ let x=u,y=v,pin=1;
+ // Overlapping hair/scarf crops share one source image. Preserve every
+ // attachment point even when a neighbouring material mask covers it.
+ for(const p of art.cloth||[]){const distance=Math.hypot(u-p.root[0]*w,v-p.root[1]*h);pin=Math.min(pin,smooth(.4,2.2,distance*136/w));}
  for(let i=0;i<(art.cloth||[]).length;i++){
   const p=art.cloth[i],s=state?.parts?.[i];if(!s)continue;
   const [rx,ry,rw,rh]=p.region,nx=(u/w-rx)/rw,ny=(v/h-ry)/rh;if(nx<=0||nx>=1||ny<=0||ny>=1)continue;
   const ax=p.root[0]*w,ay=p.root[1]*h,dx=(p.tip[0]-p.root[0])*w,dy=(p.tip[1]-p.root[1])*h;
-  const along=((u-ax)*dx+(v-ay)*dy)/(dx*dx+dy*dy||1),edge=smooth(0,.12,nx)*(1-smooth(.88,1,nx))*smooth(0,.12,ny)*(1-smooth(.88,1,ny));
-  const weight=smooth(0,1,along)*edge,scale=w/136;x+=s.x*weight*scale;y+=s.y*weight*scale;
+  const along=((u-ax)*dx+(v-ay)*dy)/(dx*dx+dy*dy||1),ex=Math.abs(dx)>Math.abs(dy)?.04:.12,ey=Math.abs(dy)>=Math.abs(dx)?.04:.12;
+  // Keep the body outside the crop fixed, but do not fade away the actual
+  // free-end outline before it reaches the crop border.
+  const edge=smooth(0,ex,nx)*(1-smooth(1-ex,1,nx))*smooth(0,ey,ny)*(1-smooth(1-ey,1,ny));
+  const weight=smooth(0,1,along)*edge,scale=w/136,chain=p.kind==='veil'||p.kind==='scarf';
+  const mid=chain?Math.sin(Math.PI*clamp(along,0,1))*edge:0;
+  x+=(s.x*weight+((s.midX??s.x*.45)-s.x*.45)*mid)*scale;y+=(s.y*weight+((s.midY??s.y*.45)-s.y*.45)*mid)*scale;
  }
- return[x,y];
+ return[u+(x-u)*pin,v+(y-v)*pin];
 }
 export const MOTION_PROFILES={
  rosso:{name:'低伏橫滑',bank:.86,bend:1.17,yaw:1.08,hz:9,damp:.86,compression:1.02},
@@ -70,7 +96,22 @@ export function vehiclePresentation(spec,pc,physical,previous={}){
   q.bank+=(clamp((physical.bank||0)*profile.bank,-.45,.45)-q.bank)*(1-Math.exp(-dt*profile.hz*1.5));
   q.bend+=(clamp((physical.bend||0)*profile.bend,0,.14)-q.bend)*(1-Math.exp(-dt*profile.hz*1.7));
  }
- return{state:q,pose:{...physical,bank:q.bank,bend:q.bend,yaw:q.yaw,compression:(physical.compression||0)*profile.compression,lift:physical.lift||0,profile:profile.name}};
+ const pose={...physical,bank:q.bank,bend:q.bend,yaw:q.yaw,compression:(physical.compression||0)*profile.compression,lift:physical.lift||0,profile:profile.name};
+ return{state:q,pose:pc.crash?crashPresentation(spec,pc,pose):pose};
+}
+// A single rear drawing can depict a loaded suspension and a rear-quarter
+// slide, but cannot supply the roof/front/underside of a full barrel roll.
+// Keep the outside tyre on the road and retain the original camera scale.
+export function crashPresentation(spec,pc,physical={}){
+ const c=pc.crash;if(!c)return physical;
+ const t=Math.max(0,c.t||0),severity=clamp(c.severity??.5,0,1);
+ const impact=Math.exp(-t*10)*Math.sin(Math.min(1,t/.12)*Math.PI*.5);
+ const yaw=clamp((pc.yaw||0)*.24+(c.spin||0)*.1*Math.sin(Math.min(1,t/.65)*Math.PI),-.28,.28);
+ const tip=c.rollK||0,bank=tip*(t<.78?Math.sin(Math.PI*t/.78):t<1.18?-.13*Math.sin(Math.PI*(t-.78)/.4)*Math.exp(-(t-.78)*4):0);
+ const compression=(.025+severity*.06)*impact+Math.abs(tip)*.07*Math.exp(-Math.pow((t-.78)/.09,2));
+ return{...physical,bank,yaw,bend:Math.min(.065,Math.abs(bank)*.07),compression,
+  direction:Math.sign(bank)||Math.sign(tip)||physical.direction||1,lift:Math.abs(bank)>.002?1:0,
+  crashStyle:c.style||'frontal',crashSeverity:severity,profile:'撞擊・'+(c.style||'frontal')};
 }
 export function crewAction(spec,pc,cheer,inertia={}){
  const profile=CELEBRATIONS[spec.id]||CELEBRATIONS.rosso;

@@ -8,6 +8,16 @@ test('The metro canopy, posts and stair footprint all move beyond the rail corri
  assert(colliders.every(c=>c.x<-8-15.5));
  assert(new Set(m.faces.flatMap(f=>f.points.map(p=>p[2]))).size>10,'Stairs need distinct elevations');
 });
+test('Light-rail platform runs along the road with every roof corner and collider clear of cars and rails',()=>{
+ const w=world(),colliders=[],sprites=[],D={p:{},lat:(_,sg,off)=>sg*(8+off),spr:(name,s,x,o)=>sprites.push({name,s,x,o}),collide:(s,x,hx,hs)=>colliders.push({s,x,hx,hs})};
+ const m=w.lightRailStop(D,100),points=m.faces.flatMap(f=>f.points);
+ assert.equal(m.kind,'lightRailStop');assert.equal(m.maxOff,7.3);
+ assert(points.every(p=>p[1]>=3.9&&p[1]<7.5),'Full platform and roof stay between the pavement and the 7.5-m rail strip');
+ assert.equal(Math.max(...points.map(p=>p[0]))-Math.min(...points.map(p=>p[0])),20,'Platform length follows the route, not the screen width');
+ assert.equal(colliders.length,8);
+ for(const c of colliders){assert(c.x+c.hx<=-8-3.9);assert(c.x-c.hx>=-8-7.3);assert(c.s-c.hs>=90&&c.s+c.hs<=110);}
+ const sign=sprites[0];assert.equal(sign.name,'light-rail-sign');assert(sign.x+1.6<-8-3.9&&sign.x-1.6>-8-7.3,'Entire sign remains inside the platform width');
+});
 test('Pedestrians follow bounded continuous world paths through each turnaround',()=>{
  const w=world(),a={s0:10,s1:18,speed:.75,phase:.5};let prev=w.walkerFrame(a,0);
  for(let n=1;n<2000;n++){const cur=w.walkerFrame(a,n/60);assert(cur.s>=10&&cur.s<=18);assert(Math.abs(cur.s-prev.s)<=.75/60+1e-8);assert([0,1].includes(cur.frame));prev=cur;}

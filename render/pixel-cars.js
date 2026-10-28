@@ -65,8 +65,22 @@ function point(u,v,w,h,ppm,pose,out) {
 // Rasterise the small sprite mesh at two samples per logical pixel. Native
 // Canvas affine clips anti-alias every internal edge and leave transparent
 // stripes; nearest-neighbour barycentric samples have no such seams.
-const meshColumns=16,meshRows=20,vertices=[];
-for(let j=0;j<=meshRows;j++)for(let i=0;i<=meshColumns;i++)vertices.push({u:i/meshColumns,v:j/meshRows,p:[0,0]});
+// Spend extra samples on the small heads/cloth above the cockpit. One shared
+// rectangular grid keeps adjoining edges identical, so there are no cracks.
+const vertices=[],triangles=[];let meshSeam=[];
+// Fine horizontal segments only around the cast: short hair previously had
+// just three columns and its silhouette looked rigid despite moving values.
+// Both bands meet at v=.4, below every material mask. Fine edge points are
+// welded to the coarse edge after projection, including suspension compression.
+for(const band of [{columns:48,rows:16,from:0,to:.4},{columns:24,rows:12,from:.4,to:1}]){
+ const start=vertices.length,{columns,rows,from,to}=band;
+ for(let j=0;j<=rows;j++)for(let i=0;i<=columns;i++)vertices.push({u:i/columns,v:from+(to-from)*j/rows,p:[0,0]});
+ if(to===.4)meshSeam=vertices.slice(start+rows*(columns+1),start+(rows+1)*(columns+1));
+ for(let j=0;j<rows;j++)for(let i=0;i<columns;i++){
+  const a=vertices[start+j*(columns+1)+i],b=vertices[start+j*(columns+1)+i+1],c=vertices[start+(j+1)*(columns+1)+i],d=vertices[start+(j+1)*(columns+1)+i+1];
+  triangles.push([a,b,c],[b,d,c]);
+ }
+}
 // A larger transparent workspace prevents tall crew and the lifted inner wheel
 // from clipping at full bank. It does not change sprite width or camera scale.
 const targetW=320*detailScale,targetH=224*detailScale,anchorX=160*detailScale,anchorY=200*detailScale;
@@ -97,7 +111,9 @@ export function drawProjectedRear(g,{spec,spr,x,ground,scale=1,clip=Infinity,bra
   const img=texture(spec.id,Math.round(spr.bw),braking),w=spr.bw*scale,h=img.height*w/img.width;
   g.save();g.imageSmoothingEnabled=false;
   if(Number.isFinite(clip)){g.beginPath();g.rect(0,0,g.canvas.width,Math.max(0,clip));g.clip();}
-  g.translate(x,ground);if(crash){g.translate(0,-h*.4);g.rotate(Math.sin(time*6)*.5);g.translate(0,h*.4);}else if(roll)g.rotate(roll);
+  g.translate(x,ground);
+  if(crash&&roll){const bank=clamp(roll,-.94,.94),pivot=-Math.sign(bank)*w*.41;g.translate(pivot,0);g.rotate(-bank);g.translate(-pivot,0);}
+  else if(!crash&&roll)g.rotate(roll);
   g.drawImage(img,-w/2,-h,w,h);g.restore();
   return true;
 }
@@ -135,24 +151,21 @@ export function draw(g,options) {
   const project=(u,v)=>{const p=warpCrew(u,v,w,h,action,art);return point(p[0],p[1],w,h,ppm,pose,[0,0]);};
   let gestures=[];
   g.save();g.imageSmoothingEnabled=false;g.translate(x,ground-lift);
-  if(pc.crash){g.translate(0,-30);g.rotate(pc.roll*.8+Math.sin(pc.crash.t*6)*.1);g.drawImage(img,-w/2,-h+30,w,h);}
-  else if(spinning){g.translate(0,-24);g.rotate(spinAngle);g.drawImage(img,-w/2,-h+24,w,h);}
-  else if(!crewMoves&&Math.abs(pose.bank)<.0001&&pose.bend<.0001&&Math.abs(pose.yaw)<.0001){g.drawImage(img,-w/2,-h,w,h);}
+  if(spinning&&!pc.crash){g.translate(0,-24);g.rotate(spinAngle);g.drawImage(img,-w/2,-h+24,w,h);}
+  else if(!crewMoves&&Math.abs(pose.bank)<.0001&&pose.bend<.0001&&Math.abs(pose.yaw)<.0001&&Math.abs(pose.compression)<.0001){g.drawImage(img,-w/2,-h,w,h);}
   else {
     let source=sourcePixels.get(img);if(!source){source=img.getContext('2d').getImageData(0,0,img.width,img.height).data;sourcePixels.set(img,source);}
     targetPixels.data.fill(0);
     for(const v of vertices){const cloth=warpCloth(v.u*w,v.v*h,w,h,art,state.cloth),p=warpCrew(cloth[0],cloth[1],w,h,action,art);point(p[0],p[1],w,h,ppm,pose,v.p);}
-    for(let j=0;j<meshRows;j++)for(let i=0;i<meshColumns;i++){
-      const a=vertices[j*(meshColumns+1)+i],b=vertices[j*(meshColumns+1)+i+1],c=vertices[(j+1)*(meshColumns+1)+i],d=vertices[(j+1)*(meshColumns+1)+i+1];
-      rasterTriangle(a,b,c,source,img.width,img.height);rasterTriangle(b,d,c,source,img.width,img.height);
-    }
+    for(let i=1;i<meshSeam.length-1;i+=2){const p=meshSeam[i].p,a=meshSeam[i-1].p,b=meshSeam[i+1].p;p[0]=(a[0]+b[0])*.5;p[1]=(a[1]+b[1])*.5;}
+    for(const [a,b,c] of triangles)rasterTriangle(a,b,c,source,img.width,img.height);
     targetContext.putImageData(targetPixels,0,0);g.drawImage(target,-anchorX/detailScale,-anchorY/detailScale,targetW/detailScale,targetH/detailScale);
   }
   if(!pc.crash&&!spinning)gestures=drawCrewGestures(g,{spec:pc.spec,crew,art,w,h,action,project});
   g.restore();
   state.active=true;
   state.source=images.get(pc.spec.id).currentSrc;
-  state.last={id:pc.spec.id,x,ground,lift,width:w,height:h,pixelGrid:1/detailScale,rasterScale:detailScale,textureWidth:img.width,source:state.source,bank:pose.bank,bend:pose.bend,yaw:pose.yaw,wheelLift:pose.lift,acceptedContacts:pose.acceptedContacts,physicsTime:pc.visual?.time,zoom:1,crash:!!pc.crash,spinning,motionProfile:pose.profile,celebrating:action.active,celebrationProfile:action.profile,gestures,cloth:state.cloth.parts.map(p=>({x:p.x,y:p.y}))};
+  state.last={id:pc.spec.id,x,ground,lift,width:w,height:h,pixelGrid:1/detailScale,rasterScale:detailScale,textureWidth:img.width,source:state.source,bank:pose.bank,bend:pose.bend,yaw:pose.yaw,wheelLift:pose.lift,acceptedContacts:pose.acceptedContacts,physicsTime:pc.visual?.time,zoom:1,crash:!!pc.crash,crashStyle:pose.crashStyle,crashSeverity:pose.crashSeverity,compression:pose.compression,spinning,motionProfile:pose.profile,celebrating:action.active,celebrationProfile:action.profile,gestures,cloth:state.cloth.parts.map(p=>({x:p.x,y:p.y}))};
   return true;
 }
 window.FORMOSA_PIXEL_CAR={state,ready,has,measure,draw,drawProjectedRear,drawShowcase,drawPortrait};

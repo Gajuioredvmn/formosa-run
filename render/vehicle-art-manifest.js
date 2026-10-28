@@ -4314,3 +4314,21 @@ export const VEHICLE_ART = {
     ]
   }
 };
+
+// The approved rear atlases also contain short-haired drivers. Their crown
+// tips were omitted from the original cloth masks, leaving seven drivers
+// completely static. Pin the lower scalp; exclude ears, neck and seatbacks.
+for(const id of ['rosso','vespa','argento','blanco','adler','raiden','oro']){
+  const art=VEHICLE_ART[id],[x,y,w,h]=art.crewRegions[0];
+  art.cloth.push({kind:'hair',role:'driver',region:[x-w*.05,y-h*.08,w*1.1,h*.83],root:[x+w*.5,y+h*.68],tip:[x+w*.46,y+h*.2],flex:id==='argento'?.55:.72,drag:.32});
+}
+// Ballena's driver wears a cap: keep that rigid. Only the exposed nape hairs
+// below the cap respond, with much less travel than the uncovered heads.
+{
+  const art=VEHICLE_ART.ballena,[x,y,w,h]=art.crewRegions[0];
+  art.cloth.push({kind:'hair',role:'driver',region:[x+w*.12,y+h*.55,w*.76,h*.35],root:[x+w*.5,y+h*.58],tip:[x+w*.5,y+h*.81],flex:.48,drag:.25});
+}
+{
+  const art=VEHICLE_ART.adler,[x,y,w,h]=art.crewRegions[1];
+  art.cloth.push({kind:'hair',role:'passenger',region:[x-w*.05,y-h*.08,w*1.1,h*.83],root:[x+w*.5,y+h*.68],tip:[x+w*.5,y+h*.2],flex:.7,drag:.32});
+}

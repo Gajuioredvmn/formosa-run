@@ -302,11 +302,12 @@ test('crown setbacks retain dry roots on pond dykes and reject impossible water 
 });
 
 test('trees require rendered ground under their roots and stay within the finite hill terrain',()=>{
- const fb=new Uint32Array(80*60),context={window:{},RW:40,RH:30,DETAIL:2,_hy:15,GROUND_REACH:340,HILL_REACH:90,RV:{fb}};
+ const fb=new Uint32Array(80*60),support=new Uint8Array(fb.length),context={window:{},RW:40,RH:30,DETAIL:2,_hy:15,GROUND_REACH:340,HILL_REACH:90,RV:{fb,support}};
  vm.createContext(context);vm.runInContext(declaration('sceneryGrounded'),context);
  const grounded=context.sceneryGrounded,tree={name:'hemlock#0'},o={x:30,y:0},ip={oL:-10,oR:10};
  assert.equal(grounded(tree,o,ip,20,10),false,'A sky pixel cannot support a visible trunk');
  fb[22*80+40]=0xff567841;
+ support[22*80+40]=1;
  assert.equal(grounded(tree,o,ip,20,10),true,'Terrain immediately below the root supports the tree');
  assert.equal(grounded(tree,{...o,x:101},ip,20,10),false,'A hill tree beyond the rastered ninety metre extent is rejected even if nearer terrain covers its screen pixel');
  assert.equal(grounded(tree,{...o,x:351},ip,20,20),false,'Lowland trees also respect the finite ground extent');
@@ -315,6 +316,7 @@ test('trees require rendered ground under their roots and stay within the finite
  assert.equal(grounded({name:'balloon'},o,ip,20,3),true,'Airborne scenery remains independent of ground support');
  assert.equal(grounded(tree,{...o,lm:true},ip,20,3),true,'Explicit landscape landmarks use their own foundation');
  fb[22*80+40]=0xffc09a3a;
+ support[22*80+40]=2;
  assert.equal(grounded({name:'tank#0'},o,ip,20,10),false,'Opaque water cannot serve as a refinery tank foundation');
  assert.equal(grounded(tree,o,ip,20,10),false,'Trees behind a bridge wait until their dry bank is visible');
  assert.equal(grounded({name:'bush#0'},o,ip,20,10),false,'Land shrubs also need a dry rendered root');
@@ -327,13 +329,59 @@ test('trees require rendered ground under their roots and stay within the finite
   assert.equal(grounded({name:'pixel_palm#0'},o,ip,20,10),false,'Grey-green milkfish ponds are water, not a dry foundation');
  }
  fb[22*80+40]=0xff567841;
+ support[22*80+40]=1;
  assert.equal(grounded({name:'hakkahouse_generic'},o,ip,20,10),true,'A courtyard house supported by visible dry ground remains visible');
- assert.equal(grounded({name:'chimney'},o,ip,20,10,null,0,9),false,'A far-bank chimney with its root behind a water crest cannot float at the clip line');
+ assert.equal(grounded({name:'chimney'},o,ip,20,10,null,0,9),true,'Water on the opposite side of the camera cannot hide a dry supported object');
+ for(const color of [0xffc09a3a,0xff909a6a,0xff8a9262,0xffeeeeff]){
+  fb[22*80+40]=color;
+  assert.equal(grounded(tree,o,ip,20,10),true,'Blue shadow, haze and reflection colours cannot remove dry ground support');
+ }
+ support[22*80+40]=2;fb[22*80+40]=0xffffffff;
+ assert.equal(grounded(tree,o,ip,20,10),false,'White wave highlights remain water');
+ support[22*80+40]=1;
  context.window.FormosaLandscape={state:{layers:{forest:[]}}};
  assert.equal(grounded({name:'hill#0'},o,ip,20,20),false,'Loaded layered scenery suppresses the obsolete solid green hill card');
  const alpine={L:1000,def:{pano:'cingjing'}};
  assert.equal(grounded(tree,o,{...ip,cz:180},20,10,alpine,600),false,'Far forest rows do not float on alpine summit grassland');
  assert.equal(grounded(tree,o,{...ip,cz:80},20,10,alpine,600),true,'Near grounded trees remain available below the summit transition');
+});
+
+test('off-screen root support blends continuously through 20–28 pixels in the actual sprite alpha',()=>{
+ const RW=100,RH=100,DETAIL=2,support=new Uint8Array(RW*RH*DETAIL*DETAIL),draws=[];
+ const VG={globalAlpha:.8,imageSmoothingEnabled:false,drawImage(){draws.push(this.globalAlpha);}};
+ const context={window:{},RW,RH,DETAIL,_hy:30,GROUND_REACH:340,HILL_REACH:90,RV:{support},VG,ATLAS:{pages:[{lv:[{}],hz:[]}]}};
+ vm.createContext(context);
+ // Execute the production support/opacity expressions and drawSpr, observing
+ // Canvas globalAlpha at its draw call rather than recreating the fade in tests.
+ const alphaLines=uniqueMatch(/    const support=Math\.min\(1,o\._rootCoverage\*2\)[^\r\n]*\r?\n    const opacity=sceneryOpacity\(S,o,h\)[^\r\n]*/gm,'ground-support draw opacity')[0];
+ vm.runInContext([constLine('TAU'),constLine('clamp'),declaration('sceneryGrounded'),declaration('sceneryOpacity'),declaration('drawSpr'),
+  `function paint(S,o,ip,xs,ys){for(let once=0;once<1;once++){const h=S.wh*o.sc*ip.k;if(!sceneryGrounded(S,o,ip,xs,ys))continue;${alphaLines}\n drawSpr(S,xs,ys,h,1,false,RH,0,0,opacity);}}`].join('\n'),context);
+ const S={name:'hemlock#0',wh:10,w:32,h:64,x:0,y:0,ax:.5,pg:0},heights=[19.99,20,20.01,24,27.99,28,28.01];
+ for(const side of [-1,1])for(const dry of ['none','partial','all']){
+  support.fill(dry==='all'?1:0);
+  if(dry==='partial')support[120*RW*DETAIL+(side<0?0:RW*DETAIL-1)]=1;
+  const alpha=heights.map(height=>{
+   draws.length=0;context.paint(S,{x:side*30,y:0,sc:1,ph:0},{oL:-10,oR:10,k:height/S.wh},side<0?-1:RW+1,60);
+   assert.equal(VG.globalAlpha,.8,'Sprite rendering restores its incoming Canvas alpha');
+   assert(draws.length<=1,'One tree draws at most once with this single-mip fixture');
+   return (draws[0]||0)/.8;
+  });
+  assert(alpha.every(a=>Number.isFinite(a)&&a>=0&&a<=1));
+  assert(alpha.every((a,i)=>!i||a>=alpha[i-1]),'An approaching edge canopy never reverses its support fade');
+  assert(Math.abs(alpha[2]-alpha[1])<.00001,'Crossing 20 px cannot suddenly reveal an opaque tree');
+  assert(Math.abs(alpha[5]-alpha[4])<.00001,'The 28 px near-canopy bypass joins without a jump');
+  assert.equal(alpha[5],1);assert.equal(alpha[6],1);
+  if(dry==='none'){
+   assert.equal(alpha[0],0);assert.equal(alpha[1],0);assert(alpha[2]>0&&alpha[2]<.00001);
+   assert(Math.abs(alpha[3]-.5)<1e-12,'An unsupported offscreen root is half-visible at the blend midpoint');
+  }else if(dry==='partial'){
+   assert(alpha[0]>0&&alpha[0]<.1,'A subpixel dry edge contributes partial support');
+   assert(alpha[3]>.5&&alpha[3]<.6);
+  }else assert(alpha.every(a=>a===1),'Fully grounded trees retain full opacity across the transition');
+ }
+ support.fill(0);draws.length=0;
+ context.paint(S,{x:0,y:0,sc:1,ph:0},{oL:-10,oR:10,k:2.4},50,60);
+ assert.equal(draws.length,0,'On-screen roots above unsupported terrain remain culled');
 });
 
 test('large asymmetric buildings keep their entire foundations outside the road and water',()=>{

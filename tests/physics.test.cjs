@@ -75,5 +75,25 @@ reset(40);PC.steerIn=1;for(let i=0;i<12;i++)pcStep(1/120);const previous=PC.vx;P
 for(let i=0;i<120;i++)pcStep(1/120);assert(Math.abs(PC.vx)<.00001);
 reset(0);PC.steerIn=1;for(let i=0;i<120;i++)pcStep(1/120);assert.equal(PC.vx,0);assert.equal(PC.airY,0);assert.equal(PC.roll,0);
 `);
+test('Crash recovery preserves lateral momentum with frame-rate independent tyre drag',`
+function run(hz){reset(45);PC.vx=8;pcCrash(.5,{normalSpeed:30,yawImpulse:1,normalX:0});for(let i=0;i<hz;i++)pcStep(1/hz);return{x:PC.x,vx:PC.vx,yaw:PC.yaw,air:PC.airY};}
+const a=run(30),b=run(120);near(a.x,b.x);near(a.vx,b.vx);assert(a.x>1&&a.x<2);assert(a.vx>0&&a.vx<.1);assert.equal(a.air,0);assert(Math.abs(a.yaw)<.02);
+`);
+test('Side tips require low contact height and bounded dissipated impulse energy',`
+function hit(sign,height=.38,speed=50,energy=120,delta=42){reset(speed);pcCrash(.9,{normalSpeed:42,normalX:sign,contactHeight:height,speedMps:speed,dissipatedPerKg:energy,deltaVx:sign*delta});return PC.crash;}
+const a=hit(1),b=hit(-1);assert(a.rollK>.24&&a.rollK<=.94);near(a.rollK,-b.rollK);assert.equal(a.vy,0);assert.equal(a.style,'side-tip');
+const half=playerWidth()*.41,cg=.47,inertia=cg*cg+half*half+.36*.36;
+assert(9.81*(half*Math.sin(a.rollK)+cg*(Math.cos(a.rollK)-1))<=a.rollEnergy+1e-8);
+assert(.5*inertia*(a.rollK*Math.PI/.78)**2<=a.rollEnergy+1e-8);
+assert.equal(hit(1,.7).rollK,0);assert.equal(hit(1,.38,10).rollK,0);assert.equal(hit(1,.38,50,0).rollK,0);assert.equal(hit(1,.38,50,120,0).rollK,0);
+`);
+test('Crash lateral recovery cannot tunnel through the nearby road wall',`
+reset(45);PC.vx=18;PC.piece.colliders=[{kind:'wall',s0:0,s1:9999,x0:1.5,x1:3}];pcCrash(.5,{normalSpeed:30,yawImpulse:1});
+for(let i=0;i<30;i++)pcStep(1/60);assert(PC.x+playerWidth()/2<1.5);assert.equal(PC.vx,0);
+`);
+test('A hard central static impact stops at the obstacle instead of driving through the crash animation',`
+reset(65);PC.piece.colliders=[{kind:'solid',s0:99,s1:102,x0:-.5,x1:.5}];const before=PC.s;pcStep(1/120);assert(PC.crash);assert(PC.v<=0);assert.equal(PC.crash.rollK,0);
+for(let i=0;i<150;i++)pcStep(1/120);assert(PC.s<=before+.1);assert.equal(PC.airY,0);
+`);
 let failed=0;for(const t of tests){try{vm.runInContext(t.body,context(),{filename:t.name,timeout:5000});console.log('PASS '+t.name);}catch(e){failed++;console.error('FAIL '+t.name+'\n'+e.stack);}}
 console.log((tests.length-failed)+'/'+tests.length+' physics checks passed');process.exitCode=failed?1:0;

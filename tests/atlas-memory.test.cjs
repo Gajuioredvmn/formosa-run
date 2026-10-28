@@ -1,6 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const source=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
-const start=source.indexOf('function packAtlas()'),end=source.indexOf('// mip levels:',start);
+const start=source.indexOf('function packAtlas()'),end=source.indexOf('function mipLevels(',start);
 function packed(queue){const writes=[],warnings=[],context={_sprQueue:queue,_sprQueueIndex:new Map(),_varCache:{old:1},ATLAS:{size:128,pad:8,pages:[]},SPR:{},SPRL:[],console:{warn:(...args)=>warnings.push(args)},canvas:(w,h)=>({width:w,height:h,getContext:()=>({putImageData:(image,x,y)=>writes.push({image,x,y})})}),ImageData:class{constructor(data,w,h){this.data=data;this.width=w;this.height=h;}},mipLevels:c=>[c]};vm.runInNewContext(source.slice(start,end)+';packAtlas();',context);return{...context,writes,warnings};}
 const pix=(w,h,value=1)=>({w,h,d:new Uint8ClampedArray(w*h*4).fill(value)});
 test('Aliases share one atlas rectangle while preserving independent dimensions, pivots and contacts',()=>{

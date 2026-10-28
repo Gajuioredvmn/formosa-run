@@ -9,7 +9,7 @@ await page.goto(`http://127.0.0.1:${server.address().port}/${encodeURIComponent(
 const data=await page.evaluate(()=>{const k=__kr,w=FormosaWorldLife;k.halt(true);k.G.mode='play';k.G.noIgnite=true;k.race(0,true);k.run();k.show(null);k.bot(false);
 const checks=[],check=(name,pass,detail)=>checks.push({name,pass:!!pass,detail});
 check('World art/geometry module boots',w.state.ready,w.state.warnings);
-const pieces=k.ROUTE.pieces,meshes=pieces.flatMap(p=>(p.landmarkMeshes||[]).map(m=>({p,m})));
+const pieces=k.ROUTE.pieces,meshes=pieces.flatMap(p=>(p.landmarkMeshes||[]).filter(m=>m.kind==='metroEntrance').map(m=>({p,m})));
 check('Metro has real roof, stairs and pillars',meshes.length>0&&meshes.every(({m})=>m.faces.length>70&&m.lines.length>20&&new Set(m.faces.flatMap(f=>f.points.map(p=>p[2]))).size>10),meshes.map(({p,m})=>({piece:p.id,faces:m.faces.length,minOff:m.minOff,maxOff:m.maxOff})));
 check('Metro stays outside roadway and light rail',meshes.every(({p,m})=>m.minOff>((p.sec(m.s).tags||[]).includes('lightrail')?15.5:3)),meshes.map(({m})=>m.minOff));
 const pedestrians=pieces.flatMap(p=>p.anim.filter(a=>a.kind==='walker'));
