@@ -49,6 +49,8 @@ public final class GameProbe extends Instrumentation {
             require(bool("__kr.audioDebug.adapter.diagnostics.tracks.filter(t=>t.status==='ready').length>=20"), "twenty_music_tracks");
             screenshot("01-title");
             tap("#tap"); waitFor("UI.unlocked", 10000);
+            require(bool("UI.scr==='title'"), "initial_unlock_does_not_click_through_to_menu");
+            screenshot("01a-unlocked");
             waitFor("AU.ctx&&AU.ctx.state==='running'", 10000);
             require(true, "trusted_touch_unlocks_audio");
             tap("#s-title [data-go='select']"); waitFor("UI.scr==='select'", 5000);
@@ -118,6 +120,7 @@ public final class GameProbe extends Instrumentation {
             result.putString("report", report.toString());
             finish(Activity.RESULT_OK, result);
         } catch (Throwable e) {
+            if(web!=null)try { report.put("failureState",object("(()=>{const e=document.querySelector('#s-title [data-go=select]'),r=e&&e.getBoundingClientRect();return{screen:UI.scr,unlocked:UI.unlocked,innerWidth,innerHeight,devicePixelRatio,rect:r&&{x:r.x,y:r.y,width:r.width,height:r.height},visualViewport:visualViewport&&{width:visualViewport.width,height:visualViewport.height,scale:visualViewport.scale,offsetLeft:visualViewport.offsetLeft,offsetTop:visualViewport.offsetTop}}})()")); screenshot("99-failure"); } catch (Throwable ignored) { }
             try { report.put("checks", checks).put("ok", false).put("error", e.toString()); } catch (Exception ignored) { }
             result.putString("report", report.toString());
             finish(Activity.RESULT_CANCELED, result);
@@ -131,6 +134,7 @@ public final class GameProbe extends Instrumentation {
         return null;
     }
     private String js(String source) throws Exception {
+        if(web==null)throw new Exception("WebView is not initialized");
         String[] value = {null}; CountDownLatch done = new CountDownLatch(1);
         String wrapped = "(()=>{const k=window.__kr;const G=k&&k.G,UI=k&&k.UI,RACE=k&&k.RACE,PC=k&&k.PC,CTL=k&&k.CTL,AU=k&&k.audioDebug.buses;return (" + source + ");})()";
         runOnMainSync(() -> web.evaluateJavascript(wrapped, v -> {value[0] = v; done.countDown();}));
@@ -146,6 +150,7 @@ public final class GameProbe extends Instrumentation {
     }
     private void require(boolean ok, String name) throws Exception {
         checks.put(new JSONObject().put("name", name).put("ok", ok));
+        Bundle progress=new Bundle();progress.putString("check",name);progress.putBoolean("ok",ok);sendStatus(1,progress);
         if (!ok) throw new Exception(name);
     }
     private float[] nativePoint(JSONObject p) throws Exception {
@@ -156,12 +161,18 @@ public final class GameProbe extends Instrumentation {
     }
     private void tap(String selector) throws Exception {
         requireFocus();
-        JSONObject p = object("(()=>{let e=document.querySelector(" + JSONObject.quote(selector) + ");if(!e)return{};let r=e.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2,w:innerWidth,h:innerHeight}})()");
+        JSONObject p = object("(()=>{let e=document.querySelector(" + JSONObject.quote(selector) + ");if(!e)return{};let r=e.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2,w:innerWidth,h:innerHeight,rw:r.width,rh:r.height}})()");
+        if(p.optDouble("rw",0)<=0||p.optDouble("rh",0)<=0||p.getDouble("x")<0||p.getDouble("y")<0||p.getDouble("x")>=p.getDouble("w")||p.getDouble("y")>=p.getDouble("h"))
+            throw new Exception("Touch target is hidden or outside the game viewport: "+selector);
         float[] point = nativePoint(p); long t = SystemClock.uptimeMillis();
+        if(!report.has("taps"))report.put("taps",new JSONArray());
+        JSONObject touch=new JSONObject().put("selector",selector).put("css",p).put("nativeX",point[0]).put("nativeY",point[1]).put("before",js("UI.scr"));
+        report.getJSONArray("taps").put(touch);
         sendPointerSync(MotionEvent.obtain(t, t, MotionEvent.ACTION_DOWN, point[0], point[1], 0));
         SystemClock.sleep(60);
         sendPointerSync(MotionEvent.obtain(t, SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, point[0], point[1], 0));
         SystemClock.sleep(200);
+        touch.put("after",js("UI.scr"));
     }
     private void screenshot(String name) throws Exception {
         requireFocus();

@@ -159,7 +159,9 @@ godot --headless --path . --script res://tools/verify-godot-data.gd
 
 本機證據在 `../formosa-work/fix-20261028/scenery-release/`，其餘在 `../formosa-work/fixes-20261028/` 的 `vehicle-motion-final-weld/`、`cloth-driving-wind-final/`、`mix-balance/`、`hud-stations/`、`multiplayer-release/`、`release-unit/high-speed-wind/`；撞擊證據在 `../formosa-work/fix-20261028/crash-release/`。APK 建置證據在 `../formosa-work/android-20261029/`。較早報告保留原日期與範圍，不代表已覆蓋本次所有新變更。
 
-最終 APK `FormosaRun-0.2.1.apk` 已安裝到使用者授權的 ASUSAI2501C，亦存於手機 Download；SHA-256 為 `edd48360bfa5061fba0858a7d113cd4855e4085a9e93a2af59934f8b0fb95fc4`。實機測試因螢幕鎖定在第一項停止，尚無觸控／實機 FPS 通過紀錄，等待使用者解鎖。該 APK 所含 `www` 成品另外在桌面完成 55 項瀏覽器檢查（10 車、31 路段、點火及選單），無 JS／缺檔錯誤。Godot 共用 JSON 重新匯出並通過 10 車、31 段、16 終點、451 邊界、171 窄通口與 1 處平交道解析；這不等於新行為已移植至 Godot 原生版。
+最終 APK `FormosaRun-0.2.1.apk` 已安裝到使用者授權的 ASUSAI2501C，亦存於手機 Download；SHA-256 為 `b293f1400b96628d2babd940587d18669054267f44a06e4b2884686b0aa7d84a`，建置證據在 `android-20261029/release-input-fixed/`。手機初輪已通過本地 HTTPS、橫向、10 車／20 曲清單與觸控解鎖音訊等 7 項，並實際抓出首次 `pointerdown` 提前顯示選單，導致放手時誤點連線對戰的問題；改在 `click` 釋放後解鎖，新增按下／抬起回歸，桌面 57 項檢查通過。前一候選 APK 的 `www` 也完成 55 項成品檢查，無 JS／缺檔錯誤。最終版手機完整駕駛、背景暫停／恢復、實際 MP3 解碼、FPS 及錄影仍未完成：修補安裝後先遇到鎖定，解鎖後使用者已在其他 App，故停止自動操作。沒有實機 60fps 的通過數據。Godot 共用 JSON 重新匯出並通過 10 車、31 段、16 終點、451 邊界、171 窄通口與 1 處平交道解析；這不等於新行為已移植至 Godot 原生版。
+
+網頁版 `108674df35a8f48aa8c0dc935936b5c9d9c216ad` 已由 GitHub Actions [40757334555](https://github.com/Gajuioredvmn/formosa-run/actions/runs/40757334555) 發布成功；公開網站的 `index.html` 與 6 個變更繪圖／音效模組均以 SHA-256 對照工作樹一致。證據為 `fixes-20261028/published-report.json`。後續只有報告／測試工具變更時，不需要重建相同內容的遊戲。
 
 ## 待完成及未實測範圍
 
