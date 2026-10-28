@@ -28,7 +28,11 @@ const check = (name, condition) => { assert(condition, name); report.assertions.
     await page.waitForFunction(() => window.__kr?.G.state === 'race' && window.FORMOSA_PIXEL_CAR?.state.ready, null, { timeout: 90000 });
     await page.evaluate(() => { __kr.halt(true); __kr.show('title'); });
     check('Default presentation does not load the experimental 3D engine', !requested.some(url => /\/(?:main|world|three\.module|three\.core)\.js$/.test(url)));
-    await page.locator('#tap:visible').click();
+    const tap=await page.locator('#tap:visible').boundingBox();
+    await page.mouse.move(tap.x+tap.width/2,tap.y+tap.height/2);await page.mouse.down();
+    check('Initial press cannot expose clickable menu buttons before release',await page.evaluate(()=>document.getElementById('menu').hidden&&!__kr.UI.unlocked));
+    await page.mouse.up();
+    check('First release unlocks audio and leaves the player on the title menu',await page.evaluate(()=>__kr.UI.unlocked&&__kr.UI.scr==='title'&&!document.getElementById('menu').hidden));
     await page.locator('[data-go="select"]:visible').first().click();
     await page.locator('[data-act="pick"]:visible').click();
     await page.locator('[data-act="go"]:visible').click();

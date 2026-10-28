@@ -9350,8 +9350,9 @@ function uiInit() {
   <section class="scr dim" id="s-online" hidden><div class="panel card" id="online"></div></section>`;
   document.body.appendChild(h('<div id="rot" class="need"><div style="font-size:44px">⟲</div>請把手機轉成橫向<br><small style="font-weight:500;font-size:14px;opacity:.8">這個遊戲要橫著玩</small></div>'));
   root.addEventListener('click', onUiClick);
-  // the first touch anywhere on the title unlocks sound and asks for the tilt sensor
-  $('s-title').addEventListener('pointerdown', unlock);
+  // Reveal the menu after release. Revealing on pointerdown lets the same
+  // native touch end on a newly exposed menu button and enter it accidentally.
+  $('s-title').addEventListener('click', unlock);
   addEventListener('keydown', onUiKey);
   if (!IS_TOUCH) $('row-ctrl').hidden = true;
   const musicTracks=GAME_AUDIO?.diagnostics.tracks.filter(t=>t.status==='ready'&&t.src&&t.commercialUseVerified)||[];
