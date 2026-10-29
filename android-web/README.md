@@ -4,6 +4,8 @@
 
 採用橫向全螢幕，保留瀏海安全邊界、觸控輸入及本機設定。切到背景、來電失去音訊焦點時暫停；回到遊戲後由玩家繼續。返回鍵先暫停比賽，選單上才詢問是否離開。僅需網路權限，不使用相機、麥克風、檔案系統 JavaScript 橋接。
 
+目前建置版本設定為 `0.2.3`（`versionCode 2026102903`），用於車輪美術修正，並保留新版點火與人物圖層。這是版本設定，完成建置的內容與雜湊以該次 `build-report.json` 為準。新版本須另外記錄實機驗證；舊版的通過項目與幀率不代表 0.2.3 已測完。
+
 ## 建置
 
 需要 Node.js 18+、Python 3.11+、JDK 17、Android SDK `platforms;android-35` 和 `build-tools;35.0.1`。不用 Gradle，也不用額外 Java 函式庫。
@@ -20,7 +22,7 @@ node android-web/build.cjs --sdk 'C:\Android\Sdk' --jdk 'C:\Java\jdk-17' --pytho
 
 ```powershell
 adb devices -l
-adb -s DEVICE_SERIAL install -r 'D:\builds\formosa-unique-build\FormosaRun-0.2.2.apk'
+adb -s DEVICE_SERIAL install -r 'D:\builds\formosa-unique-build\FormosaRun-0.2.3.apk'
 adb -s DEVICE_SERIAL shell am start -n tw.formosarun.game/.MainActivity
 ```
 

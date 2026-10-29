@@ -1,0 +1,717 @@
+{
+  "asset": "wheels-raiden-v2.png",
+  "useCase": "precise-object-edit",
+  "purpose": "Straight-ahead rear wheel paint correction. Only the two wheel polygons may replace source pixels; body and crew remain the original asset.",
+  "sourceAsset": "vehicle-raiden-v1.png",
+  "sourceAtlasSize": [
+    1254,
+    1254
+  ],
+  "sourceRearCropPixels": [
+    24,
+    94,
+    1204,
+    587
+  ],
+  "sourceRearCropNormalized": [
+    0.0191388,
+    0.0749601,
+    0.9601276,
+    0.4681021
+  ],
+  "generatedImageSize": [
+    1796,
+    876
+  ],
+  "transparentBackground": true,
+  "generation": {
+    "provider": "OpenAI built-in image_gen",
+    "date": "2026-10-29",
+    "sourceOutput": "C:/Users/88690/.codex/generated_images/01a182bb-edaa-7d13-a301-e430a4608881/exec-01fd1d18-a272-4aa5-ba55-33b2a40ce036.png",
+    "prompt": "Use case: precise-object-edit. Image 1 is the EDIT TARGET: an existing transparent rear-view pixel-art purple/cyan futuristic convertible racing sprite, cropped exactly 1204x587 pixels. This is a tiny production correction of ONLY the two visible rear wheels. Keep the exact original framing, rear camera, scale, tire width, wheel track, wheel contact locations and equal horizontal road-contact level. Make BOTH rear wheels point straight ahead at zero steering/toe and near-zero camber: the rear-facing tire tread columns must stand upright, vertically parallel to one another, with no V-shaped toe-out, no /\\\\ splayed stance and no inward collapse. Retain broad dark performance rubber tread and the signature electric-blue/cyan rim styling, but show MUCH LESS of both outer rim faces from this dead-rear view: only a narrow blue rim-edge side glint, not a broad visible oval disc facing the rear camera. Preserve tire outer silhouettes and contact patches as closely as possible while straightening the tire/rim axes. Do not make tires thinner, shorten them, enlarge them, move them inward or outward, lift one tire or change the road-contact height. Keep the purple fenders, all body panels, wing, vents, cyan lights, bumper, exhausts, occupants, hair, mirrors and upper half of the sprite unchanged. Do not redraw, redesign, tilt, rotate, zoom or recenter the car. No extra wheels, no new mechanical details, no text, no scenery, no added ground plane or shadow. Match the original fine arcade pixel-art linework and palette exactly. Preserve true alpha transparency around the sprite and through existing openings. Return the complete edited rear-view sprite with the same 1204x587 framing, suitable for extracting only the wheel-region patches."
+  },
+  "wheelMasks": {
+    "coordinateDescription": "Atlas pixels and equivalent normalized coordinates within rear crop [24,94,1204,587]. Conservative visible tire/rim polygons exclude painted fenders and bumper. Right edge is clipped at rear crop right boundary.",
+    "sourceAtlasPixels": {
+      "left": [
+        [
+          81,
+          383
+        ],
+        [
+          106,
+          383
+        ],
+        [
+          109,
+          409
+        ],
+        [
+          119,
+          453
+        ],
+        [
+          136,
+          504
+        ],
+        [
+          158,
+          552
+        ],
+        [
+          179,
+          593
+        ],
+        [
+          204,
+          621
+        ],
+        [
+          225,
+          635
+        ],
+        [
+          221,
+          654
+        ],
+        [
+          212,
+          669
+        ],
+        [
+          199,
+          678
+        ],
+        [
+          65,
+          678
+        ],
+        [
+          48,
+          670
+        ],
+        [
+          36,
+          649
+        ],
+        [
+          28,
+          617
+        ],
+        [
+          24,
+          575
+        ],
+        [
+          24,
+          534
+        ],
+        [
+          29,
+          487
+        ],
+        [
+          39,
+          443
+        ],
+        [
+          53,
+          411
+        ],
+        [
+          67,
+          391
+        ]
+      ],
+      "right": [
+        [
+          1146,
+          383
+        ],
+        [
+          1172,
+          383
+        ],
+        [
+          1187,
+          395
+        ],
+        [
+          1203,
+          424
+        ],
+        [
+          1218,
+          468
+        ],
+        [
+          1227,
+          514
+        ],
+        [
+          1227,
+          556
+        ],
+        [
+          1226,
+          605
+        ],
+        [
+          1218,
+          644
+        ],
+        [
+          1206,
+          666
+        ],
+        [
+          1186,
+          678
+        ],
+        [
+          1056,
+          678
+        ],
+        [
+          1038,
+          668
+        ],
+        [
+          1026,
+          649
+        ],
+        [
+          1024,
+          634
+        ],
+        [
+          1043,
+          615
+        ],
+        [
+          1067,
+          576
+        ],
+        [
+          1089,
+          530
+        ],
+        [
+          1107,
+          485
+        ],
+        [
+          1124,
+          438
+        ],
+        [
+          1136,
+          405
+        ]
+      ]
+    },
+    "sourceRearUV": {
+      "left": [
+        [
+          0.0473422,
+          0.4923339
+        ],
+        [
+          0.0681063,
+          0.4923339
+        ],
+        [
+          0.070598,
+          0.5366269
+        ],
+        [
+          0.0789037,
+          0.6115843
+        ],
+        [
+          0.0930233,
+          0.6984668
+        ],
+        [
+          0.1112957,
+          0.7802385
+        ],
+        [
+          0.1287375,
+          0.8500852
+        ],
+        [
+          0.1495017,
+          0.8977853
+        ],
+        [
+          0.1669435,
+          0.9216354
+        ],
+        [
+          0.1636213,
+          0.9540034
+        ],
+        [
+          0.1561462,
+          0.9795571
+        ],
+        [
+          0.1453488,
+          0.9948893
+        ],
+        [
+          0.0340532,
+          0.9948893
+        ],
+        [
+          0.0199336,
+          0.9812606
+        ],
+        [
+          0.0099668,
+          0.9454855
+        ],
+        [
+          0.0033223,
+          0.890971
+        ],
+        [
+          0,
+          0.8194208
+        ],
+        [
+          0,
+          0.7495741
+        ],
+        [
+          0.0041528,
+          0.669506
+        ],
+        [
+          0.0124585,
+          0.5945486
+        ],
+        [
+          0.0240864,
+          0.5400341
+        ],
+        [
+          0.0357143,
+          0.5059625
+        ]
+      ],
+      "right": [
+        [
+          0.9318937,
+          0.4923339
+        ],
+        [
+          0.9534884,
+          0.4923339
+        ],
+        [
+          0.9659468,
+          0.5127768
+        ],
+        [
+          0.9792359,
+          0.5621806
+        ],
+        [
+          0.9916944,
+          0.637138
+        ],
+        [
+          0.9991694,
+          0.7155026
+        ],
+        [
+          0.9991694,
+          0.7870528
+        ],
+        [
+          0.9983389,
+          0.8705281
+        ],
+        [
+          0.9916944,
+          0.9369676
+        ],
+        [
+          0.9817276,
+          0.9744463
+        ],
+        [
+          0.9651163,
+          0.9948893
+        ],
+        [
+          0.8571429,
+          0.9948893
+        ],
+        [
+          0.8421927,
+          0.9778535
+        ],
+        [
+          0.8322259,
+          0.9454855
+        ],
+        [
+          0.8305648,
+          0.9199319
+        ],
+        [
+          0.8463455,
+          0.8875639
+        ],
+        [
+          0.8662791,
+          0.8211244
+        ],
+        [
+          0.8845515,
+          0.7427598
+        ],
+        [
+          0.8995017,
+          0.6660988
+        ],
+        [
+          0.9136213,
+          0.5860307
+        ],
+        [
+          0.923588,
+          0.5298126
+        ]
+      ]
+    }
+  },
+  "mapping": {
+    "rearUVToGenerated": "x = u * 1796; y = v * 876",
+    "sourceAtlasPixelToGenerated": "x = (sourceX - 24) * 1796 / 1204; y = (sourceY - 94) * 876 / 587",
+    "clip": "Use only the wheel masks. Do not replace the full regenerated rear car, upper wheel arches, occupants, mirrors, wing, fenders or bumper.",
+    "requiredAlignment": "The generator did not exactly preserve outer silhouette/contact height. A per-wheel patch remap or edge-aware mask adjustment must retain original wheel track/contact points. Full-frame scaling alone is insufficient to reproduce the original footprint. Verify the pasted result against source in neutral driving before release.",
+    "preferredDescriptor": "integrationDescriptor contains individually aligned source/target rectangles and tighter polygons than the original-source wheelMasks. It intentionally retains the original narrow inner rubber/wheel-arch seam and original contact outline."
+  },
+  "inspection": {
+    "rearTreadAxes": "Visually upright and parallel.",
+    "rimSideArea": "Broad blue rim ovals replaced by narrow cyan/blue side glints.",
+    "bodyAndCrew": "Similar framing but NOT pixel-identical: retain original pixels outside tire/rim masks.",
+    "geometryDeviation": "At rear-equivalent y=500, leftmost opaque generated x=25 vs source x=6; rightmost generated x=1179 vs source x=1197. At y=560 generated left range32..193 vs source19..198. Generated tread ends about3–4 rear pixels above the original contact. This is disclosed and requires local alignment by the integrator.",
+    "sourceTireMaskReviewed": true,
+    "rendererModified": false,
+    "browserOpened": false,
+    "offlineAlignedPatchAudit": {
+      "painted": 64034,
+      "originalOpaquePixelsMadeTransparent": 0,
+      "allUVValid": true,
+      "method": "Offline nearest-sample composite at original rear source resolution; no browser.",
+      "images": [
+        "raiden-patch-proposed.png",
+        "raiden-left-proposed.png",
+        "raiden-right-proposed.png"
+      ]
+    }
+  },
+  "alphaProfilesRearEquivalent": {
+    "threshold": 96,
+    "original": [
+      {
+        "y": 560,
+        "left": [
+          19,
+          198
+        ],
+        "right": [
+          1007,
+          1184
+        ]
+      },
+      {
+        "y": 570,
+        "left": [
+          24,
+          192
+        ],
+        "right": [
+          1013,
+          1180
+        ]
+      },
+      {
+        "y": 578,
+        "left": [
+          32,
+          186
+        ],
+        "right": [
+          1019,
+          1172
+        ]
+      },
+      {
+        "y": 582,
+        "left": [
+          40,
+          179
+        ],
+        "right": [
+          1026,
+          1163
+        ]
+      }
+    ],
+    "generated": [
+      {
+        "y": 560,
+        "left": [
+          32,
+          193
+        ],
+        "right": [
+          1012,
+          1173
+        ]
+      },
+      {
+        "y": 570,
+        "left": [
+          36,
+          189
+        ],
+        "right": [
+          1016,
+          1169
+        ]
+      },
+      {
+        "y": 578,
+        "left": [
+          46,
+          181
+        ],
+        "right": [
+          1024,
+          1160
+        ]
+      },
+      {
+        "y": 582,
+        "left": null,
+        "right": null
+      }
+    ]
+  },
+  "integrationDescriptor": {
+    "src": "assets/pixel/wheels-raiden-v2.png",
+    "patches": [
+      {
+        "polygon": [
+          [
+            0.0473422,
+            0.4923339
+          ],
+          [
+            0.0614618,
+            0.4923339
+          ],
+          [
+            0.0639535,
+            0.5366269
+          ],
+          [
+            0.0714286,
+            0.6115843
+          ],
+          [
+            0.0847176,
+            0.6984668
+          ],
+          [
+            0.1046512,
+            0.7802385
+          ],
+          [
+            0.122093,
+            0.8500852
+          ],
+          [
+            0.1420266,
+            0.8977853
+          ],
+          [
+            0.1619601,
+            0.9216354
+          ],
+          [
+            0.1586379,
+            0.9540034
+          ],
+          [
+            0.154485,
+            0.9795571
+          ],
+          [
+            0.1436877,
+            0.9914821
+          ],
+          [
+            0.0348837,
+            0.9914821
+          ],
+          [
+            0.0215947,
+            0.9778535
+          ],
+          [
+            0.0124585,
+            0.9437819
+          ],
+          [
+            0.0074751,
+            0.890971
+          ],
+          [
+            0.0049834,
+            0.8194208
+          ],
+          [
+            0.005814,
+            0.7495741
+          ],
+          [
+            0.0091362,
+            0.669506
+          ],
+          [
+            0.0166113,
+            0.5945486
+          ],
+          [
+            0.0265781,
+            0.5400341
+          ],
+          [
+            0.038206,
+            0.5059625
+          ]
+        ],
+        "source": [
+          0.018272425249169437,
+          0.49233390119250425,
+          0.1511627906976744,
+          0.49744463373083475
+        ],
+        "target": [
+          0,
+          0.49233390119250425,
+          0.17026578073089702,
+          0.5025553662691652
+        ]
+      },
+      {
+        "polygon": [
+          [
+            0.9435216,
+            0.4923339
+          ],
+          [
+            0.9534884,
+            0.4923339
+          ],
+          [
+            0.9659468,
+            0.5127768
+          ],
+          [
+            0.9792359,
+            0.5621806
+          ],
+          [
+            0.9916944,
+            0.637138
+          ],
+          [
+            0.9983389,
+            0.7155026
+          ],
+          [
+            0.9983389,
+            0.7870528
+          ],
+          [
+            0.9966777,
+            0.8705281
+          ],
+          [
+            0.9900332,
+            0.9369676
+          ],
+          [
+            0.9800664,
+            0.9744463
+          ],
+          [
+            0.9642857,
+            0.9914821
+          ],
+          [
+            0.858804,
+            0.9914821
+          ],
+          [
+            0.8446844,
+            0.9778535
+          ],
+          [
+            0.839701,
+            0.9454855
+          ],
+          [
+            0.8380399,
+            0.9199319
+          ],
+          [
+            0.858804,
+            0.8875639
+          ],
+          [
+            0.8812292,
+            0.8211244
+          ],
+          [
+            0.9036545,
+            0.7427598
+          ],
+          [
+            0.9186047,
+            0.6660988
+          ],
+          [
+            0.9343854,
+            0.5860307
+          ],
+          [
+            0.9401993,
+            0.5298126
+          ]
+        ],
+        "source": [
+          0.8305647840531561,
+          0.49233390119250425,
+          0.1511627906976744,
+          0.49744463373083475
+        ],
+        "target": [
+          0.829734219269103,
+          0.49233390119250425,
+          0.17026578073089702,
+          0.5025553662691652
+        ]
+      }
+    ]
+  }
+}

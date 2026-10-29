@@ -6,6 +6,7 @@ import { CREW_MASKS_A } from './crew-masks-a.js';
 import { CREW_MASKS_B } from './crew-masks-b.js';
 import { separateCrew, restoreCrewBackplate, materialMesh, polygons } from './crew-layers.js';
 import { CREW_BACKPLATES } from './crew-backplates.js';
+import { WHEEL_ART, drawWheelPatches } from './wheel-art.js';
 import { vehiclePresentation, crewAction, warpCrew, drawCrewGestures, clothMotion, warpCloth, materialAttachment, clothBendGeometry } from './vehicle-motion.js';
 
 const clamp = (x,a,b) => Math.max(a,Math.min(b,x));
@@ -14,6 +15,7 @@ const state = { ready:false, complete:false, active:false, failed:false, source:
 const textures = new Map();
 const images = new Map();
 const backplates = new Map();
+const wheelImages = new Map();
 const crewMasks={...CREW_MASKS_A,...CREW_MASKS_B},layerCache=new WeakMap();
 // Two physical samples per classic logical pixel preserve camera, vehicle size
 // and contacts while retaining the linework in the individual source artwork.
@@ -23,11 +25,12 @@ const loaded = Promise.all(Object.entries(VEHICLE_ART).map(([id,art])=>new Promi
   const image=new Image();state.assets[id]='loading';
   image.onload=()=>{
     const finish=()=>{images.set(id,image);state.assets[id]='ready';state.ready=true;resolve(true);};
-    if(!CREW_BACKPLATES[id]){finish();return;}
-    const base=new Image();
-    base.onload=()=>{backplates.set(id,base);finish();};
-    base.onerror=()=>{state.assets[id]='failed';state.failed=true;resolve(false);};
-    base.src=new URL(CREW_BACKPLATES[id].src,import.meta.url).href;
+    const supplements=[[CREW_BACKPLATES[id],backplates],[WHEEL_ART[id],wheelImages]].filter(([art])=>art);
+    if(!supplements.length){finish();return;}
+    Promise.all(supplements.map(([extra,map])=>new Promise(done=>{
+      const base=new Image();base.onload=()=>{map.set(id,base);done(true);};base.onerror=()=>done(false);
+      base.src=new URL(extra.src,import.meta.url).href;
+    }))).then(results=>{if(results.every(Boolean))finish();else{state.assets[id]='failed';state.failed=true;resolve(false);}});
   };
   image.onerror=()=>{state.assets[id]='failed';state.failed=true;resolve(false);};
   image.src=new URL(art.src,import.meta.url).href;
@@ -51,6 +54,7 @@ function texture(id,width,brake) {
   const height=Math.max(1,Math.round(width*crop[3]/crop[2])),c=document.createElement('canvas');c.width=width*detailScale;c.height=height*detailScale;
   const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.scale(detailScale,detailScale);
   g.save();clipAtlasPolygon(g,art.rearMask,image,crop,0,0,width/crop[2]);g.drawImage(image,...crop,0,0,width,height);g.restore();
+  if(wheelImages.has(id))drawWheelPatches(g,wheelImages.get(id),width,height,WHEEL_ART[id]);
   if(brake){
     g.fillStyle=art.brakeColor||'#ffbe36';
     for(const [x,y,w,h] of art.lamps||[])g.fillRect(Math.round(x*width),Math.round(y*height),Math.max(1,Math.round(w*width)),Math.max(1,Math.round(h*height)));

@@ -1,0 +1,236 @@
+{
+  "asset": "assets/pixel/wheels-blanco-v3.png",
+  "created_utc": "2026-10-29T17:26:30.152706+00:00",
+  "generator": "OpenAI built-in image_gen",
+  "mode": "edit",
+  "use_case": "precise-object-edit",
+  "source_asset": "assets/pixel/vehicle-blanco-v1.png",
+  "source_sha256": "16055e676d2824376214664c7400c1b6ec0221266d3c7ab71da6bdca2d71b2af",
+  "output_sha256": "afe756c3800eca858994c00876ed2369153544792b0d245df3e3952e5df25f43",
+  "generated_original": "C:/Users/88690/.codex/generated_images/01a182b9-5ac6-7b53-bc8d-24e4cb2ec7d8/exec-14346416-0123-4308-bfe1-277ba5ed240b.png",
+  "size": [
+    1536,
+    1024
+  ],
+  "format": "RGBA PNG",
+  "transparent_background": true,
+  "prompt": "Use case: precise-object-edit. Edit target: the supplied BLANCO / NAMI RS sprite atlas. Return ONLY the complete UPPER REAR VIEW white Japanese convertible, on a transparent background; no portraits. Same detailed crisp hand-painted HD-2D pixel style, same upper-left warm sunlight.\nCRITICAL GEOMETRY REPAIR: the input has an anatomy/perspective error — it shows TWO wheel surfaces on EACH side, like four tires, with a long thin white fender blade dividing each pair. This is WRONG. Replace that whole wheel-and-adjacent-fender arrangement with exactly TWO visible REAR TIRES TOTAL: one coherent continuous rear tire under the LEFT rear wheel arch, and one coherent continuous rear tire under the RIGHT rear wheel arch. Exactly TWO ground-contact patches. NO extra forward/front tires outside either fender. NO paired/double/tandem wheels. NO long narrow white fender blade splitting a tire. Redraw the adjacent white rear wheel arches naturally so each arch partially covers the upper portion of its ONE rear tire. We view the car directly from behind: both wheel planes parallel to the longitudinal axis, zero toe, minimal camber. The rear-facing tread is broad, vertically oriented with subtle tire grooves and rounded shoulders; virtually no visible metal spoke/rim face. Both tire centerlines upright and parallel. Two rear tires, not four. Front wheels must be completely hidden behind the body from this straight rear view.\nKeep the original overall car width, body height, axle track and bottom ground-contact height; the two rear tires should occupy the normal LEFT and RIGHT rear tire positions beneath the bumper, each of realistic single-tire width. Remove the erroneous outside duplicate wheels rather than retaining or disguising them as rubber strips. Draw a plausible sidewall/quarter-panel silhouette where the erroneous extra wheels were. Wheel-adjacent white fender geometry MAY and SHOULD change to fix the bad occlusion. Do not preserve the defective double-wheel silhouette.\nEverything ABOVE the wheel regions remains exactly consistent with the source: same turquoise-shirt short-haired man driving on the left, same long-black-haired woman in a white blouse at right, hair/pose/black seats, mirrors, rear deck, white bumper panel, paired round taillights, third brake lamp, plate, single right exhaust. Do not redesign the upper body or change identities. Keep the complete car visible, centered, straight and level, matching original rear framing and game-sprite proportions. No banking, no turning, no camber stance, no speed blur, no ground plane, no opaque background, no extra people/text/logos.\nInspect final geometry before finishing: COUNT exactly TWO visible rubber tire bodies and TWO road-contact patches; each tire is a continuous shape with no white vertical blade or duplicate circle dividing it. Repaint actual wheel perspective and overlapping white fenders, not a stretch/shear of the old wheels.",
+  "source_rear_crop_px": [
+    92,
+    50,
+    1065,
+    681
+  ],
+  "output_rear_crop_px": [
+    73,
+    65,
+    1390,
+    901
+  ],
+  "output_rear_crop_normalized": [
+    0.047526041666666664,
+    0.0634765625,
+    0.9049479166666666,
+    0.8798828125
+  ],
+  "purpose": "Coherent two-rear-tire geometry with corrected white wheel arches. Runtime replaces the complete lower bumper and both rear tires in one continuous patch below the original horizontal panel seam. Original crew, upper body/deck, taillights and plate remain authoritative.",
+  "validation": {
+    "visual_geometry": "Exactly two continuous visible rear tires, one on each side, and two ground-contact patches. No duplicate outside tires and no long white blade splitting each tire. Vertical rear-facing tread with very little visible rim.",
+    "preservation": "Offline integration comparison found 0 changed pixels in the crew/upper region, left and right taillight regions, and plate region. The complete lower bumper, necessary adjacent white fenders, exhaust/underbody and two rear tires are replaced together to avoid mismatched side-panel seams.",
+    "caveat": "The defective four-visible-surface silhouette is intentionally replaced. Corrected wheel centers are farther outward than the old inner-wheel surfaces; no pixel-identical wheel-center preservation is claimed. Overall game framing and bottom contact height use the registered rear target.",
+    "registration_diagnostic": "D:/godot專案/formosa-work/fixes-20261029/wheel-review-a/blanco-v3-local-patch-comparison.png",
+    "detail_diagnostic": "D:/godot專案/formosa-work/fixes-20261029/wheel-review-a/blanco-v3-wheel-fender-detail.png",
+    "alpha_zero_pixel_count": 589248,
+    "runtime_integration": "Active in render/wheel-art.js as WHEEL_ART.blanco. Root inspected the actual renderer ten-car sheet wheel-v3-review/all-ten-straight.png and confirmed two visible rear tires for NAMI RS.",
+    "offline_registration_checks": {
+      "regions": {
+        "crew_upper": 0,
+        "left_taillight": 0,
+        "right_taillight": 0,
+        "plate": 0
+      },
+      "contact_spans_rear_px": [
+        [
+          45,
+          169
+        ],
+        [
+          913,
+          1034
+        ]
+      ],
+      "full_registration_source_px": [
+        49,
+        104,
+        1420,
+        862
+      ],
+      "target": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "method": "Single coherent lower-bumper and two-wheel replacement joined on original horizontal panel seam below taillights; outer-fender seams follow similar shading. No per-wheel center crop stretching."
+    },
+    "actual_renderer_contact_sheet": "D:/godot專案/formosa-work/fixes-20261029/wheel-v3-review/all-ten-straight.png"
+  },
+  "integration_updated_utc": "2026-10-29T19:42:00.733Z",
+  "runtime_patch_descriptor": {
+    "src": "../assets/pixel/wheels-blanco-v3.png",
+    "patches": [
+      {
+        "polygon": [
+          [
+            0,
+            0.59324523
+          ],
+          [
+            0.00751174,
+            0.61674009
+          ],
+          [
+            0.02629108,
+            0.6123348
+          ],
+          [
+            0.03380282,
+            0.59030837
+          ],
+          [
+            0.04131455,
+            0.60352423
+          ],
+          [
+            0.04882629,
+            0.5814978
+          ],
+          [
+            0.05164319,
+            0.5814978
+          ],
+          [
+            0.06948357,
+            0.54919236
+          ],
+          [
+            0.08450704,
+            0.54331865
+          ],
+          [
+            0.09107981,
+            0.56240822
+          ],
+          [
+            0.10234742,
+            0.55947137
+          ],
+          [
+            0.10704225,
+            0.5712188
+          ],
+          [
+            0.12300469,
+            0.5712188
+          ],
+          [
+            0.14366197,
+            0.62995595
+          ],
+          [
+            0.89201878,
+            0.62995595
+          ],
+          [
+            0.90234742,
+            0.58002937
+          ],
+          [
+            0.90892019,
+            0.57709251
+          ],
+          [
+            0.91830986,
+            0.54772394
+          ],
+          [
+            0.92112676,
+            0.54772394
+          ],
+          [
+            0.9258216,
+            0.53450808
+          ],
+          [
+            0.93239437,
+            0.53157122
+          ],
+          [
+            0.94741784,
+            0.5051395
+          ],
+          [
+            0.95868545,
+            0.50073421
+          ],
+          [
+            0.98028169,
+            0.55066079
+          ],
+          [
+            0.99248826,
+            0.5154185
+          ],
+          [
+            0.99906103,
+            0.51395007
+          ],
+          [
+            1,
+            0.51395007
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        "source": [
+          0.031901041666666664,
+          0.1015625,
+          0.9244791666666666,
+          0.841796875
+        ],
+        "target": [
+          0,
+          0,
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "runtime_descriptor_source": "render/wheel-art.js: WHEEL_ART.blanco",
+  "final_source_registration_px": [
+    49,
+    104,
+    1420,
+    862
+  ],
+  "final_target_registration": [
+    0,
+    0,
+    1,
+    1
+  ],
+  "patch_registration_note": "One full rear registration is clipped by a continuous lower-body destination polygon. Its central top boundary follows the original horizontal panel line below the taillights; outer fender boundaries follow similar painted shading. Complete tread and shoulder detail are retained without separate narrow tire strips. The alpha-bounds output crop remains generation metadata and is not the final runtime registration crop.",
+  "rejected_predecessor": {
+    "asset": "wheels-blanco-v2.png",
+    "reason": "The tire-only replacement retained the erroneous two wheel surfaces per side. It is not an accepted runtime source.",
+    "archived_outside_repository": "D:/godot專案/formosa-work/fixes-20261029/wheel-review-a/rejected-assets/wheels-blanco-v2.png",
+    "repository_status": "Removed from the repository asset set; archived for provenance only."
+  }
+}

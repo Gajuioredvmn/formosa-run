@@ -1,0 +1,544 @@
+{
+  "asset": "assets/pixel/wheels-arancia-v2.png",
+  "created_utc": "2026-10-29T15:27:33.621464+00:00",
+  "generator": "OpenAI built-in image_gen",
+  "mode": "edit",
+  "use_case": "precise-object-edit",
+  "source_asset": "assets/pixel/vehicle-arancia-v1.png",
+  "source_sha256": "0cf2b33979e84193529826439198301dc58ce28c3468fe18ff4df8bd0bd0af14",
+  "output_sha256": "c924ba6ee45c9cbec19e9968f2e0b1b0d1b143d48e38c3f8b60e27c19e1a0020",
+  "generated_original": "C:/Users/88690/.codex/generated_images/01a182ba-724c-7c20-a944-06a323e2f682/exec-26c520a5-7e5e-4ba0-959b-767191bc4043.png",
+  "size": [
+    1536,
+    1024
+  ],
+  "format": "RGBA PNG",
+  "transparent_background_requested": true,
+  "source_rear_crop_px": [
+    95,
+    36,
+    1064,
+    686
+  ],
+  "validation": {
+    "alpha_min": 0,
+    "alpha_max": 254,
+    "alpha_zero_pixel_count": 570564,
+    "alpha_at_least_96_pixel_count": 959790,
+    "perspective": "Generated rear-facing rubber grooves are vertical; large outward-facing wire spoke disks are removed.",
+    "scope": "Only manually traced exposed tyre polygons are integration candidates. The full generated vehicle is not a replacement.",
+    "registration": "Complete exposed-rubber source polygons preserve top shoulder shading, vertical tread grooves and the rounded contact area. Each generated scanline span is intended to map to its matching original target span. The original target polygons and target rectangles remain byte-equivalent as JSON values.",
+    "alpha_note": "Full source contours are inset from low-alpha outer fringe and orange fender edges; selected source alpha is at least 248 on the left and 250 on the right, above the runtime 96 cutoff. Colored background pixels are excluded.",
+    "runtime_integration": "Full source polygons prepared for parent row-span mapping; not browser-tested by this task. No source PNG regenerated or edited.",
+    "review_directory": "D:/godot嚙瞎嚙踝蕭/formosa-work/fixes-20261029/wheel-review-c",
+    "config": "D:/godot嚙瞎嚙踝蕭/formosa-work/fixes-20261029/wheel-review-c/arancia-config.json",
+    "source_geometry_review": "D:/godot專案/formosa-work/fixes-20261029/wheel-review-c/full-source-left-trace.png and full-source-right-trace.png",
+    "target_geometry_sha256": "117abae0ec485be71bb53e199726d3958de8401ef967200be6127720335b33a4"
+  },
+  "prompt": "Use case: precise-object-edit. Input image is the edit target ARANCIA orange classic roadster atlas. Output only the COMPLETE UPPER REAR VIEW on a truly transparent background, with no lower portrait panels. Preserve the original rear camera height, car size/proportions, tire width, wheel track and contact positions. Preserve the woman driver with auburn ponytail, white shirt and red scarf seated on the left, and the corgi dog passenger seated on the right. Keep all orange fenders, cream central stripe, chrome bumper, rear lamps, fuel cap, mirrors, seats, underbody and twin exhaust unchanged. Preserve the crisp detailed hand-painted HD-2D pixel art and original light direction.\nChange ONLY the two exposed REAR WHEELS. Repaint their perspective for perfectly straight driving, zero rear-wheel steering/toe, near-zero camber, upright parallel vertical tire centerlines and level contact patches. Viewed directly from behind, both tires show broad REAR-FACING RUBBER TREAD with vertical longitudinal grooves and crisp tread blocks. The original wrongly shows large bright outward-facing circular wire-spoke rim faces on both sides: REMOVE those decorative circular spoke faces. Show almost no metal wheel face, at most a very narrow rim-edge sliver. Do not create a steering pose or splay the tires like / \\. Do not just shear or rotate old wheels: redraw both dark rear tire tread surfaces facing the camera. Both tires must have identical vertical alignment, retain original tire width and exact original road contact position, without narrowing or widening track or changing ride height.\nAbsolutely preserve the orange painted fenders and all metal parts overlapping the tires. Do not redraw bodies, people or dog; no extra people, no ground, no text, no new objects, no motion, no body lean. This is a repair source: only small exposed tire patches will be used, not the full generated vehicle. Keep transparent background and original transparent cabin gaps.",
+  "geometry_revision_utc": "2026-10-29T16:36:45.991521+00:00",
+  "superseded_narrow_sources": [
+    {
+      "side": "left",
+      "source_px": [
+        72,
+        765,
+        90,
+        203
+      ],
+      "alpha_min": 251,
+      "alpha_max": 253
+    },
+    {
+      "side": "right",
+      "source_px": [
+        1385,
+        765,
+        90,
+        203
+      ],
+      "alpha_min": 229,
+      "alpha_max": 253
+    }
+  ],
+  "full_tread_sources": [
+    {
+      "side": "left",
+      "source_polygon_px": [
+        [
+          89,
+          548
+        ],
+        [
+          98,
+          551
+        ],
+        [
+          103,
+          563
+        ],
+        [
+          110,
+          590
+        ],
+        [
+          117,
+          625
+        ],
+        [
+          127,
+          668
+        ],
+        [
+          139,
+          712
+        ],
+        [
+          157,
+          756
+        ],
+        [
+          181,
+          798
+        ],
+        [
+          213,
+          831
+        ],
+        [
+          246,
+          851
+        ],
+        [
+          254,
+          858
+        ],
+        [
+          254,
+          904
+        ],
+        [
+          249,
+          947
+        ],
+        [
+          241,
+          964
+        ],
+        [
+          231,
+          973
+        ],
+        [
+          73,
+          973
+        ],
+        [
+          65,
+          966
+        ],
+        [
+          60,
+          951
+        ],
+        [
+          58,
+          932
+        ],
+        [
+          60,
+          884
+        ],
+        [
+          63,
+          832
+        ],
+        [
+          65,
+          770
+        ],
+        [
+          67,
+          710
+        ],
+        [
+          68,
+          670
+        ],
+        [
+          68,
+          620
+        ],
+        [
+          72,
+          582
+        ],
+        [
+          79,
+          557
+        ]
+      ],
+      "source_polygon_normalized": [
+        [
+          0.057942708,
+          0.53515625
+        ],
+        [
+          0.063802083,
+          0.538085938
+        ],
+        [
+          0.067057292,
+          0.549804688
+        ],
+        [
+          0.071614583,
+          0.576171875
+        ],
+        [
+          0.076171875,
+          0.610351562
+        ],
+        [
+          0.082682292,
+          0.65234375
+        ],
+        [
+          0.090494792,
+          0.6953125
+        ],
+        [
+          0.102213542,
+          0.73828125
+        ],
+        [
+          0.117838542,
+          0.779296875
+        ],
+        [
+          0.138671875,
+          0.811523438
+        ],
+        [
+          0.16015625,
+          0.831054688
+        ],
+        [
+          0.165364583,
+          0.837890625
+        ],
+        [
+          0.165364583,
+          0.8828125
+        ],
+        [
+          0.162109375,
+          0.924804688
+        ],
+        [
+          0.156901042,
+          0.94140625
+        ],
+        [
+          0.150390625,
+          0.950195312
+        ],
+        [
+          0.047526042,
+          0.950195312
+        ],
+        [
+          0.042317708,
+          0.943359375
+        ],
+        [
+          0.0390625,
+          0.928710938
+        ],
+        [
+          0.037760417,
+          0.91015625
+        ],
+        [
+          0.0390625,
+          0.86328125
+        ],
+        [
+          0.041015625,
+          0.8125
+        ],
+        [
+          0.042317708,
+          0.751953125
+        ],
+        [
+          0.043619792,
+          0.693359375
+        ],
+        [
+          0.044270833,
+          0.654296875
+        ],
+        [
+          0.044270833,
+          0.60546875
+        ],
+        [
+          0.046875,
+          0.568359375
+        ],
+        [
+          0.051432292,
+          0.543945312
+        ]
+      ],
+      "source_bounding_rect_px": [
+        58,
+        548,
+        196,
+        425
+      ],
+      "alpha_min_inside_polygon": 248,
+      "selected_pixels": 47268
+    },
+    {
+      "side": "right",
+      "source_polygon_px": [
+        [
+          1457,
+          557
+        ],
+        [
+          1464,
+          582
+        ],
+        [
+          1468,
+          620
+        ],
+        [
+          1468,
+          670
+        ],
+        [
+          1469,
+          710
+        ],
+        [
+          1471,
+          770
+        ],
+        [
+          1473,
+          832
+        ],
+        [
+          1476,
+          884
+        ],
+        [
+          1478,
+          932
+        ],
+        [
+          1476,
+          951
+        ],
+        [
+          1471,
+          966
+        ],
+        [
+          1463,
+          973
+        ],
+        [
+          1305,
+          973
+        ],
+        [
+          1295,
+          964
+        ],
+        [
+          1287,
+          947
+        ],
+        [
+          1282,
+          904
+        ],
+        [
+          1282,
+          858
+        ],
+        [
+          1290,
+          851
+        ],
+        [
+          1323,
+          831
+        ],
+        [
+          1355,
+          798
+        ],
+        [
+          1379,
+          756
+        ],
+        [
+          1397,
+          712
+        ],
+        [
+          1409,
+          668
+        ],
+        [
+          1419,
+          625
+        ],
+        [
+          1426,
+          590
+        ],
+        [
+          1433,
+          563
+        ],
+        [
+          1438,
+          551
+        ],
+        [
+          1447,
+          548
+        ]
+      ],
+      "source_polygon_normalized": [
+        [
+          0.948567708,
+          0.543945312
+        ],
+        [
+          0.953125,
+          0.568359375
+        ],
+        [
+          0.955729167,
+          0.60546875
+        ],
+        [
+          0.955729167,
+          0.654296875
+        ],
+        [
+          0.956380208,
+          0.693359375
+        ],
+        [
+          0.957682292,
+          0.751953125
+        ],
+        [
+          0.958984375,
+          0.8125
+        ],
+        [
+          0.9609375,
+          0.86328125
+        ],
+        [
+          0.962239583,
+          0.91015625
+        ],
+        [
+          0.9609375,
+          0.928710938
+        ],
+        [
+          0.957682292,
+          0.943359375
+        ],
+        [
+          0.952473958,
+          0.950195312
+        ],
+        [
+          0.849609375,
+          0.950195312
+        ],
+        [
+          0.843098958,
+          0.94140625
+        ],
+        [
+          0.837890625,
+          0.924804688
+        ],
+        [
+          0.834635417,
+          0.8828125
+        ],
+        [
+          0.834635417,
+          0.837890625
+        ],
+        [
+          0.83984375,
+          0.831054688
+        ],
+        [
+          0.861328125,
+          0.811523438
+        ],
+        [
+          0.882161458,
+          0.779296875
+        ],
+        [
+          0.897786458,
+          0.73828125
+        ],
+        [
+          0.909505208,
+          0.6953125
+        ],
+        [
+          0.917317708,
+          0.65234375
+        ],
+        [
+          0.923828125,
+          0.610351562
+        ],
+        [
+          0.928385417,
+          0.576171875
+        ],
+        [
+          0.932942708,
+          0.549804688
+        ],
+        [
+          0.936197917,
+          0.538085938
+        ],
+        [
+          0.942057292,
+          0.53515625
+        ]
+      ],
+      "source_bounding_rect_px": [
+        1282,
+        548,
+        196,
+        425
+      ],
+      "alpha_min_inside_polygon": 250,
+      "selected_pixels": 47268
+    }
+  ]
+}
