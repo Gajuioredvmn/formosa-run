@@ -1,0 +1,90 @@
+{
+  "asset": "assets/pixel/crew-bamboo-base-v2.png",
+  "created_utc": "2026-10-29T09:13:39Z",
+  "generator": "OpenAI built-in image_gen",
+  "mode": "edit",
+  "use_case": "precise-object-edit",
+  "source_asset": "assets/pixel/vehicle-bamboo-v1.png",
+  "source_sha256": "9374aba5767d5975f9d0967b86132331f70af6b51296340766fba954350c9214",
+  "output_sha256": "224deff389a6e6c7d1980ab75ca2029b56fb544eb8b177279174a0221c70c4d2",
+  "generated_original": "C:/Users/88690/.codex/generated_images/01a182b9-5ac6-7b53-bc8d-24e4cb2ec7d8/exec-9f9de931-beef-45fb-95dc-cee938e74bba.png",
+  "size": [
+    1536,
+    1024
+  ],
+  "format": "RGBA PNG",
+  "transparent_background": true,
+  "intended_use": "Anatomical rear-view underlayer only: restore skull/nape/shoulders revealed when existing free hair and scarf layers move. Existing car body/foreground should remain the runtime authoritative art.",
+  "prompt": "Use case: precise-object-edit.\nAsset type: transparent clean rear-view crew/car base plate for an existing HD-2D pixel-art racing game.\nInput image 1 is the edit target. It is a sprite atlas; use ONLY the upper rear-view car and its two seated adult women. Do not include the two lower portrait panels.\nPrimary request: reconstruct the anatomical base underneath the freely moving hair and scarf, while matching the upper original rear-view sprite exactly in camera, perspective, proportions, passenger positions and crisp detailed hand-painted pixel-art style.\nLeft driver: same adult woman, same chestnut hair, same warm skin, same turquoise shirt. Remove the long FREE ponytail hanging down her back and other loose flying locks. Retain a compact solid scalp/hair cap, the short rooted ponytail tie at the crown, ears and the original head turn. Carefully DRAW the previously hidden complete back of the skull, warm skin nape, side of neck, turquoise collar, upper back and both shoulders. There must be a continuous anatomically natural connection from head to collar; no transparent holes where head/neck/upper back should be.\nRight passenger: same adult woman, same chestnut hair and cream blouse, same pose and exact head center. Remove the long flowing hair mass extending rightward and both free pink scarf tails. Retain a compact rooted scalp/hair cap down to the nape, a short pink scarf loop around her neck, and reconstruct the neck plus complete cream-blouse shoulders/upper back previously hidden by the hair. The metal roll bar in front stays rigid and unchanged.\nComposition: one complete rear-view green classic roadster, both wheels fully visible, same proportions and framing as the source's upper rear sprite. No portraits or extra panels. Transparent outside the car. Keep actual see-through windshield background gaps transparent; do NOT fill all empty background. The space to the LEFT of the driver's head and the space BETWEEN the two heads must remain a reasonable transparent windshield opening.\nInvariants: retain the source green car body, rear wheel size and position, chrome bumpers, taillights, mirror positions, dashboard, seats, metal roll bar, hands and clothing design. Exactly two adults. Preserve warm upper-left highlights and crisp pixel detailing; do not turn this into photorealistic 3D.\nNo long free hair, no free scarf tails, no extra people, no labels, no watermark, no opaque background. This is a functional anatomy underlayer; preserve the source identities and silhouettes rather than redesigning the characters.",
+  "validation": {
+    "inspected_against": "assets/pixel/vehicle-bamboo-v1.png upper rear view and crew-attachments/bamboo-brake-left.png",
+    "free_material_removed": [
+      "driver hanging ponytail",
+      "passenger flowing long hair",
+      "two free pink scarf tails"
+    ],
+    "anatomy_present": [
+      "driver compact rooted hair cap and tie",
+      "driver neck and turquoise collar/shoulders",
+      "passenger compact rooted hair cap",
+      "passenger neck, pink neck loop, cream blouse shoulders"
+    ],
+    "transparency_probes": [
+      {
+        "label": "between heads",
+        "pixel": [
+          770,
+          300
+        ],
+        "alpha": 0
+      },
+      {
+        "label": "left of driver's head",
+        "pixel": [
+          377,
+          301
+        ],
+        "alpha": 5
+      }
+    ],
+    "opaque_anatomy_probes": [
+      {
+        "label": "driver nape",
+        "pixel": [
+          547,
+          307
+        ],
+        "alpha": 253
+      },
+      {
+        "label": "driver upper back",
+        "pixel": [
+          529,
+          375
+        ],
+        "alpha": 253
+      },
+      {
+        "label": "passenger nape",
+        "pixel": [
+          1025,
+          319
+        ],
+        "alpha": 253
+      },
+      {
+        "label": "passenger upper back",
+        "pixel": [
+          930,
+          386
+        ],
+        "alpha": 253
+      }
+    ],
+    "alpha_zero_pixel_count": 630775,
+    "alpha_at_least_96_pixel_count": 896005,
+    "diagnostic": "D:/godot專案/formosa-work/fixes-20261029/crew-fixed-a/bamboo-base-checker.png",
+    "runtime_integration": "Not connected by this asset-generation task; requires registration to existing rear crop and renderer verification.",
+    "limitation": "Generated rear framing closely follows the source, but is not a pixel-identical redraw; only the anatomical underlayer should be sampled, not used to replace the validated original whole car."
+  }
+}

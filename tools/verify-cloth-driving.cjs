@@ -4,6 +4,8 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
 const {createServer}=require('./serve.cjs');
 let chromium;try{({chromium}=require('playwright'));}catch{({chromium}=require(path.join(process.env.USERPROFILE,'.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')));}
 const output=path.resolve(process.argv[2]||'cloth-driving'),root=path.resolve(__dirname,'..');
+const carIndices=process.argv[3]?process.argv[3].split(',').map(Number):[0,4,9];
+if(!carIndices.length||carIndices.some(i=>!Number.isInteger(i)||i<0||i>9))throw Error('Car indices must be a comma-separated subset of 0..9');
 fs.mkdirSync(output,{recursive:true});
 (async()=>{
  const server=createServer(root);await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -13,7 +15,7 @@ fs.mkdirSync(output,{recursive:true});
   const page=await browser.newPage({viewport:{width:960,height:540}});page.on('pageerror',e=>report.errors.push(e.message));
   await page.goto(`http://127.0.0.1:${server.address().port}/`,{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>window.__kr?.G.state==='race'&&window.FORMOSA_PIXEL_CAR?.state.complete,null,{timeout:90000});
-  for(const car of [0,4,9]){
+  for(const car of carIndices){
    const id=await page.evaluate(car=>{const k=__kr;k.halt(true);k.G.mode='play';k.G.noIgnite=true;k.race(car,true);k.run();k.show(null);k.bot(false);k.go(0,100,0);k.PC.v=k.PC.spec.top/3.6*.85;k.PC.gear=k.PC.spec.gears;k.CTL.keys={};k.CTL.touches.clear();k.CTL.mode='keys';k.TRAFFIC.list.length=0;k.step(0);return k.PC.spec.id;},car);
    const folder=path.join(output,id);fs.mkdirSync(folder,{recursive:true});let samples=[];
    for(let batch=0;batch<8;batch++){

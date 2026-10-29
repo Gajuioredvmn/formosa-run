@@ -7,6 +7,10 @@ const crypto = require('node:crypto');
 const os = require('node:os');
 const { packagePages } = require('../tools/package-pages.cjs');
 const ROOT = path.resolve(__dirname, '..');
+const manifest = fs.readFileSync(path.join(__dirname, 'AndroidManifest.xml'), 'utf8');
+const version = manifest.match(/android:versionName="([0-9]+\.[0-9]+\.[0-9]+)"/)?.[1];
+if (!version) throw Error('Manifest must declare a numeric major.minor.patch versionName');
+const apkName = 'FormosaRun-' + version + '.apk';
 const options = {};
 for (let i = 2; i < process.argv.length; i += 2) {
   if (!process.argv[i].startsWith('--') || !process.argv[i + 1]) throw Error('Use --name value arguments');
@@ -89,7 +93,7 @@ if (!fs.existsSync(key)) {
   run(bin('keytool'), ['-genkeypair', '-keystore', key, '-storepass:env', 'FORMOSA_APK_STORE_PASS', '-keypass:env', 'FORMOSA_APK_STORE_PASS',
     '-alias', 'formosa-run', '-keyalg', 'RSA', '-keysize', '3072', '-validity', '10000', '-dname', 'CN=Formosa Run Local Builds', '-noprompt']);
 } else env.FORMOSA_APK_STORE_PASS = fs.readFileSync(passwordFile, 'utf8').trim();
-const apk = path.join(out, 'FormosaRun-0.2.1.apk');
+const apk = path.join(out, apkName);
 const apksigner = ['-jar', path.join(bt, 'lib', 'apksigner.jar')];
 run(bin('java'), [...apksigner, 'sign', '--ks', key, '--ks-key-alias', 'formosa-run', '--ks-pass', 'env:FORMOSA_APK_STORE_PASS',
   '--key-pass', 'env:FORMOSA_APK_STORE_PASS', '--out', apk, path.join(out, 'aligned.apk')]);
@@ -100,7 +104,7 @@ run(path.join(bt, 'zipalign' + ext), ['-c', '4', apk]);
 const badging = run(path.join(bt, 'aapt' + ext), ['dump', 'badging', apk]);
 fs.writeFileSync(path.join(out, 'apk-badging.txt'), badging);
 const report = {
-  createdAt: new Date().toISOString(), apk: path.join(destination, path.basename(apk)), package: 'tw.formosarun.game', version: '0.2.1',
+  createdAt: new Date().toISOString(), apk: path.join(destination, path.basename(apk)), package: 'tw.formosarun.game', version,
   bytes: fs.statSync(apk).size, sha256: sha(apk), sourceCommit: cp.execFileSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim(),
   sourceDirty: cp.execFileSync('git', ['status', '--porcelain'], { cwd: ROOT, encoding: 'utf8' }).trim().length > 0,
   sourceIndexSha256: sha(path.join(ROOT, 'index.html')), packagedIndexSha256: sha(index),
@@ -114,7 +118,7 @@ const report = {
 fs.writeFileSync(path.join(out, 'build-report.json'), JSON.stringify(report, null, 2));
 run(python, [path.join(__dirname, 'verify.py'), apk, path.join(out, 'build-report.json')]);
 fs.mkdirSync(destination, { recursive: true });
-for (const name of ['FormosaRun-0.2.1.apk', 'build-report.json', 'apk-integrity-report.json', 'signing-verification.txt', 'apk-badging.txt'])
+for (const name of [apkName, 'build-report.json', 'apk-integrity-report.json', 'signing-verification.txt', 'apk-badging.txt'])
   fs.copyFileSync(path.join(out, name), path.join(destination, name));
 // Keep the exact packaged web directory for browser/asset verification.
 fs.cpSync(www, path.join(destination, 'www'), { recursive: true });

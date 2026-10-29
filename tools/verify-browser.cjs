@@ -38,10 +38,10 @@ const check = (name, condition) => { assert(condition, name); report.assertions.
     await page.locator('[data-act="go"]:visible').click();
     check('Actual title → car selection → setup → start opens ignition', await page.evaluate(() => __kr.RACE.state === 'ignition' && __kr.IGN.on && __kr.IGN.t === 0));
     await page.evaluate(() => { __kr.sim(1.6); __kr.step(0); });
-    check('The ignition shows the hand, turned key, lamps and starter before catching', await page.evaluate(() => __kr.IGN.hand === 1 && __kr.IGN.keyA > 1 && __kr.IGN.acc && __kr.IGN.crank && !__kr.IGN.caught));
+    check('The ignition keeps the selected car/cast while the key, lamps and starter animate', await page.evaluate(() => __kr.IGN.hand === 1 && __kr.IGN.keyA > 1 && __kr.IGN.acc && __kr.IGN.crank && !__kr.IGN.caught && __kr.IGN.layout.carId === __kr.PC.spec.id && __kr.IGN.layout.portraits.every(p=>p.ready)));
     await page.screenshot({ path: path.join(output, 'ignition-starter.png') });
     await page.evaluate(() => { __kr.sim(.8); __kr.step(0); });
-    check('The engine catches before the dash drops', await page.evaluate(() => __kr.IGN.caught && __kr.IGN.on && !__kr.IGN.crank));
+    check('The engine catches before the ignition cards fade out', await page.evaluate(() => __kr.IGN.caught && __kr.IGN.on && !__kr.IGN.crank));
     await page.evaluate(() => { __kr.sim(1); __kr.step(0); });
     check('Ignition finishes and enters the original start-light countdown', await page.evaluate(() => !__kr.IGN.on && __kr.RACE.state === 'countdown' && __kr.RACE.countdown > 3.9));
     await page.screenshot({ path: path.join(output, 'start-countdown.png') });

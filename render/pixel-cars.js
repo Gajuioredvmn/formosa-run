@@ -2,20 +2,33 @@
 // suspension observer, without loading Three.js or changing engine movement.
 import { advanceVehicleVisualPose } from './cars.js';
 import { VEHICLE_ART } from './vehicle-art-manifest.js';
-import { vehiclePresentation, crewAction, warpCrew, drawCrewGestures, clothMotion, warpCloth } from './vehicle-motion.js';
+import { CREW_MASKS_A } from './crew-masks-a.js';
+import { CREW_MASKS_B } from './crew-masks-b.js';
+import { separateCrew, restoreCrewBackplate, materialMesh, polygons } from './crew-layers.js';
+import { CREW_BACKPLATES } from './crew-backplates.js';
+import { vehiclePresentation, crewAction, warpCrew, drawCrewGestures, clothMotion, warpCloth, materialAttachment, clothBendGeometry } from './vehicle-motion.js';
 
 const clamp = (x,a,b) => Math.max(a,Math.min(b,x));
 const smooth = (a,b,x) => { const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
 const state = { ready:false, complete:false, active:false, failed:false, source:null, pose:null, last:null, assets:{} };
 const textures = new Map();
 const images = new Map();
+const backplates = new Map();
+const crewMasks={...CREW_MASKS_A,...CREW_MASKS_B},layerCache=new WeakMap();
 // Two physical samples per classic logical pixel preserve camera, vehicle size
 // and contacts while retaining the linework in the individual source artwork.
 const detailScale=2;
 const loaded = Promise.all(Object.entries(VEHICLE_ART).map(([id,art])=>new Promise(resolve=>{
   if(!art.src||!art.rear){state.assets[id]='missing';resolve(false);return;}
   const image=new Image();state.assets[id]='loading';
-  image.onload=()=>{images.set(id,image);state.assets[id]='ready';state.ready=true;resolve(true);};
+  image.onload=()=>{
+    const finish=()=>{images.set(id,image);state.assets[id]='ready';state.ready=true;resolve(true);};
+    if(!CREW_BACKPLATES[id]){finish();return;}
+    const base=new Image();
+    base.onload=()=>{backplates.set(id,base);finish();};
+    base.onerror=()=>{state.assets[id]='failed';state.failed=true;resolve(false);};
+    base.src=new URL(CREW_BACKPLATES[id].src,import.meta.url).href;
+  };
   image.onerror=()=>{state.assets[id]='failed';state.failed=true;resolve(false);};
   image.src=new URL(art.src,import.meta.url).href;
 }))).then(results=>{state.complete=results.length>0&&results.every(Boolean);return state.ready;});
@@ -42,6 +55,11 @@ function texture(id,width,brake) {
     g.fillStyle=art.brakeColor||'#ffbe36';
     for(const [x,y,w,h] of art.lamps||[])g.fillRect(Math.round(x*width),Math.round(y*height),Math.max(1,Math.round(w*width)),Math.max(1,Math.round(h*height)));
   }
+  // Match the mesh's pixel-art coverage in the still/menu path as well, so
+  // entering wind animation cannot switch soft fringes on or off.
+  const pixels=g.getImageData(0,0,c.width,c.height);
+  for(let i=3;i<pixels.data.length;i+=4)pixels.data[i]=pixels.data[i]<96?0:255;
+  g.putImageData(pixels,0,0);
   textures.set(key,c);return c;
 }
 
@@ -65,27 +83,33 @@ function point(u,v,w,h,ppm,pose,out) {
 // Rasterise the small sprite mesh at two samples per logical pixel. Native
 // Canvas affine clips anti-alias every internal edge and leave transparent
 // stripes; nearest-neighbour barycentric samples have no such seams.
-// Spend extra samples on the small heads/cloth above the cockpit. One shared
-// rectangular grid keeps adjoining edges identical, so there are no cracks.
-const vertices=[],triangles=[];let meshSeam=[];
-// Fine horizontal segments only around the cast: short hair previously had
-// just three columns and its silhouette looked rigid despite moving values.
-// Both bands meet at v=.4, below every material mask. Fine edge points are
-// welded to the coarse edge after projection, including suspension compression.
-for(const band of [{columns:48,rows:16,from:0,to:.4},{columns:24,rows:12,from:.4,to:1}]){
- const start=vertices.length,{columns,rows,from,to}=band;
- for(let j=0;j<=rows;j++)for(let i=0;i<=columns;i++)vertices.push({u:i/columns,v:from+(to-from)*j/rows,p:[0,0]});
- if(to===.4)meshSeam=vertices.slice(start+rows*(columns+1),start+(rows+1)*(columns+1));
- for(let j=0;j<rows;j++)for(let i=0;i<columns;i++){
-  const a=vertices[start+j*(columns+1)+i],b=vertices[start+j*(columns+1)+i+1],c=vertices[start+(j+1)*(columns+1)+i],d=vertices[start+(j+1)*(columns+1)+i+1];
-  triangles.push([a,b,c],[b,d,c]);
+function materialLayers(img,art,id){
+ if(layerCache.has(img))return layerCache.get(img);
+ const source=img.getContext('2d').getImageData(0,0,img.width,img.height).data;
+ const masks=crewMasks[id];
+ if(!masks)throw new Error('Missing crew material masks: '+id);
+ const layers=separateCrew(source,img.width,img.height,masks,art.cloth);
+ const backplate=backplates.get(id),repair=CREW_BACKPLATES[id];
+ if(backplate&&repair){
+   const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;
+   const g=canvas.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(backplate,...sourceRect(backplate,repair.crop||[0,0,1,1]),0,0,img.width,img.height);
+   restoreCrewBackplate(layers,g.getImageData(0,0,img.width,img.height).data,img.width,img.height,repair.patches,art.cloth);
  }
+ const body=materialMesh(layers.body,img.width,img.height,24,24);
+ const crew=layers.crew.map(p=>materialMesh(p,img.width,img.height,48,40));
+ const cloth=layers.cloth.map(p=>materialMesh(p,img.width,img.height,64,48));
+ const fixed=(masks.fixed||[]).map(polygons),w=img.width/detailScale,h=img.height/detailScale;
+ // Attachment distances are source geometry: compute once, not per frame.
+ cloth.forEach((layer,i)=>{layer.bend=clothBendGeometry(art.cloth[i],w,h,fixed[i]||[]);for(const v of layer.vertices)v.attachment=materialAttachment(v.u*w,v.v*h,w,h,fixed[i]||[]);});
+ const foreground=materialMesh(layers.foreground,img.width,img.height,24,24);
+ const result={body,crew,cloth,foreground,counts:layers.counts,labels:layers.labels};
+ layerCache.set(img,result);return result;
 }
 // A larger transparent workspace prevents tall crew and the lifted inner wheel
 // from clipping at full bank. It does not change sprite width or camera scale.
 const targetW=320*detailScale,targetH=224*detailScale,anchorX=160*detailScale,anchorY=200*detailScale;
 const target=document.createElement('canvas');target.width=targetW;target.height=targetH;
-const targetContext=target.getContext('2d'),targetPixels=targetContext.createImageData(targetW,targetH),sourcePixels=new WeakMap();
+const targetContext=target.getContext('2d'),targetPixels=targetContext.createImageData(targetW,targetH);
 function rasterTriangle(a,b,c,source,w,h){
   const ax=a.p[0]*detailScale+anchorX,ay=a.p[1]*detailScale+anchorY,bx=b.p[0]*detailScale+anchorX,by=b.p[1]*detailScale+anchorY,cx=c.p[0]*detailScale+anchorX,cy=c.p[1]*detailScale+anchorY;
   const det=(by-cy)*(ax-cx)+(cx-bx)*(ay-cy);if(Math.abs(det)<.00001)return;
@@ -137,6 +161,7 @@ export function drawPortrait(g,{spec,index,x=0,y=0,width=g.canvas.width,height=g
 export function draw(g,options) {
   const {pc,spr,x,ground,lift=0,spinning=false,spinAngle=0,braking=false,cheer=null,crew=[],crewInertia={}}=options;
   state.active=false;
+  state.materialGeometry=null;
   if(!has(pc.spec)){state.last={fallback:true,reason:'original-car',id:pc.spec?.id};return false;}
   // Switching cars is presentation state only; the original physics spec and
   // race position remain owned by the classic engine.
@@ -154,18 +179,31 @@ export function draw(g,options) {
   if(spinning&&!pc.crash){g.translate(0,-24);g.rotate(spinAngle);g.drawImage(img,-w/2,-h+24,w,h);}
   else if(!crewMoves&&Math.abs(pose.bank)<.0001&&pose.bend<.0001&&Math.abs(pose.yaw)<.0001&&Math.abs(pose.compression)<.0001){g.drawImage(img,-w/2,-h,w,h);}
   else {
-    let source=sourcePixels.get(img);if(!source){source=img.getContext('2d').getImageData(0,0,img.width,img.height).data;sourcePixels.set(img,source);}
+    const layers=materialLayers(img,art,pc.spec.id);
+    state.materialGeometry={body:layers.body.vertices,foreground:layers.foreground.vertices};
     targetPixels.data.fill(0);
-    for(const v of vertices){const cloth=warpCloth(v.u*w,v.v*h,w,h,art,state.cloth),p=warpCrew(cloth[0],cloth[1],w,h,action,art);point(p[0],p[1],w,h,ppm,pose,v.p);}
-    for(let i=1;i<meshSeam.length-1;i+=2){const p=meshSeam[i].p,a=meshSeam[i-1].p,b=meshSeam[i+1].p;p[0]=(a[0]+b[0])*.5;p[1]=(a[1]+b[1])*.5;}
-    for(const [a,b,c] of triangles)rasterTriangle(a,b,c,source,img.width,img.height);
+    const paint=(layer,person=false,part=-1)=>{
+      for(const v of layer.vertices){
+        let p=[v.u*w,v.v*h];
+        if(part>=0)p=warpCloth(p[0],p[1],w,h,art,state.cloth,part,v.attachment,layer.bend);
+        if(person){const head=warpCrew(v.u*w,v.v*h,w,h,action,art);p[0]+=head[0]-v.u*w;p[1]+=head[1]-v.v*h;}
+        point(p[0],p[1],w,h,ppm,pose,v.p);
+      }
+      for(const [a,b,c] of layer.triangles)rasterTriangle(a,b,c,layer.source,img.width,img.height);
+    };
+    // Only the material's source pixels enter its moving mesh. The rigid
+    // vehicle never receives head or cloth deformation, even at mask edges.
+    paint(layers.body);
+    for(const layer of layers.crew)paint(layer,true);
+    layers.cloth.forEach((layer,i)=>paint(layer,true,i));
+    paint(layers.foreground);
     targetContext.putImageData(targetPixels,0,0);g.drawImage(target,-anchorX/detailScale,-anchorY/detailScale,targetW/detailScale,targetH/detailScale);
   }
   if(!pc.crash&&!spinning)gestures=drawCrewGestures(g,{spec:pc.spec,crew,art,w,h,action,project});
   g.restore();
   state.active=true;
   state.source=images.get(pc.spec.id).currentSrc;
-  state.last={id:pc.spec.id,x,ground,lift,width:w,height:h,pixelGrid:1/detailScale,rasterScale:detailScale,textureWidth:img.width,source:state.source,bank:pose.bank,bend:pose.bend,yaw:pose.yaw,wheelLift:pose.lift,acceptedContacts:pose.acceptedContacts,physicsTime:pc.visual?.time,zoom:1,crash:!!pc.crash,crashStyle:pose.crashStyle,crashSeverity:pose.crashSeverity,compression:pose.compression,spinning,motionProfile:pose.profile,celebrating:action.active,celebrationProfile:action.profile,gestures,cloth:state.cloth.parts.map(p=>({x:p.x,y:p.y}))};
+  state.last={id:pc.spec.id,x,ground,lift,width:w,height:h,pixelGrid:1/detailScale,rasterScale:detailScale,textureWidth:img.width,source:state.source,bank:pose.bank,bend:pose.bend,yaw:pose.yaw,wheelLift:pose.lift,acceptedContacts:pose.acceptedContacts,physicsTime:pc.visual?.time,zoom:1,crash:!!pc.crash,crashStyle:pose.crashStyle,crashSeverity:pose.crashSeverity,compression:pose.compression,spinning,motionProfile:pose.profile,celebrating:action.active,celebrationProfile:action.profile,gestures,cloth:state.cloth.parts.map(p=>({x:p.x,y:p.y})),materials:layerCache.get(img)?.counts||null};
   return true;
 }
 window.FORMOSA_PIXEL_CAR={state,ready,has,measure,draw,drawProjectedRear,drawShowcase,drawPortrait};

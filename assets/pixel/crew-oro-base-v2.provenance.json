@@ -1,0 +1,47 @@
+{
+  "asset": "crew-oro-base-v2.png",
+  "useCase": "precise-object-edit",
+  "purpose": "Hidden passenger anatomy, wedding gown and cockpit underneath Oro's independently animated long veil. Not a replacement full car.",
+  "sourceAsset": "vehicle-oro-v1.png",
+  "sourceAtlasSize": [
+    1254,
+    1254
+  ],
+  "sourceRearCropPixels": [
+    16,
+    41,
+    1222,
+    719
+  ],
+  "sourceRearCropNormalized": [
+    0.0127592,
+    0.0326954,
+    0.9744817,
+    0.5733652
+  ],
+  "generatedImageSize": [
+    1635,
+    962
+  ],
+  "sourceRearMaskAppliedToEditInput": true,
+  "transparentBackground": true,
+  "generation": {
+    "provider": "OpenAI built-in image_gen",
+    "date": "2026-10-29",
+    "sourceOutput": "C:/Users/88690/.codex/generated_images/01a182bb-edaa-7d13-a301-e430a4608881/exec-6b235d18-e26f-4199-b794-f80a8a9a62bd.png",
+    "prompt": "Use case: precise-object-edit. Asset type: transparent pixel-art game sprite underlayer for a seated bride in an existing gold convertible. Image 1 is the EDIT TARGET, an exact rear-view crop 1222 by 719 pixels. Preserve this exact canvas, framing, perspective, vehicle dimensions and pixel-art style. Primary edit: remove ONLY the bride's long flowing translucent white veil that currently stretches down and to the right from her white flower hair ornament across her right shoulder, beige headrest and cockpit. Keep the white flowers and a very small securely attached veil cap on the back of her head. Reconstruct the legitimately hidden body and cockpit beneath that long veil: a complete solid back of the head with dark hair, connected nape/neck, both natural shoulders, white lace wedding-dress sleeves and upper back, the original continuous beige passenger headrest and seat, and the matching gold/wood cockpit edge. The bride must remain seated facing forward, at the exact original position and head size, with her original dark hair and identity. Her white wedding gown must remain modest and match the existing exposed left lace sleeve. This is a complete opaque anatomical underlayer, NOT a new drifting piece of cloth. Clearly distinguish clothing, skin, hair, beige leather, gold/chrome and transparent window/sky gaps. Do not fill the air beside the bride with skin, hair, flat brown strips, stairs or a rectangular patch. Preserve the groom, gold car, mirrors, windshield frame, rearview mirror, lights, wheels and all other pixels as closely as possible. Do not recenter, zoom, enlarge the figures, alter the car or add objects. No new scarf, no long veil, no extra people, no lettering, no diagram labels, no scenery, no checkerboard painted into the image. Keep all true surrounding background and open windshield areas genuinely alpha-transparent; preserve the source's transparency. Fine high-detail arcade pixel art, warm gold highlights and cool violet shade, same linework and material texture as the reference. Output the edited rear sprite only on the same 1222x719 transparent canvas."
+  },
+  "mapping": {
+    "rearUVToGenerated": "x = u * 1635; y = v * 962; u/v are relative to the original rear crop.",
+    "originalAtlasPixelToGenerated": "x = (sourceX - 16) * 1635 / 1222; y = (sourceY - 41) * 962 / 719.",
+    "clip": "Use only original Oro cloth[0] (veil) source-pixel footprint where its free material vacates; preserve original fixed cap, visible original crew and original rigid foreground. Do not paste the regenerated whole vehicle.",
+    "layers": "Reconstructed hair/neck/shoulders/dress follow passenger rigid crew; reconstructed beige headrest, gold cockpit edge, windshield and sky stay in vehicle/background layer. Preserve generated alpha in true air gaps."
+  },
+  "inspection": {
+    "completeRearHeadAndShoulders": true,
+    "freeVeilRemoved": true,
+    "continuousBeigePassengerHeadrest": true,
+    "noStaircaseBrownFill": true,
+    "note": "Generation follows the source crop aspect ratio but is not pixel-identical. Map by crop, then validate source landmarks and clip tightly before integration. No renderer files changed by this generation task."
+  }
+}

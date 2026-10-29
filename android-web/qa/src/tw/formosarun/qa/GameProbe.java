@@ -59,7 +59,10 @@ public final class GameProbe extends Instrumentation {
             tap("#seg-auto [data-v='at']");
             tap("#seg-ctrl [data-v='touch']");
             tap("#s-setup [data-act='go']"); waitFor("RACE.state==='ignition'", 6000);
-            require(true, "ignition_animation_reached"); screenshot("03-ignition");
+            require(true, "ignition_animation_reached");
+            waitFor("Boolean(__kr.IGN.layout&&__kr.IGN.layout.carId===PC.spec.id)", 6000);
+            require(bool("__kr.IGN.layout.portraits.length===2&&__kr.IGN.layout.portraits.every((p,i)=>p.ready&&p.name===__kr.CREW[PC.spec.id][i].name)"), "ignition_uses_selected_car_and_two_existing_portraits");
+            screenshot("03-ignition");
             waitFor("RACE.state==='run'", 18000);
             require(bool("CTL.mode==='touchforced'&&PC.auto"), "touch_steering_and_auto_gears");
             waitFor("Boolean(__kr.audioDebug.radio&&__kr.audioDebug.radio.status.active&&__kr.audioDebug.radio.status.decoded>0)", 15000);

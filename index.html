@@ -151,6 +151,7 @@ table.sp td.t{text-align:right;font-family:var(--font-num);color:#fff;white-spac
 <script src="./render/road-events.js"></script>
 <script src="./render/rail-crossing.js"></script>
 <script src="./render/road-boundary.js"></script>
+<script src="./render/ignition-art.js"></script>
 <script type="module" src="./render/bootstrap.js"></script>
 </head><body><canvas id="gl" aria-label="賽車畫面"></canvas>
 <canvas id="hud" aria-hidden="true"></canvas>
@@ -5512,6 +5513,14 @@ function drawBrakeGlow(spr, si, x0, y0, k) {
   VG.restore();
 }
 function drawPlayerCar(spr) {
+  // Small, time-based engine vibration moves only the existing car draw. The
+  // road/camera and physics stay fixed; never copy a 2x frame onto itself.
+  const q=RACE.state==='ignition'&&IGN.on?window.FormosaIgnitionArt.vibration(IGN,reduceMotion):null;
+  if(!q||(q.x===0&&q.y===0)){drawPlayerCarBody(spr);return;}
+  VG.save();VG.translate(q.x,q.y);
+  try{drawPlayerCarBody(spr);}finally{VG.restore();}
+}
+function drawPlayerCarBody(spr) {
   if (!spr || !PC.piece) return;
   const P = PC.piece.pos(PC.s, PC.x, _pc);
   if (!projW(P.x, P.y, P.z, _pq)) return;
@@ -8003,9 +8012,9 @@ function updateCamera(dt) {
   CV.slope = CAM.slope;
 }
 
-// ===================== the ignition: from the driver's seat, the key goes in and turns, the dash lights, the starter =====================
-// cranks and the engine catches — then the dash drops out of the picture onto the start line, and the lights count down.
-// Drawn in the race view's own pixels over the rendered scene, so the windscreen shows the real start line.
+// ===================== ignition: the selected car and crew stay on the actual starting grid =====================
+// The original key/chime/starter/catch timing and shared multiplayer GO time are preserved.
+// Portraits and instruments fade out into the unchanged race camera and countdown.
 const IGN = { on: false, t: 0, dur: 3.3, acc: false, crank: false, caught: false, hand: 0, keyA: 0, lamps: 0, drop: 0 };
 const IGN_T = { reach: 0.55, slot: 0.8, acc: 1.0, crank: 1.3, catch: 2.2, release: 2.5, drop: 2.8, end: 3.3 };
 function igniteStart() { Object.assign(IGN, { on: true, t: 0, acc: false, crank: false, caught: false, hand: 0, keyA: 0, lamps: 0, drop: 0 }); PC.rpm = 0; }
@@ -8031,93 +8040,16 @@ function igniteUpdate(dt) {
   if (t >= T.end) { IGN.on = false; RACE.state = 'countdown'; if(NET.on&&NET.phase==='race'&&NET.goAt)RACE.countdown=Math.max(0,(NET.goAt-netNow())/1000); }
 }
 function ease(u) { return u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2; }
-// ---- the picture ----
+// ---- the picture: the real starting-grid car and its selected crew ----
 function drawIgnition() {
-  if (!IGN.on) return;
-  const spec = PC.spec || CARS[RACE.carIdx], crew = CREW[spec.id] || [], drv = crew[0] || {};
-  const inter = spec.interior || 0x2a2a2a, panel = cssHex(shadeHex(inter, 0.42)), ledge = cssHex(shadeHex(inter, 0.62)), lip = cssHex(shadeHex(inter, 0.82));
-  const X0 = RW / 2, dy = Math.round(IGN.drop * (RH * 1.15)), up = Math.round(IGN.drop * 70);
-  const R = (x, y, w, h, c) => { VG.fillStyle = c; VG.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); };
-  const disc = (x, y, r, c) => { VG.fillStyle = c; VG.beginPath(); VG.arc(x, y, r, 0, TAU); VG.fill(); };
-  const poly = (pts, c) => { VG.fillStyle = c; VG.beginPath(); VG.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) VG.lineTo(pts[i][0], pts[i][1]); VG.closePath(); VG.fill(); };
-  // ---- the header, the pillars, the mirror: these lift away as the dash drops ----
-  VG.save(); VG.translate(0, -up); VG.globalAlpha = 1 - IGN.drop;
-  R(0, 0, RW, 16, '#0c0a12'); R(0, 16, RW, 2, '#1c1826');
-  R(X0 - 70, 14, 50, 12, '#1c1826'); R(X0 - 68, 16, 46, 8, '#2a2636');                           // the visor, flipped up
-  poly([[0, 0], [RW * 0.13, 0], [RW * 0.05, 128], [0, 128]], '#0c0a12'); poly([[RW, 0], [RW - RW * 0.13, 0], [RW - RW * 0.05, 128], [RW, 128]], '#0c0a12');
-  poly([[RW * 0.13 - 6, 0], [RW * 0.13, 0], [RW * 0.05, 128], [RW * 0.05 - 6, 128]], '#1c1826'); poly([[RW - RW * 0.13 + 6, 0], [RW - RW * 0.13, 0], [RW - RW * 0.05, 128], [RW - RW * 0.05 + 6, 128]], '#1c1826');
-  R(X0 + 6, 14, 3, 10, '#0c0a12'); R(X0 - 26, 22, 66, 20, '#0c0a12'); R(X0 - 24, 24, 62, 16, '#3a4452'); R(X0 - 22, 25, 30, 3, '#6a7888');   // the mirror
-  VG.restore();
-  // ---- the dash ----
-  VG.save(); VG.translate(0, dy);
-  const top = 118;
-  R(0, top, RW, RH - top, panel);
-  R(0, top, RW, 14, ledge); R(0, top, RW, 3, lip);                                               // the ledge, its lit edge
-  R(0, top + 14, RW, 2, '#0c0a12');
-  // the centre console: a vent, the radio with its orange display, the gear lever
-  R(X0 + 92, top + 20, 84, 110, cssHex(shadeHex(inter, 0.32))); R(X0 + 92, top + 20, 84, 2, '#0c0a12');
-  for (let k = 0; k < 4; k++) R(X0 + 100, top + 28 + k * 6, 68, 2, '#0c0a12');
-  R(X0 + 98, top + 60, 72, 22, '#0c0a12'); R(X0 + 102, top + 64, 44, 10, IGN.acc ? '#ff9a2a' : '#2a1a10'); if (IGN.acc) { R(X0 + 106, top + 67, 2, 4, '#1a0a00'); R(X0 + 112, top + 67, 2, 4, '#1a0a00'); R(X0 + 120, top + 66, 12, 6, '#1a0a00'); }
-  R(X0 + 150, top + 62, 12, 12, '#3a3a44'); R(X0 + 152, top + 64, 8, 8, '#8a8a94');
-  R(X0 + 124, top + 100, 20, 28, '#0c0a12'); R(X0 + 132, top + 84, 4, 24, '#b8bcc2'); disc(X0 + 134, top + 82, 7, '#1a181e'); disc(X0 + 133, top + 81, 4, '#3a3840');
-  // the binnacle: a hooded cowl over the two gauges, the lamps between them
-  const bx = X0 - 62, by = top + 54;
-  VG.fillStyle = cssHex(shadeHex(inter, 0.3)); VG.beginPath(); VG.ellipse(bx, by + 10, 118, 56, 0, Math.PI, TAU); VG.fill(); R(bx - 118, by + 10, 236, 44, cssHex(shadeHex(inter, 0.3)));
-  VG.fillStyle = '#0c0a12'; VG.beginPath(); VG.ellipse(bx, by + 12, 108, 48, 0, Math.PI, TAU); VG.fill(); R(bx - 108, by + 12, 216, 42, '#0c0a12');
-  const rpm = clamp(PC.rpm / PC.redline, 0, 1.08), red = PC.redline;
-  gaugeDraw(bx - 56, by + 14, 40, rpm, 'rpm', red, IGN.lamps > 0 || IGN.caught);
-  gaugeDraw(bx + 56, by + 14, 40, 0, 'km/h', red, IGN.lamps > 0 || IGN.caught);
-  const LAMP = [['#ff3a3a', '#5a1414'], ['#ff3a3a', '#5a1414'], ['#ffb02a', '#5a3a0a'], ['#4ad24a', '#143a14'], ['#ff3a3a', '#5a1414'], ['#4a9aff', '#0a2a5a']];
-  LAMP.forEach(([on, off], i) => { const lx = bx - 12 + (i % 2) * 14, ly = by + 4 + Math.floor(i / 2) * 12; R(lx - 1, ly - 1, 10, 10, '#1c1826'); const lit = i === 5 ? IGN.caught || IGN.lamps > 0.9 : IGN.lamps; R(lx, ly, 8, 8, lit ? on : off); if (lit && IGN.lamps > 0.3) R(lx + 1, ly + 1, 3, 2, '#ffffff'); });
-  // ---- the wheel: a fat rim, three spokes, the horn pad in the car's colour ----
-  const wx = X0 - 62, wy = top + 160, wr = 96;
-  VG.lineWidth = 13; VG.strokeStyle = '#0c0a12'; VG.beginPath(); VG.arc(wx, wy, wr, 0, TAU); VG.stroke();
-  VG.lineWidth = 9; VG.strokeStyle = '#2a2430'; VG.beginPath(); VG.arc(wx, wy, wr, 0, TAU); VG.stroke();
-  VG.lineWidth = 3; VG.strokeStyle = '#4a4254'; VG.beginPath(); VG.arc(wx, wy, wr - 2, Math.PI * 1.1, Math.PI * 1.9); VG.stroke();
-  for (const a of [Math.PI, 0, Math.PI * 0.5]) { const ex = wx + Math.cos(a) * (wr - 4), ey = wy + Math.sin(a) * (wr - 4); VG.lineWidth = 11; VG.strokeStyle = '#0c0a12'; VG.beginPath(); VG.moveTo(wx, wy); VG.lineTo(ex, ey); VG.stroke(); VG.lineWidth = 7; VG.strokeStyle = '#2a2430'; VG.beginPath(); VG.moveTo(wx, wy); VG.lineTo(ex, ey); VG.stroke(); }
-  disc(wx, wy, 24, '#0c0a12'); disc(wx, wy, 20, '#2a2430'); disc(wx, wy, 13, cssHex(spec.color)); disc(wx - 3, wy - 3, 4, cssHex(mixHex(spec.color, 0xffffff, 0.5)));
-  // the column and the ignition barrel, right of the wheel
-  const kx = X0 + 44, ky = top + 100;
-  R(wx + 20, ky - 14, kx - wx - 10, 30, '#1c1826'); R(wx + 20, ky - 14, kx - wx - 10, 3, '#2a2636');
-  disc(kx, ky, 14, '#0c0a12'); disc(kx, ky, 12, '#b8bcc2'); disc(kx, ky, 9, '#6a6e78'); disc(kx, ky, 6, '#0c0a12'); R(kx - 1, ky - 5, 2, 10, '#2a2a30');
-  const lab = (s, x, y) => { const L = pixLabel(s, 8, 0xd8dce0, 0x0c0a12); blitC(L, x, y, 'center'); };
-  lab('OFF', kx - 18, ky - 26); lab('ACC', kx + 8, ky - 28); lab('ON', kx + 22, ky - 12); lab('START', kx + 24, ky + 8);
-  // ---- the hand with the key: up from the lower right, into the barrel, turning with it ----
-  if (IGN.hand > 0) {
-    const reach = IGN.hand, hx0 = X0 + 150, hy0 = RH + 60, hx = lerp(hx0, kx, reach), hy = lerp(hy0, ky, reach);
-    const ang = IGN.keyA * 0.55, skin = cssHex(drv.skin || SKIN[0]), skin2 = cssHex(shadeHex(drv.skin || SKIN[0], 0.78)), cuff = cssHex(drv.shirt || 0xffffff);
-    VG.save(); VG.translate(hx, hy); VG.rotate(ang); VG.scale(1.6, 1.6);
-    const slot = IGN.t >= IGN_T.slot ? 1 : clamp((IGN.t - IGN_T.reach) / (IGN_T.slot - IGN_T.reach), 0, 1);
-    const kz = 14 - slot * 10;                                       // the key's shaft, out of the barrel until it is in
-    R(-1.5, 0, 3, kz + 2, '#d8b040'); R(-0.5, 2, 1, kz, '#f2d870'); R(1.5, 4, 1.5, 2, '#d8b040'); R(1.5, 8, 1.5, 2, '#d8b040');
-    // the head of the key, and the fob on its ring
-    R(-7, kz + 1, 14, 12, '#0c0a12'); R(-5, kz + 3, 10, 8, '#2a2430'); R(-3, kz + 5, 6, 2, cssHex(spec.color));
-    disc(9, kz + 12, 4, '#b8bcc2'); disc(9, kz + 12, 2.5, '#0c0a12'); R(10, kz + 14, 10, 7, '#ff6a8a'); R(12, kz + 16, 6, 3, '#ffffff');
-    // the hand: fingers closed over the key head, the thumb on top, the cuff behind
-    R(-12, kz + 4, 26, 24, '#0c0a12');
-    R(-10, kz + 6, 22, 20, skin);
-    for (let k = 0; k < 4; k++) { R(-10 + k * 5.5, kz + 6, 4.5, 9, k % 2 ? skin2 : skin); R(-10 + k * 5.5, kz + 14, 4.5, 1, skin2); }
-    R(-11, kz + 2, 9, 6, skin); R(-11, kz + 2, 9, 1, '#0c0a12'); R(-12, kz + 2, 1, 6, '#0c0a12');
-    R(-13, kz + 24, 30, 6, '#0c0a12'); R(-12, kz + 25, 28, 5, cuff);
-    R(-12, kz + 30, 28, 40, '#0c0a12'); R(-11, kz + 31, 26, 40, cuff);
-    VG.restore();
-  }
-  // the crank shakes the whole dash a little; the catch gives it one thump
-  VG.restore();
-  if (IGN.crank && Math.random() < 0.5) { const s = Math.random() < 0.5 ? 1 : -1; VG.drawImage(VG.canvas, 0, top + dy, RW, RH - top - dy, s, top + dy, RW, RH - top - dy); }
-}
-// a round gauge: the dark face, its ring, the ticks over a 270° sweep, the red band, the needle lit from the dash lamps
-function gaugeDraw(cx, cy, r, v, label, redline, lit) {
-  VG.fillStyle = '#2a2a34'; VG.beginPath(); VG.arc(cx, cy, r + 3, 0, TAU); VG.fill();
-  VG.fillStyle = '#101014'; VG.beginPath(); VG.arc(cx, cy, r, 0, TAU); VG.fill();
-  const a0 = Math.PI * 0.75, a1 = Math.PI * 2.25, n = label === 'rpm' ? 8 : 10;
-  if (label === 'rpm') { VG.strokeStyle = '#c82a2a'; VG.lineWidth = 4; VG.beginPath(); VG.arc(cx, cy, r - 5, a0 + (a1 - a0) * 0.86, a1); VG.stroke(); }
-  for (let k = 0; k <= n; k++) { const a = a0 + ((a1 - a0) * k) / n, big = k % 2 === 0; VG.strokeStyle = lit ? '#e8e8f0' : '#6a6a74'; VG.lineWidth = big ? 2 : 1; VG.beginPath(); VG.moveTo(cx + Math.cos(a) * (r - (big ? 10 : 7)), cy + Math.sin(a) * (r - (big ? 10 : 7))); VG.lineTo(cx + Math.cos(a) * (r - 3), cy + Math.sin(a) * (r - 3)); VG.stroke(); }
-  const L = pixLabel(label, 8, lit ? 0xe8e8f0 : 0x6a6a74, 0x101014); blitC(L, cx, cy + r * 0.45, 'center');
-  const a = a0 + (a1 - a0) * clamp(v, 0, 1.04);
-  VG.strokeStyle = '#ff7a2a'; VG.lineWidth = 2; VG.beginPath(); VG.moveTo(cx - Math.cos(a) * 6, cy - Math.sin(a) * 6); VG.lineTo(cx + Math.cos(a) * (r - 8), cy + Math.sin(a) * (r - 8)); VG.stroke();
-  VG.fillStyle = '#3a3a44'; VG.beginPath(); VG.arc(cx, cy, 4, 0, TAU); VG.fill();
-  if (lit) { VG.fillStyle = 'rgba(255,220,160,.07)'; VG.beginPath(); VG.arc(cx, cy, r, 0, TAU); VG.fill(); }
+  if(!IGN.on)return;
+  const spec=PC.spec||CARS[RACE.carIdx];
+  const label=(text,x,y,size,color,align='left',maxWidth=Infinity)=>{
+    const image=pixLabel(text,size,color,0x050b19),scale=Math.min(1,maxWidth/image.width),w=image.width*scale,h=image.height*scale;
+    VG.drawImage(image,Math.round(x-(align==='center'?w/2:0)),Math.round(y),w,h);
+  };
+  IGN.layout=window.FormosaIgnitionArt.draw(VG,{width:RW,height:RH,ign:IGN,spec,crew:CREW[spec.id]||[],art:PIXEL_PLAYER,
+    rpm:PC.rpm,redline:PC.redline,engine:ENGINE_NAME[spec.engine]||spec.en||'',label});
 }
 addEventListener('pointerdown', () => igniteSkip(), true);
 addEventListener('keydown', (e) => { if (!e.repeat && (e.code === 'Enter' || e.code === 'Space')) igniteSkip(); }, true);

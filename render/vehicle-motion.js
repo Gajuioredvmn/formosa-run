@@ -43,13 +43,76 @@ export function clothMotion(spec,pc,art,previous={}){
  }
  return q;
 }
-export function warpCloth(u,v,w,h,art,state){
+// The head/scarf knot is solid anatomy, not a free cloth tip. Vertices at its
+// boundary stay attached and deflection grows continuously into the free ends.
+export function materialAttachment(u,v,w,h,polygons){
+ let squaredDistance=Infinity;
+ for(const poly of polygons){
+  let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+   const ax=poly[i][0]*w,ay=poly[i][1]*h,bx=poly[j][0]*w,by=poly[j][1]*h;
+   if((ay>v)!==(by>v)&&u<(bx-ax)*(v-ay)/(by-ay)+ax)inside=!inside;
+   const dx=bx-ax,dy=by-ay,t=clamp(((u-ax)*dx+(v-ay)*dy)/(dx*dx+dy*dy||1),0,1),ex=u-ax-dx*t,ey=v-ay-dy*t;
+   squaredDistance=Math.min(squaredDistance,ex*ex+ey*ey);
+  }
+  if(inside)return 0;
+ }
+ return smooth(0,2.5,Math.sqrt(squaredDistance)*136/w);
+}
+// Build once with the material mesh. A radial bend leaves the knot and every
+// fixed contour inside this radius untouched; disconnected neck loops outside
+// the free tail's crop remain rigid too. No polygon work belongs in draw().
+export function clothBendGeometry(part,w,h,fixedPolygons=[]){
+ const scale=w/136,[rx,ry,rw,rh]=part.region,ax=part.root[0]*w,ay=part.root[1]*h;
+ const dx=(part.tip[0]-part.root[0])*w,dy=(part.tip[1]-part.root[1])*h,length=Math.hypot(dx,dy)||scale;
+ const box=[rx*w,ry*h,(rx+rw)*w,(ry+rh)*h];let fixedRadius=2.2*scale;
+ // Clip before measuring: Bamboo's distant neck loop shares the scarf mask,
+ // but must not freeze its separate free tail by inflating the knot radius.
+ for(const polygon of fixedPolygons){
+  let points=polygon.map(([x,y])=>[x*w,y*h]);
+  for(const [axis,bound,sign] of [[0,box[0],1],[0,box[2],-1],[1,box[1],1],[1,box[3],-1]]){
+   const input=points;points=[];if(!input.length)break;
+   for(let i=0,j=input.length-1;i<input.length;j=i++){
+    const a=input[j],b=input[i],insideA=(a[axis]-bound)*sign>=0,insideB=(b[axis]-bound)*sign>=0;
+    if(insideA!==insideB){const t=(bound-a[axis])/(b[axis]-a[axis]);points.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]);}
+    if(insideB)points.push(b);
+   }
+  }
+  for(const [x,y] of points)fixedRadius=Math.max(fixedRadius,Math.hypot(x-ax,y-ay)+.6*scale);
+ }
+ return{ax,ay,dx,dy,length,scale,fixedRadius,span:Math.max(8*scale,length-fixedRadius),
+  bounds:[box[0]-3*scale,box[1]-3*scale,box[2]+3*scale,box[3]+3*scale]};
+}
+function bendCloth(u,v,s,g,attachmentWeight=1){
+ if(u<g.bounds[0]||u>g.bounds[2]||v<g.bounds[1]||v>g.bounds[3])return[u,v];
+ const x=u-g.ax,y=v-g.ay,radius=Math.hypot(x,y),t=clamp((radius-g.fixedRadius)/g.span,0,1);
+ if(!t)return[u,v];
+ const length2=g.length*g.length,tx=s.x*g.scale,ty=s.y*g.scale;
+ // The spring state supplies a bending moment, not a translation that can
+ // squeeze a 14px displacement through a 2.5px attachment band and invert it.
+ const angle=clamp(Math.atan2(g.dx*ty-g.dy*tx,Math.max(length2*.3,length2+g.dx*tx+g.dy*ty)),-.62,.62);
+ const mx=((s.midX??s.x*.45)-s.x*.45)*g.scale,my=((s.midY??s.y*.45)-s.y*.45)*g.scale;
+ const middle=clamp((g.dx*my-g.dy*mx)/length2,-.18,.18);
+ const theta=(angle*t*t*(3-2*t)+middle*4*t*(1-t))*attachmentWeight,c=Math.cos(theta),sn=Math.sin(theta);
+ // Radius is invariant. With cached geometry theta depends only on radius,
+ // so this continuous twist has det(J)=1 instead of folding the cloth over.
+ return[g.ax+x*c-y*sn,g.ay+x*sn+y*c];
+}
+export function warpCloth(u,v,w,h,art,state,partIndex=-1,attachmentWeight=1,bendGeometry=null){
+ const selected=art.cloth?.[partIndex],selectedState=state?.parts?.[partIndex];
+ if(selectedState&&(selected.kind==='scarf'||selected.kind==='veil')){
+  return bendCloth(u,v,selectedState,bendGeometry||clothBendGeometry(selected,w,h),bendGeometry?1:attachmentWeight);
+ }
  let x=u,y=v,pin=1;
  // Overlapping hair/scarf crops share one source image. Preserve every
  // attachment point even when a neighbouring material mask covers it.
- for(const p of art.cloth||[]){const distance=Math.hypot(u-p.root[0]*w,v-p.root[1]*h);pin=Math.min(pin,smooth(.4,2.2,distance*136/w));}
+ for(let i=0;i<(art.cloth||[]).length;i++){if(partIndex>=0&&i!==partIndex)continue;const p=art.cloth[i],distance=Math.hypot(u-p.root[0]*w,v-p.root[1]*h);pin=Math.min(pin,smooth(.4,2.2,distance*136/w));}
  for(let i=0;i<(art.cloth||[]).length;i++){
+  if(partIndex>=0&&i!==partIndex)continue;
   const p=art.cloth[i],s=state?.parts?.[i];if(!s)continue;
+  if(p.kind==='scarf'||p.kind==='veil'){
+   const q=bendCloth(u,v,s,clothBendGeometry(p,w,h));x+=q[0]-u;y+=q[1]-v;continue;
+  }
   const [rx,ry,rw,rh]=p.region,nx=(u/w-rx)/rw,ny=(v/h-ry)/rh;if(nx<=0||nx>=1||ny<=0||ny>=1)continue;
   const ax=p.root[0]*w,ay=p.root[1]*h,dx=(p.tip[0]-p.root[0])*w,dy=(p.tip[1]-p.root[1])*h;
   const along=((u-ax)*dx+(v-ay)*dy)/(dx*dx+dy*dy||1),ex=Math.abs(dx)>Math.abs(dy)?.04:.12,ey=Math.abs(dy)>=Math.abs(dx)?.04:.12;
@@ -60,6 +123,7 @@ export function warpCloth(u,v,w,h,art,state){
   const mid=chain?Math.sin(Math.PI*clamp(along,0,1))*edge:0;
   x+=(s.x*weight+((s.midX??s.x*.45)-s.x*.45)*mid)*scale;y+=(s.y*weight+((s.midY??s.y*.45)-s.y*.45)*mid)*scale;
  }
+ pin*=attachmentWeight;
  return[u+(x-u)*pin,v+(y-v)*pin];
 }
 export const MOTION_PROFILES={

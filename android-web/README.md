@@ -20,7 +20,7 @@ node android-web/build.cjs --sdk 'C:\Android\Sdk' --jdk 'C:\Java\jdk-17' --pytho
 
 ```powershell
 adb devices -l
-adb -s DEVICE_SERIAL install -r 'D:\builds\formosa-unique-build\FormosaRun-0.2.1.apk'
+adb -s DEVICE_SERIAL install -r 'D:\builds\formosa-unique-build\FormosaRun-0.2.2.apk'
 adb -s DEVICE_SERIAL shell am start -n tw.formosarun.game/.MainActivity
 ```
 

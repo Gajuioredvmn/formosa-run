@@ -45,13 +45,28 @@ fs.mkdirSync(output,{recursive:true});const check=(name,value)=>{assert(value,na
   check('The original dog passenger never receives a human hand',data.cars.find(c=>c.id==='arancia').gestures.every(g=>g.who!==1));
   check('Head animation warps existing pixels and leaves the lower body fixed',data.untouched[0]===40&&data.untouched[1]===60&&Math.abs(data.animated[0]-47.6)>.1);
   const cloth=await page.evaluate(async()=>{
-   const m=await import('./render/vehicle-motion.js'),{VEHICLE_ART}=await import('./render/vehicle-art-manifest.js'),spec=__kr.CARS[9],art=VEHICLE_ART.oro;
+   const m=await import('./render/vehicle-motion.js'),{VEHICLE_ART}=await import('./render/vehicle-art-manifest.js'),{CREW_MASKS_B}=await import('./render/crew-masks-b.js'),{polygons}=await import('./render/crew-layers.js'),spec=__kr.CARS.find(c=>c.id==='oro'),art=VEHICLE_ART.oro;
    function run(hz,wind=false){const pc={spec,visual:{time:0,lateralAccel:0},v:0,vx:0,wind:0},history=[];let state,pure=true;
     for(let f=0;f<=hz*6;f++){const time=f/hz;pc.visual.time=time;pc.visual.lateralAccel=time>=.5&&time<1.5?10:0;pc.v=wind&&time<3?50:0;const before=JSON.stringify(pc);state=m.clothMotion(spec,pc,art,state);pure&&=before===JSON.stringify(pc);history.push({time,x:state.parts[0].x,y:state.parts[0].y});}
     return{history,pure};}
-   const a=run(30),b=run(60),w=run(60,true),state={parts:[{x:3,y:4}]},root=art.cloth[0].root,tip=art.cloth[0].tip;
-   const rootP=m.warpCloth(root[0]*136,root[1]*80,136,80,art,state),tipP=m.warpCloth(tip[0]*136,tip[1]*80,136,80,art,state);
-   return{a,b,w,rootError:Math.hypot(rootP[0]-root[0]*136,rootP[1]-root[1]*80),tipMotion:Math.hypot(tipP[0]-tip[0]*136,tipP[1]-tip[1]*80)};
+   const a=run(30),b=run(60),w=run(60,true),width=136,height=FORMOSA_PIXEL_CAR.measure(spec,width).height;
+   const part=art.cloth[0],fixed=polygons(CREW_MASKS_B.oro.fixed[0]),geometry=m.clothBendGeometry(part,width,height,fixed);
+   const root=[part.root[0]*width,part.root[1]*height],tip=[part.tip[0]*width,part.tip[1]*height],length=geometry.length;
+   const probe=(x,y)=>{
+    const state={parts:[{x,y}]},warp=p=>m.warpCloth(...p,width,height,art,state,0,m.materialAttachment(...p,width,height,fixed),geometry);
+    const rootP=warp(root),tipP=warp(tip),points=fixed.flat().map(([u,v])=>[u*width,v*height]);
+    return{load:{x,y},rootError:Math.hypot(rootP[0]-root[0],rootP[1]-root[1]),
+     fixedError:Math.max(0,...points.map(p=>{const q=warp(p);return Math.hypot(q[0]-p[0],q[1]-p[1]);})),
+     tipMotion:Math.hypot(tipP[0]-tip[0],tipP[1]-tip[1]),
+     reachError:Math.abs(Math.hypot(tipP[0]-root[0],tipP[1]-root[1])-length),
+     turn:geometry.dx*(tipP[1]-root[1])-geometry.dy*(tipP[0]-root[0])};
+   };
+   // A force along the scarf cannot stretch it. Exercise true perpendicular
+   // loads with the same cached fixed-contour geometry as the actual renderer.
+   const tx=-geometry.dy/length*5,ty=geometry.dx/length*5,rx=geometry.dx/length*5,ry=geometry.dy/length*5;
+   const tangent=[probe(tx,ty),probe(-tx,-ty)],radial=[probe(rx,ry),probe(-rx,-ry)];
+   return{a,b,w,geometry:{width,height,length,fixedRadius:geometry.fixedRadius},tangent,radial,
+    rootError:Math.max(...tangent.concat(radial).map(p=>p.rootError)),tipMotion:tangent[0].tipMotion};
   });report.cloth=cloth;
   check('Hair, scarf and veil simulation never mutates the car state',cloth.a.pure&&cloth.b.pure&&cloth.w.pure);
   check('A lateral impulse produces opposite delayed material deflection',cloth.b.history[30].x<0&&Math.abs(cloth.b.history[30].x)<Math.abs(cloth.b.history[60].x)*.1);
@@ -62,7 +77,9 @@ fs.mkdirSync(output,{recursive:true});const check=(name,value)=>{assert(value,na
   // Bound the stronger response by one actual source pixel (DETAIL=2),
   // rather than the old sub-pixel threshold for almost invisible motion.
   check('30 and 60 FPS material responses stay within one source pixel',cloth.a.history.every((p,i)=>Math.abs(p.x-cloth.b.history[i*2].x)<.5&&Math.abs(p.y-cloth.b.history[i*2].y)<.5));
-  check('The material root is pinned while the free tip can bend',cloth.rootError<1e-8&&cloth.tipMotion>1);
+  check('Real cached Oro root and fixed contours stay pinned under tangential and radial loads',cloth.rootError<1e-8&&cloth.tangent.concat(cloth.radial).every(p=>p.fixedError<1e-8));
+  check('Opposite tangential loads visibly bend the free end in opposite directions without shortening it',cloth.tangent.every(p=>p.tipMotion>3&&p.reachError<1e-8)&&cloth.tangent[0].turn*cloth.tangent[1].turn<0);
+  check('Pure radial tension and compression cannot stretch or collapse the free end',cloth.radial.every(p=>p.tipMotion<1e-8&&p.reachError<1e-8));
   const render=await page.evaluate(()=>{
    const k=__kr,m=FORMOSA_PIXEL_CAR;k.G.mode='play';k.G.noIgnite=true;k.race(0,true);k.run();k.show(null);k.bot(false);k.PC.v=40;k.PC.gear=3;k.step(0);
    k.PC.steerIn=0;k.PC.drift=0;k.PC.offroad=false;k.FX.cheer={t:.3,dur:1,kind:'wave',who:1};k.step(0);
@@ -95,7 +112,10 @@ fs.mkdirSync(output,{recursive:true});const check=(name,value)=>{assert(value,na
      if(frame>=120&&frame%15===0){const data=g.getImageData(0,0,640,448).data;if(!reference)reference=new Uint8ClampedArray(data);
       for(let p=0;p<data.length;p+=4)if(data[p]!==reference[p]||data[p+1]!==reference[p+1]||data[p+2]!==reference[p+2]||data[p+3]!==reference[p+3]){
        const x=(p/4)%640,y=Math.floor(p/4/640),u=(x/2-(160-w/2))/w,v=(y/2-(200-h))/h;
-       changed.add(p/4);if(v>.45)lowerChanged++;if(u<.5)driver.add(p/4);else passenger.add(p/4);
+       // Free hair/scarves can overlap the deck; the lower shell below
+       // their maximum travel remains rigid. Accessory probes are tested
+       // separately by verify-crew-layers.cjs.
+       changed.add(p/4);if(v>.65)lowerChanged++;if(u<.5)driver.add(p/4);else passenger.add(p/4);
       }
       if(frame===120||frame===180||frame===240)captures.push({frame,data:cv.toDataURL()});
      }
