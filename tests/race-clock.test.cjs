@@ -1,0 +1,8 @@
+const fs=require('fs'),path=require('path'),vm=require('vm'),test=require('node:test'),assert=require('node:assert/strict');
+const ctx={};vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../render/race-clock.js'),'utf8'),ctx);const clock=ctx.FormosaRaceClock;
+const piece=(id,L,k=0,goal=false)=>({id,L,checkS:100,goalS:goal?L-100:null,secs:[{len:L,k}],def:{}});
+test('Initial clock is 80 seconds and independent of car choice',()=>{assert.equal(clock.budget(piece('s1',5220)),80);assert.equal(clock.INITIAL_TIME,80);});
+test('Length and bends earn time; a short finish does not receive a long mountain allowance',()=>{const short=clock.budget(piece('end',4200,.002,true)),long=clock.budget(piece('pass',5200,.006));assert(short>=50&&short<=65);assert(long>short&&long<=78);assert(clock.budget(piece('flat',5000))<=clock.budget(piece('bend',5000,.006)));});
+test('Checkpoint budgets apply once to definitions and do not mutate route or handling geometry',()=>{const p=piece('s2s',5020,.004),before=JSON.stringify({L:p.L,secs:p.secs,checkS:p.checkS});clock.apply([p]);const once=p.def.time;clock.apply([p]);assert.equal(p.def.time,once);assert.equal(JSON.stringify({L:p.L,secs:p.secs,checkS:p.checkS}),before);});
+test('Long climbs receive a bounded recovery allowance shared by every car',()=>{const p=piece('mountain',5100,.006),flat=clock.budget(p);p.secs[0].dy=210;const uphill=clock.budget(p);assert(uphill>flat&&uphill-flat<=6&&uphill<=84);});
+test('A representative five-stage tour loses its former hundred-second surplus',()=>{const tour=[piece('s1',5220),piece('s2s',5020,.003),piece('s3',5100,.005),piece('s4',5000,.004),piece('goal',4360,.004,true)];const total=tour.reduce((n,p)=>n+clock.budget(p),0);assert(total>=345&&total<=380);assert(475-total>=95);});

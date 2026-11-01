@@ -1,0 +1,17 @@
+{
+  "generator": "OpenAI built-in image_gen",
+  "mode": "generate with source-art references",
+  "asset": "assets/pixel/traffic-front-quarter-v2.png",
+  "generated_original": "C:/Users/88690/.codex/generated_images/01a167a1-33ba-7de3-8ef6-09833163f9b1/exec-795df0d0-7703-48ee-a8ec-ac30f8bd0b92.png",
+  "prompt": "Use case: stylized-concept. Production HD-2D arcade traffic sprite atlas matching the reference identities exactly. Rich finely clustered pixel art and hand-painted materials, detailed windows/chrome/tire tread, strong warm sunlight and cool shadow with visible dark detail; original OutRunners multi-angle sprite craft, not low-poly blocks. Transparent alpha background, NO grid/labels/text/ground plane/cast shadows. Exactly 15 vehicles in FIVE columns by THREE rows, equal cells with generous transparent gutters and at least 8% cell padding. ROW1: white sedan, yellow roof-sign taxi, dark teal SUV, burgundy wagon with black roof box, silver double-cab pickup. ROW2: blue Taiwanese small cab-over flatbed, cream-white city bus with orange lower stripe, white-cab grey dump truck, white-cab long rebar truck, white-cab long timber truck. ROW3: blue tractor and silver-white container semi, yellow-cab flatbed carrying strapped concrete slabs, orange-white cab silver tanker, navy-jacket/white-helmet rider on red scooter, black-jacket/white-helmet rider on red sport motorcycle. Keep each complete vehicle separate and fully inside its own cell; no touching, no clipped bumpers/trailers. Preserve body colors, loads, number of axles, rider identities and helmets. All wheels straight, correct full chassis with cabin, front and rear wheels at plausible positions. Camera modestly elevated 2.2 metres, similar to existing sprites; show the whole vehicle and roof surfaces naturally. Heavy vehicles have their full realistic long lengths, not shortened box vans. Exact orderly cells are important for extraction. VIEW FOR EVERY CELL: FRONT THREE-QUARTER, approximately 40 degrees from directly ahead. Nose/front headlights face toward the LOWER RIGHT of the cell, rear/trailer extends toward the UPPER LEFT. Clearly show complete FRONT grille/headlights/windscreen and the long visible LEFT SIDE extending backward. The entire vehicle is ONE coherent painted object, no separate overlaid panels. This is the oncoming/front-view traffic angle.",
+  "transparent_background": true,
+  "purpose": "Fifteen coherent painted quarter views. Paired with existing front/rear and new side profiles for complete multi-angle HD-2D traffic.",
+  "runtime": "Cells measured in render/world-art-manifest.js; imported through alpha-aware connected-component isolation. Physical length/width and ground pivot remain owned by the road engine.",
+  "limitations": "Multi-angle pseudo-3D art, not polygonal 360-degree vehicle meshes. Opposite quarter/side uses mirrored art for the other direction.",
+  "output_sha256": "565ccb1cffafcf7b7ab2a9b179c04197b2bd8fdc021732147de50a0c52c446cd",
+  "reference_hashes": {
+    "traffic-rear-v1.png": "bff2a6df13e7a4e21d8a48f4f2e8c4d102dd01991306d5a89a0f3045f8f9f334",
+    "traffic-front-v1.png": "8b4bfacb00d9ff79ee791cd6b8b224b4edbe3f502a851e195c2143b3b49406e2",
+    "heavy-traffic-v1.png": "d57c9c82f2e3b1600a7a41124d8c2f1d158accc312f96dd167cb500aef5de400"
+  }
+}

@@ -53,13 +53,17 @@
         const lights=frame.lightsNormalized?.map(q=>[q[0]*w,q[1]*pixels,q[2]*w,Math.max(1,q[3]*pixels)])||frame.lights||[];
         const collision=frame.collisionDiameter==null?(frame.collide||0):frame.collisionDiameter/(height*w/pixels);
         const opts={collide:collision,shadow:frame.shadow??.25,ax:frame.anchorX,sway:frame.sway||0,meta:traffic?{lights}:tree?{paintedTree:true,paintedVegetation:true}:ground?{paintedGround:true,paintedVegetation:true}:null};
+        if(traffic&&frame.type&&global.FormosaTrafficViews)global.FormosaTrafficViews.material(frame.type,view,cv,lights);
+        // Directional traffic frames have their own small mip cache; they are
+        // not scenery and need no duplicate packed atlas or haze pages.
+        if(traffic&&global.FormosaTrafficViews&&['side','rearQuarter','frontQuarter'].includes(view))return;
         api.addSprite(name,p,height,opts);
         for(const alias of frame.aliases||[])api.addSprite(alias,p,height,opts);
         if(traffic&&frame.type&&api.trafficSprites){const key=frame.type+':'+view;if(!imported.has(key))imported.set(key,[]);imported.get(key).push(name);}
         if(role==='parade'&&frame.name){state.paradeFrames=(state.paradeFrames||0)+1;paradeArtwork[frame.name]=cv;}
         if(pedestrian){const person=(spec.personOffset||0)+Math.floor(i/4),step=i%4;
           api.addSprite('ped'+person+'_'+step,p,height,{collide:0,shadow:.25,ax:frame.anchorX});people.push({person,step,canvas:cv,worldHeight:height});}});
-      for(const [key,names] of imported){const[type,view]=key.split(':'),set=api.trafficSprites[type]||(api.trafficSprites[type]={rear:[],front:[],turn:[]});set[view]=names;set.turn=names.map(()=>null);}
+      for(const [key,names] of imported){const[type,view]=key.split(':'),set=api.trafficSprites[type]||(api.trafficSprites[type]={rear:[],front:[],turn:[]});set[view]=names;}
       state[role+'Frames']=cells.length;
     }
     // Replace every existing crowd/walker alias with the same carefully drawn

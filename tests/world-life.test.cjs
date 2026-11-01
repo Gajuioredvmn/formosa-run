@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
-function world(){const sandbox={window:{},Math,Map};vm.createContext(sandbox);vm.runInContext(fs.readFileSync(path.resolve(__dirname,'../render/world-life.js'),'utf8'),sandbox);return sandbox.window.FormosaWorldLife;}
+function world(extra={}){const sandbox={window:extra,Math,Map};vm.createContext(sandbox);vm.runInContext(fs.readFileSync(path.resolve(__dirname,'../render/world-life.js'),'utf8'),sandbox);return sandbox.window.FormosaWorldLife;}
 function fixtureCanvas(width,height){const canvas={width,height},g={canvas,save(){},restore(){},translate(){},scale(){},drawImage(){},getImageData:()=>({data:new Uint8ClampedArray(width*height*4)})};canvas.getContext=()=>g;return canvas;}
 test('The metro canopy, posts and stair footprint all move beyond the rail corridor',()=>{
  const w=world(),colliders=[],D={p:{sec:()=>({tags:['lightrail']})},gap(){},spr(){},lat:(_,sg,off)=>sg*(8+off),collide:(s,x)=>colliders.push({s,x})};
@@ -22,11 +22,12 @@ test('Pedestrians follow bounded continuous world paths through each turnaround'
  const w=world(),a={s0:10,s1:18,speed:.75,phase:.5};let prev=w.walkerFrame(a,0);
  for(let n=1;n<2000;n++){const cur=w.walkerFrame(a,n/60);assert(cur.s>=10&&cur.s<=18);assert(Math.abs(cur.s-prev.s)<=.75/60+1e-8);assert([0,1].includes(cur.frame));prev=cur;}
 });
-test('Imported front/rear traffic replaces old angle drawings and preserves brake lights',()=>{
- const w=world(),added=[],pix=class{constructor(width,height){this.d=new Uint8ClampedArray(width*height*4);}rect(){}text(){}};
+test('Imported traffic supplies directional art without erasing fallback angles or brake-light metadata',()=>{
+ const received=[],w=world({FormosaTrafficViews:{material:(...args)=>received.push(args)}}),added=[],pix=class{constructor(width,height){this.d=new Uint8ClampedArray(width*height*4);}rect(){}text(){}};
  const api={Pix:pix,canvas:fixtureCanvas,addSprite:(...a)=>added.push(a),trafficSprites:{taxi:{rear:['oldRear'],front:['oldFront'],turn:[{'0.7':'oldLowPoly'}]}}};
  w.state.images.traffic={image:{naturalWidth:200,naturalHeight:100},spec:{cells:[[0,0,100,100],[100,0,100,100]],frames:[{type:'taxi',view:'rear',worldHeight:1.5,lightsNormalized:[[.2,.7,.15,.06],[.65,.7,.15,.06]]},{type:'taxi',view:'front',worldHeight:1.5}]}};
- w.registerSprites(api);assert.equal(api.trafficSprites.taxi.rear[0],'world_traffic#0');assert.equal(api.trafficSprites.taxi.front[0],'world_traffic#1');assert.equal(api.trafficSprites.taxi.turn[0],null);
+ w.registerSprites(api);assert.equal(api.trafficSprites.taxi.rear[0],'world_traffic#0');assert.equal(api.trafficSprites.taxi.front[0],'world_traffic#1');assert.equal(api.trafficSprites.taxi.turn[0]['0.7'],'oldLowPoly');
+ assert.deepEqual(received.map(a=>[a[0],a[1]]),[['taxi','rear'],['taxi','front']]);assert.equal(received[0][3].length,2);assert.equal(received[1][3].length,0);
  const lights=added.find(a=>a[0]==='world_traffic#0')[3].meta.lights;assert.equal(lights.length,2);assert.equal(lights[0][0],12.8);assert.equal(lights[0][1],44.8);assert.equal(added.find(a=>a[0]==='world_traffic#1')[3].meta.lights.length,0,'Headlights do not inherit rear brake lamps');
 });
 test('Imported pedestrian cells replace every existing crossing-person pose',()=>{

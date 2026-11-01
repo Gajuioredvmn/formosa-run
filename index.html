@@ -140,8 +140,8 @@ table.sp td.t{text-align:right;font-family:var(--font-num);color:#fff;white-spac
 <script src="./render/classic-street-art.js"></script>
 <script src="./render/landscape-art-manifest.js"></script>
 <script src="./render/landscape-parallax.js"></script>
-<script src="./render/world-art-manifest.js"></script>
-<script src="./render/world-life.js"></script>
+<script src="./render/world-art-manifest.js?v=0.2.4"></script>
+<script src="./render/world-life.js?v=0.2.4"></script>
 <script src="./render/landmark-art-manifest.js"></script>
 <script src="./render/landmark-art.js"></script>
 <script src="./render/regional-art-manifest.js"></script>
@@ -152,6 +152,8 @@ table.sp td.t{text-align:right;font-family:var(--font-num);color:#fff;white-spac
 <script src="./render/rail-crossing.js"></script>
 <script src="./render/road-boundary.js"></script>
 <script src="./render/ignition-art.js"></script>
+<script src="./render/race-clock.js?v=0.2.4"></script>
+<script src="./render/traffic-views.js?v=0.2.4"></script>
 <script type="module" src="./render/bootstrap.js"></script>
 </head><body><canvas id="gl" aria-label="賽車畫面"></canvas>
 <canvas id="hud" aria-hidden="true"></canvas>
@@ -874,7 +876,7 @@ Object.assign(SIDE_BANDS, {
 // The tree is OutRunners': 1 → 2 → 4 → 5 → 10, the middle stages of each row reached from two parents.
 // One clock for every stage: the first is straight and quiet, so the same seconds get tighter as the road climbs,
 // twists and fills up — the way the arcade did it
-const STAGE_TIME = 95;
+const STAGE_TIME = 80;
 const STAGES = {
   // ---------------------------------------------------------------- row 1 ----------------------------------------------------------------
   s1: {
@@ -1295,6 +1297,7 @@ function layPiece(stageId, start, opts) {
 function buildRoute() {
   ROUTE.pieces.length = 0;
   ROUTE.root = layPiece('s1', { x: 0, y: 3, z: 0, h: 0 }, {});
+  if(window.FormosaRaceClock)window.FormosaRaceClock.apply(ROUTE.pieces);
   return ROUTE.root;
 }
 
@@ -7215,6 +7218,10 @@ function laneChange(v, dt) {
 // a vehicle on screen: a soft shadow, the picture, its brake lights glowing when it slows
 // yv: the view angle (radians, + when the nose points right on screen); the nearest painted turn is used
 function trafficView(v, yv) {
+  if(!v.train&&window.FormosaTrafficViews?.state.ready){
+    const steer=Math.atan2(v.contactVx||0,Math.max(6,Math.abs(v.v||0)));
+    const s=window.FormosaTrafficViews.frame(v.type,yv+steer+(v.oncoming?Math.PI:0),v._viewBand);if(s){v._viewBand=s.meta.directional.band;return s;}
+  }
   const T = v.turn; if (!T || !yv) return v.spr;
   const a = Math.abs(yv), s = yv < 0 ? -1 : 1;
   const key = T[s * 0.7] && a > 0.5 ? s * 0.7 : a > 0.15 ? s * 0.3 : 0;
@@ -7222,12 +7229,12 @@ function trafficView(v, yv) {
 }
 function drawVehicle(v, x, y, k, clip, fog, yv) {
   const S = trafficView(v, yv); if (!S) return;
-  const hpx = S.wh * k, wpx = hpx * S.w / S.h;
+  const hpx = S.wh * k, wpx = S.worldWidth!=null?S.worldWidth*k:hpx*S.w/S.h;
   if (y - hpx >= clip || x + wpx < 0 || x - wpx > RW) return;
   if (y <= clip) { VG.fillStyle = 'rgba(0,0,0,0.28)'; VG.beginPath(); VG.ellipse(x, y - 0.5, wpx * 0.56, Math.max(1, wpx * 0.1), 0, 0, TAU); VG.fill(); }
   const wob = v.wob > 0 ? v.wob : 0;
   if (wob > 0) { VG.save(); VG.translate(x, y); VG.rotate(Math.sin(G.t * 38) * 0.09 * wob * (v.push < 0 ? -1 : 1)); VG.translate(-x, -y + Math.round(Math.sin(G.t * 50) * 2 * wob)); }
-  drawSpr(S, x, y, hpx, 1, false, clip, fog, 0);
+  drawSpr(S, x, y, hpx, 1, S.flip||false, clip, fog, 0);
   if (wob > 0) VG.restore();
   if(v.cargoWarnAt!=null&&!v.cargoDropped){
     const cy=y-hpx-13-Math.abs(Math.sin(G.t*9))*2,mark=pixText('!',{s:2,fill:0x291b16,out:0xffe68a,it:0});
@@ -7242,11 +7249,11 @@ function drawVehicle(v, x, y, k, clip, fog, yv) {
     VG.fillStyle = rg; VG.fillRect(cx - r * 1.6, cy - r * 1.6, r * 3.2, r * 3.2);
     VG.globalCompositeOperation = 'source-over';
   }
-  if (L && v.brake > 0.3 && y - hpx < clip) {
+  if (L && !S.meta?.directional?.front && v.brake > 0.3 && y - hpx < clip) {
     const sc = hpx / S.h, x0 = x - wpx / 2;
     VG.globalCompositeOperation = 'lighter';
     for (const [lx, ly, lw, lh] of L) {
-      const cx = x0 + (lx + lw / 2) * sc, cy = y - hpx + (ly + lh / 2) * sc, r = Math.max(2, lw * sc * 1.1);
+      const u=(lx+lw/2)/S.w,cx=x0+(S.flip?1-u:u)*wpx,cy=y-hpx*(S.ay??1)+(ly+lh/2)*sc,r=Math.max(2,lw/S.w*wpx*1.1);
       if (cy > clip) continue;
       const rg = VG.createRadialGradient(cx, cy, 0, cx, cy, r);
       rg.addColorStop(0, 'rgba(255,60,40,0.85)'); rg.addColorStop(1, 'rgba(255,40,20,0)');
@@ -8618,42 +8625,73 @@ function cargoWarningRow(cx,rk,R,gs,asph){
     if(s-warning.s0<.35||warning.s1-s<.35)fillSpan(xa,xb,fogPx(0xffcf48,_f));
   }
 }
-function rasterStrip(A, B, nA, nB) {
-  const yN = A[0].sy, yF = B[0].sy;
-  if (!(yF < yN)) return;
-  const yTop = Math.max(0, Math.ceil(yF * DETAIL)), yBot = Math.min(RH * DETAIL - 1, Math.ceil(yN * DETAIL) - 1, Math.ceil(RV.clipY * DETAIL) - 1);
-  if (yBot < yTop) return;
-  const iza = 1 / A[0].cz, izb = 1 / B[0].cz, ga = A[0].gs * iza, gb = B[0].gs * izb;
-  for (let y = yBot; y >= yTop; y--) {
-    const t = (yN - ((y + 0.5) / DETAIL)) / (yN - yF), iz = iza + (izb - iza) * t, z = 1 / iz;
-    const gs = (ga + (gb - ga) * t) * z, tN = (yN - ((y - 0.5) / DETAIL)) / (yN - yF), gsN = (ga + (gb - ga) * tN) / (iza + (izb - iza) * tN);
-    _row = y * (RW * DETAIL); _y = y; _f = fogAt(z); _gcell = (gs * 15) | 0;
-    if (nB === 1) {
-      const a = A[0], b = B[0], cx = (a.sx + (b.sx - a.sx) * t) * DETAIL, rk = (a.rk + (b.rk - a.rk) * t) * DETAIL, R = t < 0.5 ? a : b;
-      _gcx = cx; _girk = 15 / Math.max(0.01, rk);
-      const xl = cx + R.oL * rk, xr = cx + R.oR * rk;
-      sideRow(sideBands(R.sec.L), xl, rk, -1, gs, gsN, null, R.sec.L, R.p.def.pano);
-      sideRow(sideBands(R.sec.R), xr, rk, 1, gs, gsN, null, R.sec.R, R.p.def.pano);
-      groundOverlays(R.p, gs - R.p.gS, cx, rk, R, gs);
-      roadRow(cx, rk, R, gs, gsN);
-    } else {
-      // two roads side by side: the left one's outer ground, the gap between them, the right one's outer ground
-      const a0 = A[0], b0 = B[0], a1 = A[1], b1 = B[1];
-      const cx0 = (a0.sx + (b0.sx - a0.sx) * t) * DETAIL, rk0 = (a0.rk + (b0.rk - a0.rk) * t) * DETAIL, R0 = t < 0.5 ? a0 : b0;
-      _gcx = cx0; _girk = 15 / Math.max(0.01, rk0);
-      const cx1 = (a1.sx + (b1.sx - a1.sx) * t) * DETAIL, rk1 = (a1.rk + (b1.rk - a1.rk) * t) * DETAIL, R1 = t < 0.5 ? a1 : b1;
-      const x0r = cx0 + R0.oR * rk0, x1l = cx1 + R1.oL * rk1, mid = (x0r + x1l) / 2;
-      sideRow(sideBands(R0.sec.L), cx0 + R0.oL * rk0, rk0, -1, gs, gsN, null, R0.sec.L, R0.p.def.pano);
-      sideRow(sideBands(R1.sec.R), cx1 + R1.oR * rk1, rk1, 1, gs, gsN, null, R1.sec.R, R1.p.def.pano);
-      if (x1l > x0r) { sideRow(sideBands(R0.sec.R), x0r, rk0, 1, gs, gsN, mid, R0.sec.R, R0.p.def.pano); sideRow(sideBands(R1.sec.L), x1l, rk1, -1, gs, gsN, mid, R1.sec.L, R1.p.def.pano); }
-      // A fork's neighbouring road must not suppress the current road's
-      // independent railway/tram ballast and other physical ground strips.
-      groundOverlays(R0.p, gs - R0.p.gS, cx0, rk0, R0, gs);
-      groundOverlays(R1.p, gs - R1.p.gS, cx1, rk1, R1, gs);
-      roadRow(cx0, rk0, R0, gs, gsN); roadRow(cx1, rk1, R1, gs, gsN);
+// Fork branches can have different grades (the harbour tunnel descends while
+// the northbound road stays level). Each branch needs its own scan conversion
+// and crest clip. Reusing the left branch's rows for both painted water across
+// the selected right-hand road just after entering Cijin.
+const ROAD_ROWS=[];let roadRowsUsed=0;
+function queueRoadRow(cx,rk,R,gs,gsN,z){
+  const q=ROAD_ROWS[roadRowsUsed]||(ROAD_ROWS[roadRowsUsed]={R:{}});roadRowsUsed++;
+  const r=q.R;r.p=R.p;r.sec=R.sec;r.W=R.W;r.M=R.M;r.SH=R.SH;r.oL=R.oL;r.oR=R.oR;r.F=R.F;r.div=R.div;
+  q.cx=cx;q.rk=rk;q.gs=gs;q.gsN=gsN;q.z=z;q.row=_row;q.y=_y;q.f=_f;q.cell=_gcell;
+}
+function paintRoadRows(){
+  const rows=RV.forkSeen?ROAD_ROWS.slice(0,roadRowsUsed).sort((a,b)=>b.z-a.z):ROAD_ROWS;
+  for(let i=0;i<roadRowsUsed;i++){const q=rows[i];_row=q.row;_y=q.y;_f=q.f;_gcell=q.cell;_gcx=q.cx;_girk=15/Math.max(.01,q.rk);roadRow(q.cx,q.rk,q.R,q.gs,q.gsN);}
+}
+function rasterSingle(a,b){
+  const limit=RV.pathClip.get(b.pid)??RV.pathClip.get(b.ppid)??RH;RV.slotsClip.set(b,limit);
+  if(!(b.sy<a.sy))return;
+  const top=Math.max(0,Math.ceil(b.sy*DETAIL)),bottom=Math.min(RH*DETAIL-1,Math.ceil(a.sy*DETAIL)-1,Math.ceil(limit*DETAIL)-1);if(bottom<top)return;
+  const ia=1/a.cz,ib=1/b.cz,ga=a.gs*ia,gb=b.gs*ib,dy=a.sy-b.sy;
+  for(let y=bottom;y>=top;y--){
+    const t=(a.sy-(y+.5)/DETAIL)/dy,iz=ia+(ib-ia)*t,z=1/iz,gs=(ga+(gb-ga)*t)*z,tn=(a.sy-(y-.5)/DETAIL)/dy,gsN=(ga+(gb-ga)*tn)/(ia+(ib-ia)*tn);
+    const cx=(a.sx+(b.sx-a.sx)*t)*DETAIL,rk=(a.rk+(b.rk-a.rk)*t)*DETAIL,R=t<.5?a:b;
+    _row=y*(RW*DETAIL);_y=y;_f=fogAt(z);_gcell=(gs*15)|0;_gcx=cx;_girk=15/Math.max(.01,rk);
+    sideRow(sideBands(R.sec.L),cx+R.oL*rk,rk,-1,gs,gsN,null,R.sec.L,R.p.def.pano);
+    sideRow(sideBands(R.sec.R),cx+R.oR*rk,rk,1,gs,gsN,null,R.sec.R,R.p.def.pano);
+    groundOverlays(R.p,gs-R.p.gS,cx,rk,R,gs);queueRoadRow(cx,rk,R,gs,gsN,z);
+  }
+  RV.pathClip.set(b.pid,Math.min(limit,top/DETAIL));RV.clipY=Math.max(...RV.pathClip.values());
+}
+function rasterStrip(A,B,nA,nB){
+  if(nB===1){rasterSingle(A[0],B[0]);return;}RV.forkSeen=true;
+  const branches=[];
+  for(let i=0;i<nB;i++){
+    const a=A[i],b=B[i],limit=RV.pathClip.get(b.pid)??RV.pathClip.get(b.ppid)??RH;
+    const top=Math.max(0,Math.ceil(b.sy*DETAIL)),bottom=Math.min(RH*DETAIL-1,Math.ceil(a.sy*DETAIL)-1,Math.ceil(limit*DETAIL)-1);
+    if(!RV.slotsClip)RV.slotsClip=new Map();
+    RV.slotsClip.set(b,limit);
+    if(!(b.sy<a.sy)||bottom<top)continue;
+    branches.push({a,b,i,top,bottom,izA:1/a.cz,izB:1/b.cz,delta:a.sy-b.sy});
+    RV.pathClip.set(b.pid,Math.min(limit,top/DETAIL));
+  }
+  if(!branches.length)return;
+  const low=Math.max(...branches.map(q=>q.bottom)),high=Math.min(...branches.map(q=>q.top));
+  for(let y=low;y>=high;y--){
+    const fragments=[];
+    for(const q of branches){
+      if(y<q.top||y>q.bottom)continue;
+      const {a,b}=q,t=(a.sy-(y+.5)/DETAIL)/q.delta,iz=q.izA+(q.izB-q.izA)*t,z=1/iz;
+      const ga=a.gs*q.izA,gb=b.gs*q.izB,gs=(ga+(gb-ga)*t)*z,tn=(a.sy-(y-.5)/DETAIL)/q.delta;
+      const f={...q,cx:(a.sx+(b.sx-a.sx)*t)*DETAIL,rk:(a.rk+(b.rk-a.rk)*t)*DETAIL,z,gs,gsN:(ga+(gb-ga)*tn)/(q.izA+(q.izB-q.izA)*tn),R:{...(t<.5?a:b)}};
+      for(const key of ['W','M','SH','oL','oR','F','div'])f.R[key]=a[key]+(b[key]-a[key])*t;
+      fragments.push(f);
+    }
+    if(!fragments.length)continue;
+    let mid=null;
+    if(nB>1){
+      const projected=A.map((a,i)=>{const b=B[i],t=Math.max(0,Math.min(1,(a.sy-(y+.5)/DETAIL)/Math.max(.00001,a.sy-b.sy)));return{cx:(a.sx+(b.sx-a.sx)*t)*DETAIL,rk:(a.rk+(b.rk-a.rk)*t)*DETAIL,oL:a.oL+(b.oL-a.oL)*t,oR:a.oR+(b.oR-a.oR)*t};});
+      mid=(projected[0].cx+projected[0].oR*projected[0].rk+projected[1].cx+projected[1].oL*projected[1].rk)/2;
+    }
+    for(const f of fragments){
+      const {R,cx,rk,gs,gsN}=f;_row=y*(RW*DETAIL);_y=y;_f=fogAt(f.z);_gcell=(gs*15)|0;_gcx=cx;_girk=15/Math.max(.01,rk);
+      sideRow(sideBands(R.sec.L),cx+R.oL*rk,rk,-1,gs,gsN,nB>1&&f.i===1?mid:null,R.sec.L,R.p.def.pano);
+      sideRow(sideBands(R.sec.R),cx+R.oR*rk,rk,1,gs,gsN,nB>1&&f.i===0?mid:null,R.sec.R,R.p.def.pano);
+      groundOverlays(R.p,gs-R.p.gS,cx,rk,R,gs);queueRoadRow(cx,rk,R,gs,gsN,f.z);
     }
   }
-  RV.clipY = Math.min(RV.clipY, yTop / DETAIL);
+  RV.clipY=Math.max(...RV.pathClip.values());
 }
 // lawns with tram tracks, railway ballast: strips laid over the ground bands by tags
 function groundOverlays(p, s, cx, rk, R, gs) {
@@ -8669,15 +8707,16 @@ function groundOverlays(p, s, cx, rk, R, gs) {
 // ---------- drawing pictures: mip level by size, cropped at the crest line, hazed by distance ----------
 const VG = vctx;
 function drawSpr(S, x, yb, hpx, sx, flip, clip, fog, skew, opacity = 1) {
-  const wpx = hpx * (S.w / S.h) * sx, x0 = x - (flip ? 1 - S.ax : S.ax) * wpx, yt = yb - hpx;
+  const wpx = hpx * (S.worldWidth!=null?S.worldWidth/S.wh:S.w/S.h) * sx, x0 = x - (flip ? 1 - S.ax : S.ax) * wpx, yt = yb - hpx*(S.ay??1),bottom=yt+hpx;
   if (x0 > RW || x0 + wpx < 0 || yt >= clip || hpx < 0.6) return;
-  const pg = ATLAS.pages[S.pg];
+  const pg = S.page||ATLAS.pages[S.pg];
   let L = 0; while (L + 1 < pg.lv.length && S.h / (1 << (L + 1)) >= hpx * DETAIL) L++;
+  if(S.page&&fog>.02)window.FormosaTrafficViews.haze(S,L,RV.haze);
   // Fractional atlas coordinates preserve the same world pivot at every mip.
   // Rounding each crop independently used to move entire trunks sideways.
   const sc = 1 << L, srcX = S.x / sc, srcY = S.y / sc, srcW = S.w / sc, srcH = S.h / sc;
   let dh = hpx, sh = srcH;
-  if (yb > clip) { dh = clip - yt; sh = srcH * dh / hpx; }
+  if (bottom > clip) { dh = clip - yt; sh = srcH * dh / hpx; }
   const smoothing=VG.imageSmoothingEnabled,alpha=VG.globalAlpha;
   // Filter only when reducing the art. Enlarged pixels remain sharp; distant
   // fine leaves retain average coverage instead of sparkling between texels.
@@ -8981,7 +9020,7 @@ function renderFrame(T) {
   const t1 = performance.now();
   // the road raster, near to far
   buildSlots();
-  RV.fb.fill(0); RV.support.fill(0); RV.clipY = RH; _hy = horizonY();
+  RV.fb.fill(0); RV.support.fill(0); RV.clipY = RH; RV.pathClip=new Map();RV.slotsClip=new Map();RV.forkSeen=false;roadRowsUsed=0; _hy = horizonY();
   RV.cargoWarnings=window.FormosaRoadEvents?window.FormosaRoadEvents.warnings(roadEventsApi()):[];
   const S = RV.slots, ns = RV.ns;
   for (let k = 0; k + 1 < ns; k++) {
@@ -8993,6 +9032,7 @@ function renderFrame(T) {
     if (!near.length) continue;
     rasterStrip(near, far, near.length, far.length);
   }
+  paintRoadRows();
   const t2 = performance.now();
   RV.groundCulled=0;
   RV.gctx.putImageData(RV.img, 0, 0);
@@ -9003,7 +9043,7 @@ function renderFrame(T) {
   for (let k = ns - 2; k >= 0; k--) {
     const A = S[k], B = S[k + 1];
     if (!hazed && A.nr && A.r[0].cz < HAZE_Z) { hazeBand(A.r[0].sy); hazed = true; }
-    for (let j = 0; j < B.nr; j++) { const n = nearOf(A, B.r[j], j); if (n && B.r[j].cz > 0.5) drawStripItems(n, B.r[j], A.clip); }
+    for (let j = 0; j < B.nr; j++) { const n = nearOf(A, B.r[j], j); if (n && B.r[j].cz > 0.5) drawStripItems(n, B.r[j], RV.slotsClip.get(B.r[j])??A.clip); }
   }
   const t4 = performance.now();
   const P = RV.prof || (RV.prof = { sky: 0, raster: 0, put: 0, items: 0, n: 0 });
@@ -9169,6 +9209,7 @@ async function boot() {
   const t0 = performance.now();
   paintNature(); paintTown(); paintLand(); paintSigns(); paintSights(); paintHazards(); paintBig(); paintCity(); paintRails(); paintTraffic(); paintTaiwan(); paintTrains();
   if(window.FormosaWorldLife)window.FormosaWorldLife.registerSprites({canvas,Pix,addSprite,trafficSprites:TRAFFIC_SPR});
+  if(window.FormosaTrafficViews)window.FormosaTrafficViews.configure({mips:mipLevels,types:VTYPES});
   if(window.FormosaClassicStreetArt)window.FormosaClassicStreetArt.registerUprightPalms({canvas,Pix,addSprite,originals:_sprQueue});
   if(window.FormosaRailCrossing)window.FormosaRailCrossing.registerSprites({Pix,addSprite});
   if(window.FormosaLandmarkArt)window.FormosaLandmarkArt.registerSprites({canvas,Pix,addSprite,originals:_sprQueue});
@@ -9218,7 +9259,7 @@ window.__kr = {
   info() { return { pieces: ROUTE.pieces.map((p) => [p.id, Math.round(p.L), p.sprites.length, p.walls.length]), slots: RV.ns, sprites: SPRL.length, detailScale: DETAIL, physicalHeight: view.height, pages: ATLAS.pages.map((pg) => pg.lv[0].width + 'x' + pg.lv[0].height), RW }; },
   atlas(i) { return ATLAS.pages[i || 0].lv[0].toDataURL('image/png'); },
   // one fixed step with a drawn frame, for recording: returns the game screen as a PNG data URL
-  step(dt) { const steps = Math.max(1, Math.ceil(dt / 0.02)), h = dt / steps; for (let i = 0; i < steps; i++) tick(h); if (G.state === 'race') { updateCamera(dt); updateBackdrop(); uiFrame(); } render(); drawHud(dt); return view.toDataURL('image/png'); },
+  step(dt, image = true) { const steps = Math.max(1, Math.ceil(dt / 0.02)), h = dt / steps; for (let i = 0; i < steps; i++) tick(h); if (G.state === 'race') { updateCamera(dt); updateBackdrop(); uiFrame(); } render(); drawHud(dt); return image ? view.toDataURL('image/png') : null; },
   spawn(type, ds, x, v) { const p = PC.piece, veh = spawnVehicle(p, PC.s + ds) || spawnVehicle(p, PC.s + ds + 30); if (!veh) return null; veh.s = PC.s + ds; veh.type = type; const set = TRAFFIC_SPR[type] || TRAFFIC_SPR.sedan; veh.spr = SPR[set.rear[0]]; veh.turn = set.turn ? set.turn[0] : null; const T = VTYPES[type] || VTYPES.sedan; veh.len = T.len; veh.wid = T.wid; veh.x = x; veh.v = veh.v0 = v == null ? veh.v : v; TRAFFIC.list.push(veh); return veh.spr.name; },
   cars() { const W = CFW, H = CFH, c = canvas(W * 5, H * 2 + H * 2), x = c.getContext('2d'); CARS.forEach((sp, i) => { const s = carSprites(sp); x.drawImage(s.frames[2][i & 1][0], (i % 5) * W, Math.floor(i / 5) * H); }); const s0 = carSprites(CARS[0]); s0.frames.forEach((row, k) => { x.drawImage(row[0][0], k * W, H * 2); x.drawImage(row[1][1], k * W, H * 3); }); return c.toDataURL('image/png'); },
   sheet(i) { const s = carSprites(CARS[i]), sd = carSide(CARS[i]); const c = canvas(Math.max(s.w * 5, sd.width), s.h * 2 + sd.height + 8); const x = c.getContext('2d'); s.frames.forEach((row, k) => { x.drawImage(row[0][0], k * s.w, 0); x.drawImage(row[1][1], k * s.w, s.h); }); x.drawImage(sd, 0, s.h * 2 + 8); return c.toDataURL('image/png'); },

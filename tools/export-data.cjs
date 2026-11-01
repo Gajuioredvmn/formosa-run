@@ -32,7 +32,7 @@ const root = path.resolve(__dirname, '..');
           railCrossing:p.railCrossing?Object.fromEntries(['kind','s','axis','start','end','divideStart','divideEnd','height','len','speed','period'].map(k=>[k,p.railCrossing[k]])):null,
           roadBoundaries,roadCrossings:(p.roadCrossings||[]).map(q=>({s:q.s,width:q.width,kind:q.kind})) };
       });
-      return { version:2, title:'衝向寶島 FORMOSA RUN', root:'s1', rules:{ initial_time:95, checkpoint_bonus:95, world_k:k.WORLD_K, stages:5, branches:30, endings:16, traffic_clearance:.24, target_mobile_fps:60 }, cars:k.CARS, crew:k.CREW, stages:k.STAGES, pieces };
+      return { version:2, title:'衝向寶島 FORMOSA RUN', root:'s1', rules:{ initial_time:k.ROUTE.root.def.time, checkpoint_bonus:74, checkpoint_mode:'per_route', world_k:k.WORLD_K, stages:5, branches:30, endings:16, traffic_clearance:.24, target_mobile_fps:60 }, cars:k.CARS, crew:k.CREW, stages:k.STAGES, pieces };
     });
     if (errors.length) throw new Error(errors.join('\n'));
     if (data.pieces.length !== 31 || new Set(data.pieces.map(p=>p.id)).size !== 31 || data.pieces.filter(p=>!p.children.length).length !== 16) throw new Error('The route must be the complete five-level tree.');

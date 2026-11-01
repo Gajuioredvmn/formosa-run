@@ -398,7 +398,7 @@ func _check_checkpoint() -> void:
 	if checkpoint == null or s < float(checkpoint):
 		return
 	checkpoints[piece_id] = true
-	var bonus: float = float(data.get("rules", {}).get("checkpoint_bonus", 95))
+	var bonus: float = float(pieces[piece_id].get("time", data.get("rules", {}).get("checkpoint_bonus", 74)))
 	remaining += bonus
 	_notice_message("CHECKPOINT  +%d 秒" % int(bonus), 2.5)
 

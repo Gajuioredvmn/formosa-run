@@ -1,0 +1,5 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),path=require('path'),vm=require('vm');
+const ctx={};vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../render/traffic-views.js'),'utf8'),ctx);const api=ctx.FormosaTrafficViews;
+test('Rear, quarter, side and oncoming bearings select distinct complete car views',()=>{assert.equal(api.choose(0).view,'rear');assert.equal(api.choose(.65).view,'rearQuarter');assert.equal(api.choose(Math.PI/2).view,'side');assert.equal(api.choose(Math.PI-.65).view,'frontQuarter');assert.equal(api.choose(Math.PI).view,'front');});
+test('Opposite side mirrors directional art, while straight front/rear keep their authored orientation',()=>{assert(api.choose(-.65).flip);assert(api.choose(-Math.PI/2).flip);assert(!api.choose(-Math.PI).flip);assert(!api.choose(0).flip);assert.equal(api.choose(Math.PI*3).view,'front');});
+test('Small camera jitter across a view boundary cannot alternate artwork every frame',()=>{for(const a of [.195,.205,.198,.202])assert.equal(api.choose(a,0).view,'rear');assert.equal(api.choose(.25,0).view,'rearQuarter');});
