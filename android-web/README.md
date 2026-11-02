@@ -4,7 +4,7 @@
 
 採用橫向全螢幕，保留瀏海安全邊界、觸控輸入及本機設定。切到背景、來電失去音訊焦點時暫停；回到遊戲後由玩家繼續。返回鍵先暫停比賽，選單上才詢問是否離開。僅需網路權限，不使用相機、麥克風、檔案系統 JavaScript 橋接。
 
-目前建置版本設定為 `0.2.4`（`versionCode 2026110204`），用於交通車多角度美術、旗津分支路面與路線配時修正，並保留點火與人物圖層。這是版本設定，完成建置的內容與雜湊以該次 `build-report.json` 為準。新版本須另外記錄實機驗證；舊版的通過項目與幀率不代表 0.2.4 已測完。
+目前建置版本設定為 `0.2.5`（`versionCode 2026110305`），修正交通車轉向時輪胎浮空的視覺問題：輪胎接地投影、道路陰影及近端車身裁切同步調整，保留圖像比例、操控與碰撞尺寸。這是版本設定，完成建置的內容與雜湊以該次 `build-report.json` 為準。新版本須另外記錄實機驗證；舊版的通過項目與幀率不代表 0.2.5 已測完。
 
 ## 建置
 
@@ -22,7 +22,7 @@ node android-web/build.cjs --sdk 'C:\Android\Sdk' --jdk 'C:\Java\jdk-17' --pytho
 
 ```powershell
 adb devices -l
-adb -s DEVICE_SERIAL install -r 'D:\builds\formosa-unique-build\FormosaRun-0.2.4.apk'
+adb -s DEVICE_SERIAL install -r 'D:\builds\formosa-unique-build\FormosaRun-0.2.5.apk'
 adb -s DEVICE_SERIAL shell am start -n tw.formosarun.game/.MainActivity
 ```
 
