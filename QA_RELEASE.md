@@ -239,6 +239,10 @@ APK 0.2.2 的安裝與實機結果由後續紀錄補充，不能沿用 **0.2.1�
 
 本輪驗證：122 項 Node runner 測試通過；1,350 組交通車視角／距離／坡度案例檢查素材接地與比例；31 條路段上的實際道路投影檢查通過；瀏覽器 57 項／十車／31 路段，無 JS 錯誤或缺檔。十車正常操控回歸共 1,104,000 個欄位值與原《衝向墾丁》最大差異 0。目視檢查接地總覽、前後斜角、重車、機車與正常控制的連續行駛影片；影片 11.874 秒、960×540、無聲，不能用來宣稱手機幀率。證據位於 `fixes-20261103/ground-final/`、`ground-driving-review.png`、`browser-ground/`、`unit.log` 及 `driving-contract.json`。成品 APK／發布驗證另行增補；本輪手機尚未連線，沒有實機前景測試。
 
+交付增補：APK **0.2.5／2026110305** 從乾淨提交 `fcaf6b2e96445ab9f95c48c20bca3ef9fefefdaa` 建置，142 個遊戲資產、20 首音樂、離線字型、zipalign 及既有 v2／v3 簽章驗證通過。成品 `www` 重跑 1,350 組素材接地案例、31 路段 243 組實際道路投影、正常行駛影片及 57 項瀏覽器檢查，無 JS 錯誤或缺檔。成品為 266,363,233 bytes，SHA-256 `2ae34449ead44e5aed383a79c9ac51260ae2774727ed767f09d4dc11ba00e10e`，與 `exports/android/FormosaRun-0.2.5.apk` 一致。ADB 裝置清單為空，因此本輪沒有安裝到手機，也沒有實機測試；已裝的舊版不能當作新修正。
+
+網頁提交 `fcaf6b2e96445ab9f95c48c20bca3ef9fefefdaa` 已由 GitHub Actions [41502210227](https://github.com/Gajuioredvmn/formosa-run/actions/runs/41502210227) 發布成功。公開 `index.html` 與 `render/traffic-views.js` 的 SHA-256 均與來源一致；證據位於 `fixes-20261103/packaged-ground/`、`packaged-browser/`、`published-025-report.json` 及 `pages-release-025.png`。原《衝向墾丁》未修改。旗津偶發海色問題狀態沿用前節，這次車輛接地修正沒有作為其排除證據。
+
 ## 待完成及未實測範圍
 
 - **音訊量測限制**：20 首正式音檔共 86,245,119 bytes（約 82.25 MiB），每首 179.16–180.00 秒，來源、下載與分析紀錄保存在 `assets/music/`。已測解碼、RMS／峰值、交疊連續性及桌面播放流程；尚未認證實測 BPM、調性、LUFS、節拍同步、手機聲音延遲或不同喇叭／耳機的主觀混音。生成要求的 BPM／調性不是實際量測值。
