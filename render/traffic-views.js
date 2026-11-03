@@ -6,9 +6,9 @@
   const heights={sedan:1.55,taxi:1.65,suv:1.95,wagon:1.85,pickup:1.9,bluetruck:2.2,bus:3.4,gravel:3.5,rebar:3.5,logs:3.5,semi:3.8,flatbed:3.6,tanker:3.6,scooter:1.72,motorbike:1.78};
   const order=['rear','rearQuarter','side','frontQuarter','front'];
   const boundaries=[.20,1.12,2.02,Math.PI-.20];
-  // The paintings use a higher camera than the road. These tyre windows are
-  // measured in the cropped artwork; the lowest opaque tyre pixels become
-  // support points, not the bottom of the bumper or a shared sprite baseline.
+  // Measured tyre windows locate contact shadows within the rigid painting.
+  // They must never be used to fit separate parts of the body to road depths:
+  // a long truck axle can cross the camera plane during a close overtake.
   const axleWindows={
     rearQuarter:{sedan:[.035,.59,.94],taxi:[.04,.57,.92],suv:[.04,.59,.94],wagon:[.04,.58,.92],pickup:[.04,.59,.93],bluetruck:[.10,.55,.91],bus:[.10,.56,.88],gravel:[.09,.52,.92],rebar:[.08,.46,.92],logs:[.09,.47,.92],semi:[.08,.43,.91],flatbed:[.10,.48,.90],tanker:[.08,.47,.91]},
     frontQuarter:{sedan:[.07,.40,.94],taxi:[.07,.37,.92],suv:[.08,.36,.93],wagon:[.08,.36,.93],pickup:[.08,.39,.93],bluetruck:[.08,.42,.93],bus:[.10,.40,.92],gravel:[.08,.40,.92],rebar:[.09,.48,.93],logs:[.08,.48,.93],semi:[.08,.45,.93],flatbed:[.08,.45,.93],tanker:[.08,.47,.93]}
@@ -67,20 +67,12 @@
     const view=sprite.meta.directional.view,side=sprite.flip?-1:1;
     const centre=project(0,0);if(!centre)return null;
     const scale=sprite.wh*k/sprite.h;
-    // Retain the painted width and round tyres. A collider's length must not
-    // stretch a short painted bus into an accordion when its side is visible.
-    const contacts=sprite.supports.map(q=>{const x=centre.x+side*(q.u-.5)*sprite.w*scale,p=project(q.s,q.l*side,x);return{...q,screen:p?{...p,x}:null};});
-    if(contacts.some(q=>!q.screen))return null;
-    const sy=scale,strips=[];
-    if(contacts.length===1){const a=contacts[0];strips.push({u0:0,u1:1,xx:sy,xy:0,sy,tx:a.screen.x-sy*a.u*sprite.w,ty:a.screen.y-sy*a.v*sprite.h});return{strips,contacts,view};}
-    for(let i=0;i<contacts.length-1;i++){
-      const a=contacts[i],b=contacts[i+1],dx=(b.u-a.u)*sprite.w;
-      if(dx<1)return null;
-      const xx=(b.screen.x-a.screen.x)/dx,xy=(b.screen.y-a.screen.y-sy*(b.v-a.v)*sprite.h)/dx;
-      if(Math.abs(xx)<.00001||Math.sign(xx)!==(sprite.flip?-1:1))return null;
-      strips.push({u0:i? a.u:0,u1:i===contacts.length-2?1:b.u,xx,xy,sy,tx:a.screen.x-xx*a.u*sprite.w,ty:a.screen.y-xy*a.u*sprite.w-sy*a.v*sprite.h});
-    }
-    return{strips,contacts,view};
+    if(!Number.isFinite(scale)||scale<=0)return null;
+    // Exactly one similarity transform: translation, equal X/Y scale and an
+    // optional mirror. Roof, tyres, trailer and cargo remain one rigid image.
+    const transform={u0:0,u1:1,xx:side*scale,xy:0,sy:scale,tx:centre.x-side*sprite.w*scale*.5,ty:centre.y-sprite.h*scale};
+    const contacts=sprite.supports.map(q=>({...q,screen:{x:transform.tx+transform.xx*q.u*sprite.w,y:transform.ty+scale*q.v*sprite.h,k}}));
+    return{strips:[transform],contacts,view};
   }
   function groundPoint(sprite,rig,u,v){
     const t=rig.strips.find(q=>u<=q.u1)||rig.strips.at(-1),x=u*sprite.w,y=v*sprite.h;

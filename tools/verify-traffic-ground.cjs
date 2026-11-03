@@ -1,9 +1,10 @@
-// Inspect the rendered tyre pixels against a projected support plane. This
-// covers the wheelie regression, not collisions, phone FPS or native Godot.
+// Inspect source tyre markers, rigid sprite placement and contact shadows.
+// These are painted HD-2D supports, not independently projected physical axles.
+// The near-camera regression is in verify-traffic-close-pass.cjs.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{createServer}=require('./serve.cjs');
 const {chromium}=require(path.join(process.env.USERPROFILE,'.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'));
 const root=path.resolve(process.argv[3]||path.join(__dirname,'..')),out=path.resolve(process.argv[2]||'../formosa-work/traffic-ground');fs.mkdirSync(out,{recursive:true});
-(async()=>{const server=createServer(root);await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch({headless:true,channel:'msedge'}),report={errors:[],missing:[],scope:'Desktop Canvas: traffic tyre support, normal turns, hills and clipping; no phone FPS claim.'};
+(async()=>{const server=createServer(root);await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch({headless:true,channel:'msedge'}),report={errors:[],missing:[],scope:'Desktop Canvas: source tyre markers and rigid HD-2D placement/shadows; not physical axle projection or phone FPS.'};
 try{const page=await browser.newPage({viewport:{width:1280,height:720}});page.on('pageerror',e=>report.errors.push(e.message));page.on('response',r=>{if(r.status()>=400)report.missing.push(r.url());});await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>window.__kr?.G.state==='race'&&window.FORMOSA_PIXEL_CAR?.state.complete,null,{timeout:120000});
 const data=await page.evaluate(()=>{const k=__kr,V=FormosaTrafficViews;k.halt(true);k.G.mode='play';k.G.noIgnite=true;k.race(0,true);k.run();k.bot(false);k.show(null);
  const types=Object.keys(k.VTYPES),angles=[0,.26,.65,1.57,2.49,Math.PI,-.26,-.65,-1.57,-2.49],rows=[],images=[];
@@ -12,7 +13,7 @@ const data=await page.evaluate(()=>{const k=__kr,V=FormosaTrafficViews;k.halt(tr
   const type=types[row],a=angles[col],t=k.VTYPES[type],S=V.frame(type,a),F=450,Z=Math.max(12,t.len*1.2),K=F/Z,H=1.8,cx=col*300+150,cy=row*190+112;
   const project=(s,l)=>{const ds=s*t.len,dx=l*t.wid,z=Z+Math.cos(a)*ds-Math.sin(a)*dx;return{x:cx+F*(Math.sin(a)*ds+Math.cos(a)*dx)/z,y:cy+F*H/z,k:F/z};};
   const rig=V.groundRig(S,K,project);if(!rig)throw Error('Invalid support rig '+type+' '+a);
-  const hull=[[-.45,-.48],[.45,-.48],[.45,.48],[-.45,.48]].map(q=>project(...q));g.fillStyle='#151d25';g.beginPath();hull.forEach((q,i)=>i?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y));g.closePath();g.fill();
+  const hull=rig.contacts.map(q=>q.screen);g.fillStyle='#151d25';g.beginPath();hull.forEach((q,i)=>i?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y));g.closePath();g.fill();
   for(const b of rig.strips){const x=b.u0*S.w,w=(b.u1-b.u0)*S.w;g.save();g.transform(b.xx,b.xy,0,b.sy,b.tx,b.ty);g.drawImage(S.page.lv[0],x,0,w,S.h,x,0,w,S.h);g.restore();}
   for(const q of rig.contacts){g.strokeStyle='#6effa5';g.beginPath();g.moveTo(q.screen.x-4,q.screen.y);g.lineTo(q.screen.x+4,q.screen.y);g.stroke();}
   g.font='13px sans-serif';g.fillStyle='white';g.fillText(type+' / '+S.meta.directional.view,col*300+5,row*190+18);
@@ -31,7 +32,7 @@ const data=await page.evaluate(()=>{const k=__kr,V=FormosaTrafficViews;k.halt(tr
   rows.push({type,angle:a,distance:Z,grade,view:S.meta.directional.view,contacts:rig.contacts.length,maxError,sourceOpaque,verticalScale:rig.strips.every(q=>Math.abs(q.sy-S.wh*K/S.h)<1e-10)});
  }
  return{rows,images};});report.rows=data.rows;for(const im of data.images)fs.writeFileSync(path.join(out,im.name),Buffer.from(im.data.split(',')[1],'base64'));
-assert(data.rows.every(r=>r.maxError<1e-7&&r.sourceOpaque&&r.verticalScale),'Tyres must meet projected support without scaling their height');
+assert(data.rows.every(r=>r.maxError<1e-7&&r.sourceOpaque&&r.verticalScale),'Painted contact markers must remain aligned with their image');
 report.roadCases=await page.evaluate(()=>{const k=__kr,V=FormosaTrafficViews,rows=[];for(let pi=0;pi<k.ROUTE.pieces.length;pi++){const p=k.ROUTE.pieces[pi],at=Math.min(p.L-100,Math.max(100,p.L*.4));k.go(pi,at,0);k.PC.v=0;k.TRAFFIC.list=[];k.HAZ.list=[];const types=['sedan','bus','semi','motorbike'];types.forEach((t,i)=>k.spawn(t,20+i*15,i%2?3:-3,0));k.step(0);for(const v of k.TRAFFIC.list){const centre=k.trafficGroundProjection(v,0,0);if(!centre)continue;const w={};p.pos(v.s,v.x,w);const cx=(w.x-k.CV.x)*k.CV.ch+(w.z-k.CV.z)*k.CV.sh,a=p.heading(v.s)-k.CV.h-Math.atan2(cx,centre.cz),s=V.frame(v.type,a);let maxXError=0;const rig=V.groundRig(s,centre.k,(along,lateral,x)=>{const q=k.trafficGroundProjection(v,along,lateral,x);if(q&&x!=null)maxXError=Math.max(maxXError,Math.abs(q.x-x));return q;});rows.push({piece:p.id,type:v.type,view:s.meta.directional.view,rig:!!rig,maxXError});}}return rows;});
 assert(report.roadCases.length>=124&&report.roadCases.every(r=>r.rig&&r.maxXError<1e-6),'Actual route slopes and road projection');
 // Capture the actual game draw path, including its strip/crest clipping.
