@@ -255,6 +255,10 @@ APK 0.2.2 的安裝與實機結果由後續紀錄補充，不能沿用 **0.2.1�
 
 證據位於 `fixes-20261103-user-video/baseline-025/`、`candidate-rigid/`、`regression-before.log`、`unit-final.log`、`candidate-driving-review.png` 及 `browser-rigid/`。使用者原始錄影僅在本機檢視，未放入專案或上傳。成品及公開版本驗證另行增補；手機未連線，尚無本輪安裝或實機測試。
 
+交付增補：APK **0.2.6／2026110406** 由乾淨提交 `2342069678124d9b7a3022112e7304996c0289c9` 建置，142 個遊戲檔案、20 首音樂、離線字型、zipalign 與既有 v2／v3 簽章通過。成品 `www` 另外重跑近距離超車 780 個位置組合及 57 項瀏覽器／十車／31 路段檢查，均通過且無 JS 錯誤、缺檔。APK 為 266,363,233 bytes，SHA-256 `b9c6077c53b1910606b82c01044d5d28802fd70003e923131d0a4188830d9f5a`，與 `exports/android/FormosaRun-0.2.6.apk` 一致。ADB 裝置清單仍為空；沒有安裝或執行實機測試。
+
+同一執行版本已由 GitHub Actions [41676282848](https://github.com/Gajuioredvmn/formosa-run/actions/runs/41676282848) 成功發布，公開 `index.html` 及 `render/traffic-views.js` 雜湊均與來源一致。證據位於 `fixes-20261103-user-video/packaged-close-pass/`、`packaged-browser/`、`published-026-report.json`、`android-delivery-026.json` 及 `pages-release-026.png`。原《衝向墾丁》未修改。
+
 ## 待完成及未實測範圍
 
 - **音訊量測限制**：20 首正式音檔共 86,245,119 bytes（約 82.25 MiB），每首 179.16–180.00 秒，來源、下載與分析紀錄保存在 `assets/music/`。已測解碼、RMS／峰值、交疊連續性及桌面播放流程；尚未認證實測 BPM、調性、LUFS、節拍同步、手機聲音延遲或不同喇叭／耳機的主觀混音。生成要求的 BPM／調性不是實際量測值。
